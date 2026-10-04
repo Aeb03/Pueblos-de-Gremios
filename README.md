@@ -4,19 +4,19 @@ PWA de gestión fantástica desarrollada paso a paso.
 
 ## Estado actual
 
-**v0.1.1h2 — Posada**
+**v0.2.0 — Primer bucle jugable**
 
-- Base PWA instalable.
-- Interfaz móvil en orientación vertical.
-- Vista principal de ciudad.
-- Posada reemplaza al antiguo Almacén como edificio base.
+- Base PWA instalable y actualizable.
+- Interfaz móvil vertical.
+- Vista principal de ciudad con Ayuntamiento, Taberna, Herrería, Carpintería y Posada.
 - Pantalla de trabajadores.
-- Expedición local de prueba.
-- Maqueta del Reino online.
-- Service Worker y caché offline inicial.
-- Cabecera compactada para móvil.
-- Reencuadre de edificios para evitar recortes.
-- Barra inferior y espaciado ajustados para pantallas pequeñas.
+- Mara puede iniciar una expedición real de minería.
+- La expedición usa hora de inicio y final, por lo que continúa aunque se cierre la PWA.
+- Al completar una expedición se obtienen hierro, piedra y XP de Minería.
+- Recursos y progreso se guardan en `localStorage`.
+- El nivel de Minería aumenta cada 100 XP.
+- El modo Reino sigue como maqueta para la futura capa online.
+- La duración de expedición está reducida a 30 segundos sólo para playtest.
 
 ## Concepto
 
