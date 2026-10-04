@@ -321,3 +321,51 @@ dialog form{padding:18px}
   .resource-strip{font-size:.64rem}
   .topbar h1{font-size:1rem}
 }
+
+/* v0.2.0 — primer bucle jugable */
+.skill-progress{
+  display:block;
+  width:100%;
+  height:7px;
+  margin-top:6px;
+  accent-color:#7aa85b;
+}
+.state.is-busy{
+  color:#f5cf7b;
+  background:#49351d;
+}
+.expedition-status{
+  margin-top:10px;
+  padding:0 10px 8px;
+  border:1px solid #3f3428;
+  border-radius:12px;
+  background:#15120f;
+}
+.expedition-status .kv{
+  padding-inline:0;
+}
+.expedition-status progress{
+  margin-top:10px;
+  height:10px;
+  accent-color:var(--gold);
+}
+.countdown{
+  min-height:1.25em;
+  margin:.45rem 0 0;
+  text-align:right;
+  color:var(--gold2);
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+.primary:disabled{
+  opacity:.62;
+  filter:saturate(.65);
+}
+.menu-grid button:disabled{
+  opacity:.8;
+}
+@media (max-width:390px){
+  .resource-strip span{padding-inline:4px}
+  .resource-strip{font-size:.64rem}
+  .worker-mara small{font-size:.72rem}
+}
