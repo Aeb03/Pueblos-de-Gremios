@@ -4,7 +4,7 @@ PWA de gestión fantástica desarrollada paso a paso.
 
 ## Estado actual
 
-**v0.1.0 — Fundación**
+**v0.1.1 — Ajuste móvil**
 
 - Base PWA instalable.
 - Interfaz móvil en orientación vertical.
@@ -13,6 +13,9 @@ PWA de gestión fantástica desarrollada paso a paso.
 - Expedición local de prueba.
 - Maqueta del Reino online.
 - Service Worker y caché offline inicial.
+- Cabecera compactada para móvil.
+- Reencuadre de edificios para evitar recortes.
+- Barra inferior y espaciado ajustados para pantallas pequeñas.
 
 ## Concepto
 
