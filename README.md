@@ -4,11 +4,12 @@ PWA de gestión fantástica desarrollada paso a paso.
 
 ## Estado actual
 
-**v0.1.1 — Ajuste móvil**
+**v0.1.1h2 — Posada**
 
 - Base PWA instalable.
 - Interfaz móvil en orientación vertical.
 - Vista principal de ciudad.
+- Posada reemplaza al antiguo Almacén como edificio base.
 - Pantalla de trabajadores.
 - Expedición local de prueba.
 - Maqueta del Reino online.
