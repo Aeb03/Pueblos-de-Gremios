@@ -1,0 +1,26 @@
+name: Validate PWA
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: node --check app.js
+      - name: Check required PWA files
+        run: |
+          test -f index.html
+          test -f styles.css
+          test -f manifest.webmanifest
+          test -f sw.js
+          test -f icons/icon.svg
+      - name: Validate manifest JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest OK')"
+      - name: Check version wiring
+        run: |
+          grep -q "v0.2.0" index.html
+          grep -q "pueblos-gremios-v0.2.0" sw.js
