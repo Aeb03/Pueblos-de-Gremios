@@ -12,9 +12,18 @@ const copy={Ayuntamiento:'Centro administrativo del asentamiento. Aquí se gesti
 document.querySelectorAll('[data-building]').forEach(b=>b.addEventListener('click',()=>{const n=b.dataset.building;buildingName.textContent=n;buildingCopy.textContent=copy[n]||'Gestión del edificio.';dialog.showModal();}));
 const expeditionBtn=document.getElementById('startExpedition');
 const expeditionFeedback=document.getElementById('expeditionFeedback');
-expeditionBtn.addEventListener('click',()=>{expeditionBtn.disabled=true;expeditionBtn.textContent='Expedición iniciada';expeditionFeedback.textContent='Mara partió hacia la Cantera del Este. Esta es una simulación local de la v0.1.0.';});
+expeditionBtn.addEventListener('click',()=>{expeditionBtn.disabled=true;expeditionBtn.textContent='Expedición iniciada';expeditionFeedback.textContent='Mara partió hacia la Cantera del Este. Esta es una simulación local de la v0.1.1h1.';});
 let deferredPrompt=null;
 const installBtn=document.getElementById('installBtn');
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.disabled=false;});
 installBtn.addEventListener('click',async()=>{if(!deferredPrompt){installBtn.querySelector('span').textContent='Usá “Instalar app” del navegador';return;}deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;});
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+if('serviceWorker' in navigator){
+  let refreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(refreshing)return;refreshing=true;window.location.reload();});
+  window.addEventListener('load',async()=>{
+    try{
+      const reg=await navigator.serviceWorker.register('./sw.js?v=0.1.1h1',{updateViaCache:'none'});
+      await reg.update();
+    }catch{}
+  });
+}
