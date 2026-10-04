@@ -8,11 +8,11 @@ document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=
 const dialog=document.getElementById('buildingDialog');
 const buildingName=document.getElementById('buildingName');
 const buildingCopy=document.getElementById('buildingCopy');
-const copy={Ayuntamiento:'Centro administrativo del asentamiento. Aquí se gestionará el crecimiento y el prestigio.',Taberna:'Atención de aventureros, cocina, descanso, rumores y pedidos.',Herrería:'Producción de herramientas, armas y encargos especiales.',Carpintería:'Madera, muebles, herramientas y componentes para otros edificios.',Almacén:'Inventario central y distribución de recursos.'};
+const copy={Ayuntamiento:'Centro administrativo del asentamiento. Aquí se gestionará el crecimiento y el prestigio.',Taberna:'Atención de aventureros, cocina, descanso, rumores y pedidos.',Herrería:'Producción de herramientas, armas y encargos especiales.',Carpintería:'Madera, muebles, herramientas y componentes para otros edificios.',Posada:'Alojamiento para aventureros, descanso y servicios de hospedaje.'};
 document.querySelectorAll('[data-building]').forEach(b=>b.addEventListener('click',()=>{const n=b.dataset.building;buildingName.textContent=n;buildingCopy.textContent=copy[n]||'Gestión del edificio.';dialog.showModal();}));
 const expeditionBtn=document.getElementById('startExpedition');
 const expeditionFeedback=document.getElementById('expeditionFeedback');
-expeditionBtn.addEventListener('click',()=>{expeditionBtn.disabled=true;expeditionBtn.textContent='Expedición iniciada';expeditionFeedback.textContent='Mara partió hacia la Cantera del Este. Esta es una simulación local de la v0.1.1h1.';});
+expeditionBtn.addEventListener('click',()=>{expeditionBtn.disabled=true;expeditionBtn.textContent='Expedición iniciada';expeditionFeedback.textContent='Mara partió hacia la Cantera del Este. Esta es una simulación local de la v0.1.1h2.';});
 let deferredPrompt=null;
 const installBtn=document.getElementById('installBtn');
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.disabled=false;});
@@ -22,7 +22,7 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(refreshing)return;refreshing=true;window.location.reload();});
   window.addEventListener('load',async()=>{
     try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=0.1.1h1',{updateViaCache:'none'});
+      const reg=await navigator.serviceWorker.register('./sw.js?v=0.1.1h2',{updateViaCache:'none'});
       await reg.update();
     }catch{}
   });
