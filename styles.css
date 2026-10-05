@@ -1405,3 +1405,17 @@ dialog form{padding:18px}
     font-size:.61rem;
   }
 }
+
+
+/* v0.9.0b — progreso de ciudad y población */
+.city-growth-card .city-population-summary{
+  margin:.7rem 0 .2rem;
+  color:#d6c49f;
+  font-weight:700;
+}
+.city-growth-card #cityProgressHint{
+  margin:.35rem 0 0;
+}
+.arrival-note{
+  color:#d9bf78!important;
+}
