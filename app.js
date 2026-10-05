@@ -1,4 +1,4 @@
-const APP_VERSION='0.3.0';
+const APP_VERSION='0.4.0';
 const SAVE_KEY='pueblos-gremios-save-v0.2.0';
 
 const EXPEDITION_DURATION_MS=30_000;
@@ -12,10 +12,17 @@ const SMITHY_UPGRADE_STONE_COST=10;
 const SMITHY_UPGRADE_CRAFTED_REQUIRED=3;
 const SMITHY_UPGRADE_PRESTIGE_REWARD=20;
 
+const STAMINA_MAX=100;
+const EXPEDITION_STAMINA_COST=20;
+const STAMINA_TICK_MS=10_000;
+const PASSIVE_STAMINA_PER_TICK=1;
+const INN_STAMINA_PER_TICK=5;
+
 const titles={
   city:'Villa del Roble',
   workers:'Trabajadores',
   smithy:'Herrería',
+  inn:'Posada',
   expedition:'Expedición',
   kingdom:'Reino de Ardel',
   inventory:'Inventario',
@@ -32,7 +39,12 @@ const defaultState=()=>({
   resources:{coins:1240,wood:86,iron:42,stone:0},
   inventory:{pickaxeHeads:0},
   workers:{
-    mara:{miningXp:0},
+    mara:{
+      miningXp:0,
+      stamina:STAMINA_MAX,
+      staminaUpdatedAt:Date.now(),
+      restingAtInn:false
+    },
     borin:{smithingXp:0}
   },
   buildings:{
@@ -41,7 +53,8 @@ const defaultState=()=>({
   activeExpedition:null,
   activeCraft:null,
   lastMessage:'',
-  lastSmithyMessage:''
+  lastSmithyMessage:'',
+  lastInnMessage:''
 });
 
 function loadState(){
@@ -85,7 +98,7 @@ function saveState(){
 
 function showScreen(name){
   screens.forEach(s=>s.classList.toggle('is-active',s.dataset.screen===name));
-  const navTarget=name==='smithy'?'city':name;
+  const navTarget=(name==='smithy'||name==='inn')?'city':name;
   nav.forEach(b=>b.classList.toggle('is-active',b.dataset.target===navTarget));
   title.textContent=titles[name]||'Pueblos de Gremios';
   window.scrollTo({top:0,behavior:'smooth'});
@@ -155,6 +168,11 @@ document.querySelectorAll('[data-building]').forEach(b=>b.addEventListener('clic
     return;
   }
 
+  if(n==='Posada'){
+    showScreen('inn');
+    return;
+  }
+
   currentBuilding=n;
   buildingName.textContent=n;
   buildingCopy.textContent=buildingInfo[n]?.copy||'Gestión del edificio.';
@@ -187,6 +205,8 @@ const els={
   maraMiningXp:document.getElementById('maraMiningXp'),
   maraNextXp:document.getElementById('maraNextXp'),
   maraXpProgress:document.getElementById('maraXpProgress'),
+  maraStaminaWorker:document.getElementById('maraStaminaWorker'),
+  maraStaminaWorkerProgress:document.getElementById('maraStaminaWorkerProgress'),
   maraState:document.getElementById('maraState'),
 
   smithyLevelHero:document.getElementById('smithyLevelHero'),
@@ -213,6 +233,15 @@ const els={
   upgradeSmithy:document.getElementById('upgradeSmithy'),
   upgradeFeedback:document.getElementById('upgradeFeedback'),
 
+  innMaraLevel:document.getElementById('innMaraLevel'),
+  innMaraState:document.getElementById('innMaraState'),
+  innMaraStamina:document.getElementById('innMaraStamina'),
+  innMaraStaminaProgress:document.getElementById('innMaraStaminaProgress'),
+  toggleInnRest:document.getElementById('toggleInnRest'),
+  innFeedback:document.getElementById('innFeedback'),
+
+  expeditionStamina:document.getElementById('expeditionStamina'),
+  expeditionStaminaProgress:document.getElementById('expeditionStaminaProgress'),
   expeditionStatus:document.getElementById('expeditionStatus'),
   expeditionProgress:document.getElementById('expeditionProgress'),
   expeditionCountdown:document.getElementById('expeditionCountdown'),
@@ -252,11 +281,95 @@ function rollReward(){
   };
 }
 
-function startExpedition(){
-  resolveExpiredExpedition();
-  if(state.activeExpedition)return;
+function syncMaraStamina(){
+  const mara=state.workers.mara;
+
+  if(state.activeExpedition)return false;
 
   const now=Date.now();
+  const updatedAt=Number(mara.staminaUpdatedAt)||now;
+
+  if(mara.stamina>=STAMINA_MAX){
+    if(mara.staminaUpdatedAt!==now){
+      mara.stamina=STAMINA_MAX;
+      mara.staminaUpdatedAt=now;
+    }
+    return false;
+  }
+
+  const ticks=Math.floor(Math.max(0,now-updatedAt)/STAMINA_TICK_MS);
+  if(ticks<=0)return false;
+
+  const gainPerTick=mara.restingAtInn?INN_STAMINA_PER_TICK:PASSIVE_STAMINA_PER_TICK;
+  const previous=mara.stamina;
+  mara.stamina=Math.min(STAMINA_MAX,mara.stamina+(ticks*gainPerTick));
+  mara.staminaUpdatedAt=mara.stamina>=STAMINA_MAX
+    ?now
+    :updatedAt+(ticks*STAMINA_TICK_MS);
+
+  if(mara.stamina!==previous){
+    saveState();
+    return true;
+  }
+
+  return false;
+}
+
+function toggleInnRest(){
+  resolveExpiredExpedition();
+  syncMaraStamina();
+
+  const mara=state.workers.mara;
+
+  if(state.activeExpedition){
+    state.lastInnMessage='Mara está en expedición y no puede descansar todavía.';
+    render();
+    return;
+  }
+
+  if(mara.restingAtInn){
+    mara.restingAtInn=false;
+    mara.staminaUpdatedAt=Date.now();
+    state.lastInnMessage='Mara dejó la Posada. Seguirá recuperando Resistencia lentamente mientras esté libre.';
+  }else{
+    if(mara.stamina>=STAMINA_MAX){
+      state.lastInnMessage='Mara ya tiene la Resistencia completa.';
+      render();
+      return;
+    }
+
+    mara.restingAtInn=true;
+    mara.staminaUpdatedAt=Date.now();
+    state.lastInnMessage='Mara está descansando en la Posada. Su recuperación está acelerada.';
+  }
+
+  saveState();
+  render();
+}
+
+function startExpedition(){
+  resolveExpiredExpedition();
+  syncMaraStamina();
+  if(state.activeExpedition)return;
+
+  const mara=state.workers.mara;
+
+  if(mara.restingAtInn){
+    state.lastMessage='Mara está descansando en la Posada. Terminá su descanso antes de enviarla.';
+    render();
+    return;
+  }
+
+  if(mara.stamina<EXPEDITION_STAMINA_COST){
+    state.lastMessage=`Mara necesita ${EXPEDITION_STAMINA_COST} de Resistencia para esta expedición.`;
+    render();
+    return;
+  }
+
+  const now=Date.now();
+  mara.stamina-=EXPEDITION_STAMINA_COST;
+  mara.staminaUpdatedAt=now;
+
   state.activeExpedition={
     id:createActionId(),
     zone:'Cantera del Este',
@@ -275,6 +388,7 @@ function completeExpedition(expedition){
   state.resources.stone+=expedition.rewards.stone;
   state.workers.mara.miningXp+=expedition.rewards.miningXp;
   state.activeExpedition=null;
+  state.workers.mara.staminaUpdatedAt=expedition.endsAt;
   state.lastMessage=`Expedición completada: +${expedition.rewards.iron} hierro, +${expedition.rewards.stone} piedra y +${expedition.rewards.miningXp} XP de Minería.`;
   saveState();
 }
@@ -399,6 +513,7 @@ function setRequirementState(key,met){
 function render(){
   resolveExpiredExpedition();
   resolveExpiredCraft();
+  syncMaraStamina();
 
   els.coins.textContent=formatNumber(state.resources.coins);
 
@@ -424,6 +539,14 @@ function render(){
       progress:[els.maraXpProgress]
     }
   );
+
+  els.maraStaminaWorker.textContent=Math.floor(state.workers.mara.stamina);
+  els.maraStaminaWorkerProgress.value=state.workers.mara.stamina;
+  els.expeditionStamina.textContent=Math.floor(state.workers.mara.stamina);
+  els.expeditionStaminaProgress.value=state.workers.mara.stamina;
+  els.innMaraStamina.textContent=Math.floor(state.workers.mara.stamina);
+  els.innMaraStaminaProgress.value=state.workers.mara.stamina;
+  els.innMaraLevel.textContent=miningLevel();
 
   renderSkillProgress(
     state.workers.borin.smithingXp,
@@ -451,16 +574,53 @@ function render(){
     els.startExpedition.disabled=true;
     els.startExpedition.textContent='Mara está en expedición';
   }else{
-    els.maraState.textContent='Disponible';
-    els.maraState.classList.remove('is-busy');
-    els.expeditionStatus.textContent='Lista para partir';
+    const resting=state.workers.mara.restingAtInn;
+    const enoughStamina=state.workers.mara.stamina>=EXPEDITION_STAMINA_COST;
+
+    els.maraState.textContent=resting?'Descansando':'Disponible';
+    els.maraState.classList.toggle('is-busy',resting);
+    els.expeditionStatus.textContent=resting?'En la Posada':'Lista para partir';
     els.expeditionProgress.value=0;
     els.expeditionCountdown.textContent='';
-    els.startExpedition.disabled=false;
-    els.startExpedition.textContent='Iniciar expedición';
+
+    if(resting){
+      els.startExpedition.disabled=true;
+      els.startExpedition.textContent='Mara está descansando';
+    }else if(!enoughStamina){
+      els.startExpedition.disabled=true;
+      els.startExpedition.textContent='Falta Resistencia';
+    }else{
+      els.startExpedition.disabled=false;
+      els.startExpedition.textContent='Iniciar expedición';
+    }
   }
 
-  els.expeditionFeedback.textContent=state.lastMessage||'El progreso se guarda automáticamente en este dispositivo.';
+  if(state.activeExpedition){
+    els.innMaraState.textContent='En expedición';
+    els.innMaraState.classList.add('is-busy');
+    els.toggleInnRest.disabled=true;
+    els.toggleInnRest.textContent='Mara está en expedición';
+  }else if(state.workers.mara.restingAtInn){
+    els.innMaraState.textContent='Descansando';
+    els.innMaraState.classList.add('is-busy');
+    els.toggleInnRest.disabled=false;
+    els.toggleInnRest.textContent='Terminar descanso';
+  }else{
+    els.innMaraState.textContent='Disponible';
+    els.innMaraState.classList.remove('is-busy');
+    els.toggleInnRest.disabled=state.workers.mara.stamina>=STAMINA_MAX;
+    els.toggleInnRest.textContent=state.workers.mara.stamina>=STAMINA_MAX
+      ?'Resistencia completa'
+      :'Descansar en Posada';
+  }
+
+  els.innFeedback.textContent=state.lastInnMessage||
+    (state.workers.mara.restingAtInn
+      ?'La Posada recupera +5 de Resistencia cada 10 segundos en esta prueba.'
+      :'Libre en la ciudad, Mara recupera +1 de Resistencia cada 10 segundos.');
+
+  els.expeditionFeedback.textContent=state.lastMessage||
+    `Esta salida cuesta ${EXPEDITION_STAMINA_COST} de Resistencia.`;
 
   els.smithyLevelHero.textContent=state.buildings.smithy.level;
   els.smithyIron.textContent=formatNumber(state.resources.iron);
@@ -534,6 +694,7 @@ function render(){
 }
 
 els.startExpedition.addEventListener('click',startExpedition);
+els.toggleInnRest.addEventListener('click',toggleInnRest);
 els.startCraft.addEventListener('click',startCraft);
 els.upgradeSmithy.addEventListener('click',upgradeSmithy);
 
@@ -578,7 +739,7 @@ if('serviceWorker' in navigator){
 
   window.addEventListener('load',async()=>{
     try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=0.3.0',{updateViaCache:'none'});
+      const reg=await navigator.serviceWorker.register('./sw.js?v=0.4.0',{updateViaCache:'none'});
       await reg.update();
     }catch{}
   });
