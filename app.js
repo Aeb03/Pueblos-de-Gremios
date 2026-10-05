@@ -1,6 +1,9 @@
-const APP_VERSION='0.8.1';
+const APP_VERSION='0.9.0a';
 const SAVE_KEY='pueblos-gremios-save-v0.8.0';
 const DATA=globalThis.PG_DATA;
+const ADV=globalThis.PG_ADVENTURER_CORE;
+
+if(!ADV)throw new Error('PG_ADVENTURER_CORE no está disponible.');
 
 const EXPEDITION_DURATION_MS=30_000;
 const CRAFT_DURATION_MS=DATA.recipes.pickaxeHead.durationMs;
@@ -67,6 +70,7 @@ const title=document.getElementById('screenTitle');
 
 const defaultState=()=>({
   version:APP_VERSION,
+  adventurerSchemaVersion:ADV.ADVENTURER_SCHEMA_VERSION,
   world:{
     id:DATA.world.id,
     name:DATA.world.name,
@@ -195,7 +199,9 @@ function loadState(){
         ...(saved.buildings||{}),
         smithy:{...base.buildings.smithy,...(saved.buildings?.smithy||{})}
       },
-      adventurers:Array.isArray(saved.adventurers)?saved.adventurers:[],
+      adventurers:Array.isArray(saved.adventurers)
+        ?saved.adventurers.map(npc=>ADV.normalizeAdventurer(npc,DATA))
+        :[],
       smithyTraffic:{...base.smithyTraffic,...(saved.smithyTraffic||{})},
       smithyBook:{
         ...base.smithyBook,
@@ -230,6 +236,7 @@ function loadState(){
 
     merged.smithyBook.entries=Array.isArray(merged.smithyBook.entries)?merged.smithyBook.entries:[];
     merged.smithyBook.unread=merged.smithyBook.entries.filter(entry=>entry.unread).length;
+    merged.adventurerSchemaVersion=ADV.ADVENTURER_SCHEMA_VERSION;
     return merged;
   }catch{
     return defaultState();
@@ -240,8 +247,11 @@ let state=loadState();
 
 function saveState(){
   state.version=APP_VERSION;
+  state.adventurerSchemaVersion=ADV.ADVENTURER_SCHEMA_VERSION;
   localStorage.setItem(SAVE_KEY,JSON.stringify(state));
 }
+
+if(state.city.founded)saveState();
 
 
 function smithyStorage(){
@@ -295,86 +305,43 @@ function uniqueAdventurerName(existingFullNames){
   return {firstName:'Viajero',lastName:fallback.split(' ')[1],fullName:fallback};
 }
 
-function rollAdventurerStats(role){
-  const variationBudget=2;
-  const stats={...role.baseStats};
-  const keys=['attack','defense','speed','support'];
-  for(let i=0;i<variationBudget;i++){
-    const up=randomChoice(keys);
-    const down=randomChoice(keys.filter(key=>key!==up&&stats[key]>2));
-    stats[up]+=1;
-    stats[down]-=1;
-  }
-  stats.hp+=randomInt(-4,4);
-  return stats;
-}
-
-function generateAdventurer({city,roleKey,existingFullNames}){
+function generateAdventurer({city,roleKey,existingFullNames,combatStyle=null}){
   const role=DATA.adventurerRoles[roleKey];
   const personality=randomChoice(Object.values(DATA.personalities));
   const name=uniqueAdventurerName(existingFullNames);
   existingFullNames.add(name.fullName);
-  const stats=rollAdventurerStats(role);
-  const weaponQuality=randomInt(45,58);
 
-  return {
+  const [coinMin,coinMax]=DATA.founding.adventurerCoinRange||[55,75];
+  const selectedStyle=roleKey==='explorer'
+    ?(combatStyle||randomChoice(['bow','daggers']))
+    :combatStyle;
+
+  return ADV.createAdventurer(DATA,{
     id:createActionId(),
     firstName:name.firstName,
     lastName:name.lastName,
     fullName:name.fullName,
-    originCityId:city.id,
-    originCityName:city.name,
-    originTier:city.tier,
-    currentCityId:city.id,
-    currentCityName:city.name,
-    level:1,
-    xp:0,
-    roleKey:role.id,
-    role:role.label,
+    city,
+    classKey:roleKey,
+    combatStyle:selectedStyle,
     personalityKey:personality.id,
-    personality:personality.label,
-    traits:{...personality.traits},
-    stats,
-    hpMax:stats.hp,
-    hpCurrent:stats.hp,
-    coins:randomInt(150,260),
-    weaponDamage:role.weaponDamage,
-    weaponQuality,
-    visits:0,
-    purchases:0,
-    active:true,
-    status:'Disponible',
-    equipment:{
-      weapon:{
-        id:'starter-weapon',
-        name:'Equipo inicial',
-        damage:role.weaponDamage,
-        quality:weaponQuality
-      }
-    },
-    inventory:[],
-    createdAt:Date.now(),
-    purchaseProfile:{
-      affinity:role.smithyAffinity,
-      needRange:[...personality.needRange],
-      weights:{...personality.purchaseWeights}
-    }
-  };
+    coins:randomInt(coinMin,coinMax),
+    createdAt:Date.now()
+  });
 }
 
 function generateFoundingAdventurers(city,count=DATA.founding.adventurerCount){
   const existingNames=new Set(state.adventurers.map(npc=>npc.fullName));
-  const roleKeys=shuffled(Object.keys(DATA.adventurerRoles));
+  const founderClasses=DATA.founding.founderClassKeys||['warrior','explorer','healer'];
   const result=[];
 
   for(let i=0;i<count;i++){
-    const roleKey=roleKeys[i%roleKeys.length];
+    const roleKey=founderClasses[i%founderClasses.length];
     result.push(generateAdventurer({city,roleKey,existingFullNames:existingNames}));
   }
 
   return result;
 }
-
 function getAdventurer(id){
   return state.adventurers.find(npc=>npc.id===id)||null;
 }
@@ -420,7 +387,7 @@ function foundCity(){
 }
 
 function resetTestWorld(){
-  const ok=globalThis.confirm('¿Reiniciar el Reino de prueba? Se borrará el progreso local de v0.8.0 y volverás a fundar la ciudad.');
+  const ok=globalThis.confirm('¿Reiniciar el Reino de prueba? Se borrará el progreso local de esta prueba y volverás a fundar la ciudad.');
   if(!ok)return;
   localStorage.removeItem(SAVE_KEY);
   state=defaultState();
@@ -897,6 +864,16 @@ function resolveSmithyVisitor(visitor,nextBase=Date.now()){
       npc.coins-=price;
       npc.weaponDamage=best.sword.damage;
       npc.weaponQuality=best.sword.qualityScore;
+      npc.equipment.weapon={
+        id:best.sword.id,
+        name:best.sword.name,
+        slot:'weapon',
+        founder:false,
+        damage:best.sword.damage,
+        quality:best.sword.qualityScore,
+        durability:null,
+        maxDurability:null
+      };
       npc.purchases+=1;
       smithyStorage().ironSwords=smithyStorage().ironSwords.filter(item=>item.id!==best.sword.id);
       swordInventorySignature='';
@@ -1755,10 +1732,11 @@ function renderFoundingAdventurers(){
         <span>❤️ ${npc.hpCurrent}/${npc.hpMax}</span>
         <span>⚔️ ${npc.stats.attack}</span>
         <span>🛡️ ${npc.stats.defense}</span>
-        <span>💨 ${npc.stats.speed}</span>
-        <span>✨ ${npc.stats.support}</span>
+        <span>⚡ ${npc.stats.initiative}</span>
+        <span>🔷 ${npc.manaCurrent}/${npc.manaMax}</span>
       </div>
-      <small>Originario de ${npc.originTier} ${npc.originCityName} · 🪙 ${formatNumber(npc.coins)}</small>
+      <small>${DATA.adventurerRoles[npc.classKey]?.identity||npc.role} · Evasión ${Math.round((npc.evasion||0)*100)}%</small>
+      <small>Originario de ${npc.originTier} ${npc.originCityName} · 🪙 ${formatNumber(npc.coins)} · XP ${npc.xp}/${DATA.adventurerProgression.xpToNext[npc.level]||'—'}</small>
     `;
     els.kingdomAdventurerList.append(card);
   });
@@ -2220,7 +2198,7 @@ if('serviceWorker' in navigator){
 
   window.addEventListener('load',async()=>{
     try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=0.8.1',{updateViaCache:'none'});
+      const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0a',{updateViaCache:'none'});
       await reg.update();
     }catch{}
   });
