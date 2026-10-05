@@ -29,12 +29,12 @@
   const GROUP_PRESSURE={
     wolf:{
       1:{lossMultiplier:1,winPenalty:0,manaMultiplier:1},
-      2:{lossMultiplier:1.75,winPenalty:.08,manaMultiplier:1.10},
-      3:{lossMultiplier:3.10,winPenalty:.21,manaMultiplier:1.22}
+      2:{lossMultiplier:1.85,winPenalty:.10,manaMultiplier:1.12},
+      3:{lossMultiplier:3.55,winPenalty:.27,manaMultiplier:1.28}
     },
     boar:{
       1:{lossMultiplier:1,winPenalty:0,manaMultiplier:1},
-      2:{lossMultiplier:1.90,winPenalty:.18,manaMultiplier:1.15}
+      2:{lossMultiplier:2.25,winPenalty:.25,manaMultiplier:1.22}
     }
   };
 
