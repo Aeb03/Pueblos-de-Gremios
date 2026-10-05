@@ -39,7 +39,7 @@ function newAdventurer(cls,id,rng){
     attack:b.attack,defense:b.defense,initiative:b.initiative,evasion:b.evasion,
     coins:randInt(rng,55,75),earned:0,spent:0,rests:0,repairs:0,downs:0,fights:0,
     meals:0,rations:0,rationPrepared:false,
-    loot:{},lootOfferMemory:{},
+    loot:{},lootGenerated:0,lootSold:0,lootOfferMemory:{},
     spending:{gear:0,rest:0,repair:0,consumable:0},
     equipment:{},
     active:true
@@ -308,6 +308,7 @@ function restStep(state,a){
 
 function addLoot(a,key,qty=1){
   a.loot[key]=(a.loot[key]||0)+qty;
+  a.lootGenerated+=qty;
 }
 function rollCommonLoot(a,enemy,count,rng){
   for(let i=0;i<count;i++){
@@ -389,6 +390,7 @@ function sellLootStep(state,a,rng){
     city.resources[key]=(city.resources[key]||0)+accepted;
     a.coins+=value;a.earned+=value;
     a.loot[key]-=accepted;
+    a.lootSold+=accepted;
     sold=true;
 
     const remaining=qty-accepted;
@@ -662,6 +664,9 @@ function runCity(seed,profileKey){
     spendShareOfAvailable:(earned+adv.length*65)>0?spent/(earned+adv.length*65):0,
     missionPaid:city.missionPaid,sales:city.sales,serviceRevenue:city.serviceRevenue,repairRevenue:city.repairRevenue,
     lootPurchases:city.lootPurchases,
+    lootGeneratedUnits:adv.reduce((s,a)=>s+a.lootGenerated,0),
+    lootSoldUnits:adv.reduce((s,a)=>s+a.lootSold,0),
+    lootRetainedUnits:adv.reduce((s,a)=>s+Object.values(a.loot).reduce((x,y)=>x+(y||0),0),0),
     lootOfferUnits:city.lootMarket.offerUnits,lootAcceptedUnits:city.lootMarket.acceptedUnits,
     lootNoDemandUnits:city.lootMarket.noDemandUnits,lootTreasuryRejectUnits:city.lootMarket.treasuryRejectUnits,
     platesSold:city.food.platesSold,rationsSold:city.food.rationsSold,foodStockMiss:city.food.stockMiss,
@@ -717,6 +722,9 @@ function summarize(profileKey,rows){
     demandFulfilledRate:rows.reduce((s,r)=>s+r.demandAttempts,0)?rows.reduce((s,r)=>s+r.demandFulfilled,0)/rows.reduce((s,r)=>s+r.demandAttempts,0):0,
     demandStockMissRate:rows.reduce((s,r)=>s+r.demandAttempts,0)?rows.reduce((s,r)=>s+r.demandStockMiss,0)/rows.reduce((s,r)=>s+r.demandAttempts,0):0,
     demandCoinMissRate:rows.reduce((s,r)=>s+r.demandAttempts,0)?rows.reduce((s,r)=>s+r.demandCoinMiss,0)/rows.reduce((s,r)=>s+r.demandAttempts,0):0,
+    lootGeneratedMean:mean(rows.map(r=>r.lootGeneratedUnits)),
+    lootSoldRate:rows.reduce((s,r)=>s+r.lootGeneratedUnits,0)?rows.reduce((s,r)=>s+r.lootSoldUnits,0)/rows.reduce((s,r)=>s+r.lootGeneratedUnits,0):0,
+    lootRetainedMean:mean(rows.map(r=>r.lootRetainedUnits)),
     lootOfferUnitsMean:mean(rows.map(r=>r.lootOfferUnits)),
     lootAcceptedRate:rows.reduce((s,r)=>s+r.lootOfferUnits,0)?rows.reduce((s,r)=>s+r.lootAcceptedUnits,0)/rows.reduce((s,r)=>s+r.lootOfferUnits,0):0,
     lootNoDemandRate:rows.reduce((s,r)=>s+r.lootOfferUnits,0)?rows.reduce((s,r)=>s+r.lootNoDemandUnits,0)/rows.reduce((s,r)=>s+r.lootOfferUnits,0):0,
