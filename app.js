@@ -1909,6 +1909,180 @@ function renderFoundingAdventurers(){
   });
 }
 
+let activityAdventurerSignature='';
+
+function selectedActivityAdventurer(){
+  const selectedId=els.activityAdventurerSelect?.value;
+  return getAdventurer(selectedId)||state.adventurers.find(npc=>npc.active!==false)||null;
+}
+
+function appendActivityPreviewRow(labelText,valueText){
+  const row=document.createElement('div');
+  const label=document.createElement('span');
+  const value=document.createElement('strong');
+  label.textContent=labelText;
+  value.textContent=valueText;
+  row.append(label,value);
+  els.activityPreview.append(row);
+}
+
+function renderActivityLog(){
+  if(!els.activityLogList)return;
+  els.activityLogList.replaceChildren();
+
+  if(!state.activityLog.length){
+    const empty=document.createElement('p');
+    empty.className='muted';
+    empty.textContent='Todavía no hay salidas resueltas.';
+    els.activityLogList.append(empty);
+    return;
+  }
+
+  state.activityLog.forEach(entry=>{
+    const row=document.createElement('div');
+    row.className='activity-log-row '+(entry.won?'is-win':'is-loss');
+
+    const left=document.createElement('span');
+    const leftStrong=document.createElement('strong');
+    const leftSmall=document.createElement('small');
+    leftStrong.textContent=(entry.won?'✅ ':'⚠️ ')+entry.adventurerName;
+    leftSmall.textContent=entry.enemyCount+'× '+entry.enemyName+' · Nv. '+entry.levelAfter;
+    left.append(leftStrong,leftSmall);
+
+    const right=document.createElement('span');
+    const rightStrong=document.createElement('b');
+    const rightSmall=document.createElement('small');
+    rightStrong.textContent=entry.won?('+'+entry.xpGained+' XP'):('-'+entry.xpLost+' XP');
+    rightSmall.textContent='-'+entry.hpLoss+' PV · -'+entry.manaLoss+' Maná';
+    right.append(rightStrong,rightSmall);
+
+    row.append(left,right);
+    els.activityLogList.append(row);
+  });
+}
+
+function renderAdventurerActivity(){
+  if(!els.activityAdventurerSelect)return;
+
+  const active=state.adventurers.filter(npc=>npc.active!==false);
+  const signature=active.map(npc=>[
+    npc.id,npc.level,npc.hpCurrent,npc.manaCurrent,npc.status
+  ].join(':')).join('|');
+  const previous=els.activityAdventurerSelect.value;
+
+  if(signature!==activityAdventurerSignature){
+    activityAdventurerSignature=signature;
+    els.activityAdventurerSelect.replaceChildren();
+
+    active.forEach(npc=>{
+      const option=document.createElement('option');
+      option.value=npc.id;
+      option.textContent=npc.fullName+' · '+npc.role+' Nv. '+npc.level+' · '+npc.hpCurrent+'/'+npc.hpMax+' PV';
+      els.activityAdventurerSelect.append(option);
+    });
+
+    if(active.some(npc=>npc.id===previous))els.activityAdventurerSelect.value=previous;
+  }
+
+  const npc=selectedActivityAdventurer();
+  els.activityPreview.replaceChildren();
+
+  if(!npc){
+    const empty=document.createElement('p');
+    empty.className='muted';
+    empty.textContent='No hay aventureros disponibles.';
+    els.activityPreview.append(empty);
+    els.resolveAdventurerActivity.disabled=true;
+    renderActivityLog();
+    return;
+  }
+
+  const enemyKey=els.activityEnemySelect.value||'wolf';
+  const enemy=DATA.activityCombat.enemies[enemyKey];
+  let count=Math.max(1,Math.floor(Number(els.activityEnemyCount.value)||1));
+  count=Math.min(count,enemy.maxCount);
+  els.activityEnemyCount.value=String(count);
+
+  Array.from(els.activityEnemyCount.options).forEach(option=>{
+    option.disabled=Number(option.value)>enemy.maxCount;
+  });
+
+  const preview=COMBAT.previewEncounter(npc,enemyKey,count,DATA);
+  const hpExpected=Math.ceil(npc.hpMax*preview.meanHpLossRate);
+  const manaExpected=Math.ceil(npc.manaMax*preview.meanManaUseRate);
+  const chance=Math.round(preview.winChance*1000)/10;
+
+  appendActivityPreviewRow('Victoria estimada',chance+'%');
+  appendActivityPreviewRow('Desgaste medio','~'+hpExpected+' PV · ~'+manaExpected+' Maná');
+  appendActivityPreviewRow('Recompensa','+'+preview.xpReward+' XP');
+  appendActivityPreviewRow(
+    'Enemigo',
+    'PV '+preview.enemySnapshot.hp+' · ATQ '+preview.enemySnapshot.attack+' · DEF '+preview.enemySnapshot.defense
+  );
+
+  const incapacitated=npc.hpCurrent<=0||npc.status==='Incapacitado';
+  els.resolveAdventurerActivity.disabled=incapacitated;
+  els.resolveAdventurerActivity.textContent=incapacitated?'Aventurero incapacitado':'Resolver salida';
+  els.activityState.textContent=incapacitated?'Incapacitado':'Lista';
+  els.activityState.classList.toggle('is-busy',incapacitated);
+  els.activityResult.textContent=state.lastActivityMessage||'Elegí aventurero y objetivo. La resolución es instantánea.';
+  renderActivityLog();
+}
+
+function resolveAdventurerActivity(){
+  const npc=selectedActivityAdventurer();
+  if(!npc)return;
+
+  if(npc.hpCurrent<=0||npc.status==='Incapacitado'){
+    state.lastActivityMessage=npc.fullName+' está incapacitado. La recuperación real llegará en v0.9.0d.';
+    render();
+    return;
+  }
+
+  const enemyKey=els.activityEnemySelect.value||'wolf';
+  const enemy=DATA.activityCombat.enemies[enemyKey];
+  const count=Math.min(
+    Math.max(1,Math.floor(Number(els.activityEnemyCount.value)||1)),
+    enemy.maxCount
+  );
+  const result=COMBAT.resolveEncounter(npc,enemyKey,count,DATA,Math.random);
+  const index=state.adventurers.findIndex(item=>item.id===npc.id);
+  if(index<0)return;
+
+  state.adventurers[index]=result.adventurer;
+  state.activityLog.unshift({
+    id:createActionId(),
+    at:Date.now(),
+    adventurerId:npc.id,
+    adventurerName:npc.fullName,
+    enemyKey,
+    enemyName:result.preview.enemyName,
+    enemyCount:result.preview.count,
+    won:result.won,
+    hpLoss:result.hpLoss,
+    manaLoss:result.manaLoss,
+    xpGained:result.xpGained,
+    xpLost:result.xpLost,
+    levelAfter:result.adventurer.level
+  });
+  state.activityLog=state.activityLog.slice(0,12);
+
+  if(result.won){
+    const levelText=result.levelsGained.length
+      ?' Subió a Nv. '+result.adventurer.level+'.'
+      :'';
+    state.lastActivityMessage='✅ '+npc.fullName+' venció '+result.preview.count+'× '+result.preview.enemyName+
+      ': -'+result.hpLoss+' PV, -'+result.manaLoss+' Maná, +'+result.xpGained+' XP.'+levelText;
+  }else{
+    state.lastActivityMessage='⚠️ '+npc.fullName+' fue incapacitado por '+result.preview.count+'× '+
+      result.preview.enemyName+'. Perdió '+result.xpLost+' XP del nivel actual, pero conserva su nivel.';
+  }
+
+  activityAdventurerSignature='';
+  saveState();
+  render();
+}
+
 function render(){
   updateFoundationGate();
   if(els.localTestTools)els.localTestTools.hidden=!isLocalTestHost();
