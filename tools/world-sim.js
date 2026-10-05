@@ -36,7 +36,8 @@ function main(){
     console.log(`  Gasto equipo/descanso/reparación/comida: ${r.gearSpendMean.toFixed(1)} / ${r.restSpendMean.toFixed(1)} / ${r.repairSpendMean.toFixed(1)} / ${r.foodSpendMean.toFixed(1)}`);
     console.log(`  Reinversión total: ${pct(r.reinvestRate)} | recurrente: ${pct(r.recurringReinvestRate)}`);
     console.log(`  Demanda satisfecha: ${pct(r.demandFulfilledRate)} | sin stock: ${pct(r.demandStockMissRate)} | sin dinero: ${pct(r.demandCoinMissRate)}`);
-    console.log(`  Botín ofrecido: ${r.lootOfferUnitsMean.toFixed(1)} u | comprado: ${pct(r.lootAcceptedRate)} | sin demanda: ${pct(r.lootNoDemandRate)} | tesorería: ${pct(r.lootTreasuryRejectRate)} | pagado: ${r.lootPurchaseValueMean.toFixed(1)}`);
+    console.log(`  Botín generado: ${r.lootGeneratedMean.toFixed(1)} u | vendido: ${pct(r.lootSoldRate)} | retenido: ${r.lootRetainedMean.toFixed(1)} u`);
+    console.log(`  Ofertas al mercado: ${r.lootOfferUnitsMean.toFixed(1)} u | aceptado/ofrecido: ${pct(r.lootAcceptedRate)} | sin demanda: ${pct(r.lootNoDemandRate)} | tesorería: ${pct(r.lootTreasuryRejectRate)} | pagado: ${r.lootPurchaseValueMean.toFixed(1)}`);
     console.log(`  Monedas ciudad final: ${r.cityCoinsMean.toFixed(1)} | compras bloqueadas: ${r.blockedPurchasesMean.toFixed(1)}`);
     console.log(`  Alfa visto: ${pct(r.alphaSeenRate)} | Boss visto: ${pct(r.bossSeenRate)} | Boss derrotado: ${pct(r.bossDefeatRate)}`);
     console.log(`  Presencia final Lobo/Jabalí: ${r.wolfPresenceMean.toFixed(1)} / ${r.boarPresenceMean.toFixed(1)} | incidentes: ${r.threatIncidentsMean.toFixed(2)} | ataques: ${r.cityAttacksMean.toFixed(2)}\n`);
