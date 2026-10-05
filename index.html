@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17130f">
 <meta name="description" content="Pueblos de Gremios - gestión de un pueblo fantástico y su reino.">
-<link rel="manifest" href="./manifest.webmanifest?v=0.6.0">
-<link rel="icon" href="./icons/icon.svg?v=0.6.0" type="image/svg+xml">
-<link rel="stylesheet" href="./styles.css?v=0.6.0">
+<link rel="manifest" href="./manifest.webmanifest?v=0.7.0">
+<link rel="icon" href="./icons/icon.svg?v=0.7.0" type="image/svg+xml">
+<link rel="stylesheet" href="./styles.css?v=0.7.0">
 <title>Pueblos de Gremios</title>
 </head>
 <body>
@@ -24,7 +24,7 @@
     <div class="city-sky"></div>
     <button class="building hall" data-building="Ayuntamiento"><span>🏰</span><b>Ayuntamiento</b><small>Nv. 1</small></button>
     <button class="building tavern" data-building="Taberna"><span>🍺</span><b>Taberna</b><small>Nv. 1</small></button>
-    <button class="building smithy" data-building="Herrería"><span>⚒️</span><b>Herrería</b><small>Nv. <span id="smithyLevelCity">1</span></small></button>
+    <button class="building smithy" data-building="Herrería"><span>⚒️</span><b>Herrería</b><small>Nv. <span id="smithyLevelCity">1</span></small><em class="building-notice" id="smithyVisitBadge" hidden>📖 0 nuevas</em></button>
     <button class="building carpenter" data-building="Carpintería"><span>🪚</span><b>Carpintería</b><small>Nv. 1</small></button>
     <button class="building store" data-building="Posada"><span>🛏️</span><b>Posada</b><small>Nv. 1</small></button>
     <div class="road"></div>
@@ -92,6 +92,31 @@
     <div><span>🪵 Madera</span><strong id="carpenterWood">86</strong></div>
     <div><span>🪚 Mangos</span><strong id="carpenterHandles">0</strong></div>
   </div>
+
+  <article class="panel visitor-panel">
+    <div class="section-head compact">
+      <div>
+        <p class="eyebrow">Actividad de clientes</p>
+        <h3>Visitante actual</h3>
+      </div>
+      <span class="state" id="smithyVisitorState">Sin visitantes</span>
+    </div>
+    <div id="smithyVisitorCard" class="visitor-card">
+      <p class="muted">Los aventureros visitarán la Herrería de forma automática. Si estás en otra parte de la ciudad, la visita quedará registrada en el Libro de la Herrería.</p>
+    </div>
+  </article>
+
+  <article class="panel exhibition-panel">
+    <div class="section-head compact">
+      <div>
+        <p class="eyebrow">Venta frecuente</p>
+        <h3>Exhibición</h3>
+      </div>
+      <span id="smithyExhibitionCount">0 piezas</span>
+    </div>
+    <p class="muted">Sólo los objetos puestos en exhibición pueden ser evaluados por los aventureros.</p>
+    <div id="smithyExhibitionList" class="exhibition-list"></div>
+  </article>
 
   <article class="panel smithy-worker">
     <div class="smithy-worker-head">
@@ -245,6 +270,19 @@
     <button class="primary" id="upgradeSmithy">Mejorar Herrería</button>
     <p class="feedback" id="upgradeFeedback" aria-live="polite"></p>
   </article>
+
+  <article class="panel smithy-book-panel">
+    <div class="section-head compact">
+      <div>
+        <p class="eyebrow">Historial persistente</p>
+        <h3>📖 Libro de la Herrería</h3>
+      </div>
+      <button class="small-action" id="clearSmithyBook">Limpiar leídos</button>
+    </div>
+    <p class="muted">Guarda las últimas 20 visitas detalladas. Las más antiguas se compactan automáticamente en un resumen.</p>
+    <div id="smithyBookSummary" class="book-summary"></div>
+    <div id="smithyBookList" class="book-list"></div>
+  </article>
 </section>
 
 <section class="screen" data-screen="inn">
@@ -391,9 +429,9 @@
       <div class="inventory-row"><span>⛏️ Herramienta de Mara</span><strong id="inventoryMaraTool">Sin equipar</strong></div>
     </article>
     <article class="panel inventory-group sword-inventory-panel">
-      <p class="eyebrow">Piezas individuales · futuras ventas</p>
+      <p class="eyebrow">Piezas individuales · venta</p>
       <h3>Espadas de hierro</h3>
-      <p class="muted">Cada espada conserva su calidad, características, valor estimado y tu precio de venta. Todavía no llegan compradores en esta versión.</p>
+      <p class="muted">Definí el precio y elegí qué piezas querés poner en Exhibición. Los aventureros sólo pueden comprar las que estén exhibidas.</p>
       <div id="swordInventoryList" class="sword-inventory-list"></div>
     </article>
     <p class="muted inventory-note">El stock es único para toda la ciudad. Cada negocio muestra sólo lo que necesita.</p>
@@ -409,8 +447,8 @@
     <button id="installBtn">📲<span id="installLabel">Instalar PWA</span></button>
   </div>
   <div class="panel">
-    <p><strong>Versión:</strong> v0.6.0 — Calidad de objetos</p>
-    <p class="muted">La Espada de hierro introduce piezas individuales, calidad difícil de obtener, características propias, valor estimado y precio definido por el jugador.</p>
+    <p><strong>Versión:</strong> v0.7.0 — Aventureros y Libro</p>
+    <p class="muted">Los aventureros visitan la Herrería, evalúan la Exhibición según su perfil y necesidad, compran o se retiran, y cada resultado queda registrado.</p>
   </div>
 </section>
 
@@ -436,6 +474,6 @@
   </form>
 </dialog>
 </main>
-<script src="./app.js?v=0.6.0" defer></script>
+<script src="./app.js?v=0.7.0" defer></script>
 </body>
 </html>
