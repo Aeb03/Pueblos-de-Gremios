@@ -7,6 +7,8 @@
 
   const ADVENTURER_SCHEMA_VERSION=1;
 
+  const LEGACY_STARTER_DAMAGE={warrior:7,explorer:7,healer:5,mage:3};
+
   const STARTER_EQUIPMENT={
     warrior:{
       weapon:{id:'founder-warrior-weapon',name:'Arma de práctica',slot:'weapon',founder:true,durability:8,maxDurability:8,damage:4},
@@ -84,7 +86,7 @@
         maxDurability:Number.isFinite(Number(previousWeapon.maxDurability))?Number(previousWeapon.maxDurability):null,
         damage:Number(previousWeapon.damage)||previousDamage||starterDamage
       };
-    }else if(Number.isFinite(previousDamage)&&previousDamage>starterDamage){
+    }else if(Number.isFinite(previousDamage)&&previousDamage>(LEGACY_STARTER_DAMAGE[classKey]??starterDamage)){
       starter.weapon={
         id:'legacy-acquired-weapon',
         name:'Arma adquirida previamente',
@@ -248,6 +250,7 @@
 
   return {
     ADVENTURER_SCHEMA_VERSION,
+    LEGACY_STARTER_DAMAGE,
     STARTER_EQUIPMENT,
     combatStyleFor,
     starterEquipmentFor,
