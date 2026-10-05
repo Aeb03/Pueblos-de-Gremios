@@ -19,13 +19,33 @@ const CLASS={
 };
 
 const ITEM={
-  dagger:{price:24,class:['explorer'],attack:2,defense:0,initiative:0,mana:0,durability:9,slot:'weapon'},
-  bow:{price:28,class:['explorer'],attack:3,defense:0,initiative:1,mana:0,durability:9,slot:'weapon'},
-  staff:{price:26,class:['healer','mage'],attack:1,defense:0,initiative:0,mana:12,durability:9,slot:'weapon'},
-  shield:{price:22,class:['warrior'],attack:0,defense:3,initiative:-1,mana:0,durability:10,slot:'offhand'},
-  leather:{price:24,class:['warrior','explorer','healer','mage'],attack:0,defense:3,initiative:0,mana:0,durability:12,slot:'body'},
-  gloves:{price:12,class:['warrior','explorer','healer','mage'],attack:0,defense:1,initiative:0,mana:0,durability:8,slot:'hands'},
-  boots:{price:12,class:['warrior','explorer','healer','mage'],attack:0,defense:0,initiative:1,mana:0,durability:8,slot:'feet'}
+  // Equipo fundador: sus aportes ya están incluidos en la estadística base visible.
+  // La durabilidad representa la pérdida de ese paquete funcional si se rompe.
+  founderWarriorWeapon:{price:0,class:['warrior'],attack:0,defense:0,initiative:0,mana:0,durability:8,slot:'weapon',founder:true,purchasable:false,breakPenalty:6},
+  founderWarriorArmor:{price:0,class:['warrior'],attack:0,defense:0,initiative:0,mana:0,durability:10,slot:'body',founder:true,purchasable:false,breakPenalty:2},
+  founderExplorerBow:{price:0,class:['explorer'],attack:0,defense:0,initiative:0,mana:0,durability:8,slot:'weapon',founder:true,purchasable:false,breakPenalty:6},
+  founderExplorerDaggers:{price:0,class:['explorer'],attack:0,defense:0,initiative:0,mana:0,durability:8,slot:'weapon',founder:true,purchasable:false,breakPenalty:6},
+  founderExplorerClothes:{price:0,class:['explorer'],attack:0,defense:0,initiative:0,mana:0,durability:10,slot:'body',founder:true,purchasable:false,breakPenalty:2},
+  founderHealerStaff:{price:0,class:['healer'],attack:0,defense:0,initiative:0,mana:0,durability:8,slot:'weapon',founder:true,purchasable:false,breakPenalty:5},
+  founderHealerClothes:{price:0,class:['healer'],attack:0,defense:0,initiative:0,mana:0,durability:10,slot:'body',founder:true,purchasable:false,breakPenalty:2},
+  founderMageFocus:{price:0,class:['mage'],attack:0,defense:0,initiative:0,mana:0,durability:8,slot:'weapon',founder:true,purchasable:false,breakPenalty:5},
+  founderMageRobe:{price:0,class:['mage'],attack:0,defense:0,initiative:0,mana:0,durability:10,slot:'body',founder:true,purchasable:false,breakPenalty:1},
+
+  dagger:{price:24,class:['explorer'],attack:2,defense:0,initiative:0,mana:0,durability:9,slot:'weapon',purchasable:true},
+  bow:{price:28,class:['explorer'],attack:3,defense:0,initiative:1,mana:0,durability:9,slot:'weapon',purchasable:true},
+  staff:{price:26,class:['healer','mage'],attack:1,defense:0,initiative:0,mana:12,durability:9,slot:'weapon',purchasable:true},
+  shield:{price:22,class:['warrior'],attack:0,defense:3,initiative:-1,mana:0,durability:10,slot:'offhand',purchasable:true},
+  leather:{price:24,class:['warrior','explorer','healer','mage'],attack:0,defense:3,initiative:0,mana:0,durability:12,slot:'body',purchasable:true,textile:true},
+  gloves:{price:12,class:['warrior','explorer','healer','mage'],attack:0,defense:1,initiative:0,mana:0,durability:8,slot:'hands',purchasable:true,textile:true},
+  boots:{price:12,class:['warrior','explorer','healer','mage'],attack:0,defense:0,initiative:1,mana:0,durability:8,slot:'feet',purchasable:true,textile:true}
+};
+
+const TEXTILE_ORIGIN={
+  neutral:{resource:'skin',label:'Común',priceMul:1,defense:0,initiative:0,evasion:0,damageReduction:0},
+  wolf:{resource:'wolfSkin',label:'Lobo',priceMul:1.10,defense:0,initiative:1,evasion:0,damageReduction:0},
+  boar:{resource:'boarSkin',label:'Jabalí',priceMul:1.12,defense:1,initiative:0,evasion:0,damageReduction:0},
+  alphaWolf:{resource:'alphaWolfSkin',label:'Lobo Alfa',priceMul:1.35,defense:0,initiative:2,evasion:0,damageReduction:0},
+  greatBoar:{resource:'greatBoarSkin',label:'Gran Jabalí',priceMul:1.55,defense:2,initiative:0,evasion:0,damageReduction:.05}
 };
 
 const REPAIR_RATE=.22;
@@ -37,8 +57,8 @@ const RECIPES={
   staff:{wood:3},
   shield:{wood:4,iron:1},
   leather:{hide:3,tendon:1},
-  gloves:{hide:2},
-  boots:{hide:2}
+  gloves:{hide:1},
+  boots:{hide:1}
 };
 
 const FOOD={
@@ -65,4 +85,4 @@ const CITY_LOOT_MIN_TREASURY=55;
 const ALPHA_CHANCE=[.02,.04,.07,.10,.14];
 const BOSS_CHANCE=[.005,.01,.02,.04,.07];
 
-module.exports={TICK_MINUTES,MAX_MINUTES,PROFILES,CLASS,ITEM,RECIPES,FOOD,MATERIAL,CITY_LOOT_MIN_TREASURY,ALPHA_CHANCE,BOSS_CHANCE,REPAIR_RATE,REPAIR_THRESHOLD};
+module.exports={TICK_MINUTES,MAX_MINUTES,PROFILES,CLASS,ITEM,TEXTILE_ORIGIN,RECIPES,FOOD,MATERIAL,CITY_LOOT_MIN_TREASURY,ALPHA_CHANCE,BOSS_CHANCE,REPAIR_RATE,REPAIR_THRESHOLD};
