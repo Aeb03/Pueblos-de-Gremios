@@ -1877,16 +1877,35 @@ Puede existir una micro-simulación breve en memoria para obtener un resultado m
 - no requiere sincronizar cada golpe;
 - no almacena cada acción individual salvo que sea necesario para depuración.
 
-### Informe de combate
+### Devolución al jugador
 
-El jugador puede recibir un resumen narrativo construido a partir del resultado:
+No se genera un informe de combate detallado por defecto.
 
-> La manada concentró sus ataques sobre el Explorador.  
-> El Guerrero absorbió la mayor parte del daño.  
-> El Sanador gastó gran parte de su Maná.  
-> Victoria. 1 aventurero volvió herido.
+Si el enfrentamiento no afecta directamente una decisión o interés del jugador, el resultado puede quedar resuelto sin mostrar una narración específica.
 
-Ese informe puede usar los datos calculados para dar sensación de combate sin que el sistema haya tenido que representar cada golpe en vivo.
+La información relevante puede aparecer de forma contextual en sistemas que ya existen:
+
+- **Sede del Gremio:** devolución de una misión, escolta o encargo;
+- **Mesón:** rumores, comentarios y relatos de aventureros;
+- **Libro / historial:** sólo hechos importantes cuando corresponda;
+- **Estado del aventurero:** heridas, consumo de recursos, equipo dañado, XP o botín.
+
+Ejemplo de devolución en Sede:
+
+> Misión completada.  
+> Objetivo cumplido.  
+> 1 aventurero regresó herido.  
+> Recompensa entregada.
+
+Ejemplo de rumor en Mesón:
+
+> “Los lobos nos rodearon en el bosque. Por poco no volvemos.”
+
+Principio:
+
+**El combate se resuelve para producir consecuencias, no para generar un registro detallado de cada enfrentamiento.**
+
+Esto reduce ruido de interfaz, almacenamiento y datos, y mantiene la narración sólo cuando aporta algo al jugador.
 
 ### Estados como Herida
 
