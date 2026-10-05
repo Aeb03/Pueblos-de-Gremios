@@ -762,3 +762,154 @@ dialog form{padding:18px}
     grid-column:1/-1;
   }
 }
+
+
+/* v0.7.0 — Aventureros, Exhibición y Libro */
+.building-notice{
+  position:absolute;
+  top:5px;
+  right:5px;
+  max-width:88px;
+  padding:4px 6px;
+  border:1px solid #e2b75f;
+  border-radius:999px;
+  background:#241a0f;
+  color:#ffe0a0;
+  font-style:normal;
+  font-size:.58rem;
+  line-height:1;
+  box-shadow:0 2px 7px #0008;
+}
+.visitor-panel,.exhibition-panel,.smithy-book-panel{
+  border-color:#59462f;
+}
+.visitor-card{
+  margin-top:10px;
+  padding:11px;
+  border:1px solid #423527;
+  border-radius:12px;
+  background:#15120f;
+}
+.visitor-name{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.visitor-name span{
+  color:var(--gold2);
+  font-size:.78rem;
+}
+.visitor-thoughts{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+  margin-top:9px;
+}
+.visitor-thoughts span{
+  padding:7px 6px;
+  border-radius:8px;
+  background:#211b15;
+  color:var(--muted);
+  font-size:.7rem;
+  text-align:center;
+}
+.visitor-card p{
+  margin:.65rem 0 .35rem;
+  color:var(--muted);
+  font-size:.84rem;
+}
+.visitor-card small{
+  color:#d9c7a3;
+}
+.exhibition-list{
+  display:grid;
+  gap:7px;
+  margin-top:9px;
+}
+.exhibition-row{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:9px 10px;
+  border:1px solid #493a2a;
+  border-radius:10px;
+  background:#191510;
+  font-size:.8rem;
+}
+.exhibition-row span{color:var(--muted)}
+.exhibition-row strong{color:var(--gold2);white-space:nowrap}
+.small-action{
+  min-height:34px;
+  border:1px solid #6a5233;
+  border-radius:9px;
+  background:#241d16;
+  color:var(--gold2);
+  padding:6px 9px;
+  font-weight:700;
+  font-size:.72rem;
+}
+.exhibition-toggle{
+  width:100%;
+  margin-top:9px;
+}
+.book-summary{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  margin-top:10px;
+  padding:10px;
+  border:1px dashed #665033;
+  border-radius:10px;
+  background:#1b160f;
+  font-size:.78rem;
+}
+.book-summary span{color:var(--muted)}
+.book-list{
+  display:grid;
+  gap:8px;
+  margin-top:10px;
+}
+.book-entry{
+  padding:10px;
+  border:1px solid #403529;
+  border-radius:11px;
+  background:#15120f;
+}
+.book-entry.is-unread{
+  border-color:#9b7435;
+  box-shadow:inset 3px 0 0 #d4a64f;
+}
+.book-entry-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+}
+.book-entry-head time{
+  color:var(--gold2);
+  font-size:.72rem;
+  white-space:nowrap;
+}
+.book-entry small{
+  display:block;
+  margin-top:3px;
+  color:#c8b691;
+}
+.book-entry p{
+  margin:.45rem 0 0;
+  color:var(--muted);
+  font-size:.82rem;
+  line-height:1.4;
+}
+@media (max-width:390px){
+  .visitor-thoughts{
+    grid-template-columns:1fr 1fr;
+  }
+  .visitor-thoughts span:last-child{
+    grid-column:1/-1;
+  }
+  .visitor-name{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+}
