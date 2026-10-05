@@ -1759,6 +1759,116 @@ Se mantiene un conjunto compacto de estadísticas principales:
 
 Principio: **no se crea una estadística nueva hasta que exista una mecánica propia que la justifique.**
 
+### Clases fundadoras — identidad aprobada EN PRUEBA
+
+Las tres clases iniciales se diferencian por función, consumo de recursos y forma de aportar al cálculo probabilístico de combate.
+
+#### Guerrero — Protector
+
+Perfil:
+
+- **Vida: alta**.
+- **Ataque: moderado**, principalmente físico cuerpo a cuerpo.
+- **Defensa: moderada**.
+- **Iniciativa: media-baja**.
+- **Maná: bajo**.
+
+Rol principal:
+
+- proteger al grupo;
+- absorber parte del riesgo;
+- reducir la probabilidad de que aliados más frágiles terminen heridos o incapacitados;
+- sostener enfrentamientos largos.
+
+Sus habilidades deben girar principalmente alrededor de:
+
+- protección;
+- interposición;
+- reducción de daño/riesgo;
+- control de la atención del enemigo;
+- resistencia temporal.
+
+El Guerrero no debe tener Defensa base tan alta que vuelva irrelevantes escudos, armaduras, guantes u otras mejoras defensivas. Su gran reserva de Vida le da margen, pero sigue necesitando equipamiento, reparaciones, descanso y servicios de ciudad.
+
+#### Explorador — Daño físico / Evasión
+
+Perfil:
+
+- **Vida: moderada**.
+- **Ataque: alto**, físico.
+- **Defensa: baja**.
+- **Iniciativa: alta**.
+- **Maná: moderado**.
+
+Puede combatir de dos formas desde la misma clase:
+
+- **cuerpo a cuerpo con dagas**;
+- **a distancia con arco**.
+
+Rol principal:
+
+- infligir daño físico elevado;
+- terminar encuentros con rapidez;
+- evitar parte del daño mediante Evasión;
+- adaptarse a distancia o cuerpo a cuerpo según equipo y situación.
+
+**Evasión no se incorpora como sexta estadística principal.** Se trata como una **propiedad derivada de combate** expresada como probabilidad/modificador y alimentada por clase, habilidades, equipo y futuras especializaciones.
+
+Esto permite que un Explorador sea frágil si recibe el golpe, pero sobreviva gracias a su capacidad de evitar parte del riesgo. Si su Evasión falla, su baja Defensa sigue siendo relevante.
+
+Más adelante pueden aparecer **especializaciones de clase**, por ejemplo orientadas a arco, dagas, exploración, caza u otros estilos, sin necesidad de dividir la clase fundadora desde el inicio.
+
+#### Sanador — Soporte sagrado
+
+Perfil:
+
+- **Vida: baja**.
+- **Ataque: moderado**, de naturaleza mágica.
+- **Defensa: moderada**.
+- **Iniciativa: media**.
+- **Maná: alto** respecto de las otras clases fundadoras.
+
+Rol principal:
+
+- curar Vida;
+- curar o aliviar Estados;
+- reducir riesgo de incapacitación;
+- sostener al grupo;
+- aportar daño mágico cuando no necesita curar.
+
+Sus habilidades ofensivas pertenecen principalmente a **Magia Sagrada**.
+
+La Magia Sagrada tiene **efectividad superior contra enemigos de Tipo No Muerto**. El modificador exacto se fijará junto con los números definitivos de combate.
+
+El Sanador es un rol de soporte puro en prioridad de comportamiento: si el grupo necesita curación o limpieza de estados, eso debe pesar más en su resolución que buscar daño adicional.
+
+### Tipo de enemigo — nueva propiedad de combate
+
+Además de **Rareza** y **Nivel**, cada enemigo tiene una propiedad separada llamada **Tipo**.
+
+El Tipo representa su naturaleza y permite que habilidades, equipo, materiales y futuras especializaciones tengan ventajas o desventajas coherentes sin depender de la Rareza.
+
+Tipos iniciales aprobados:
+
+- **Animal** → Lobo, Jabalí, Lobo Alfa, Gran Jabalí.
+- **Humanoide** → Bandido, Goblin y otros seres humanoides.
+- **No Muerto** → Esqueleto, Zombi, Vampiro.
+- **No Vivo** → Golem, Torreta, Invocación elemental y otras entidades sin biología viva convencional.
+
+Ejemplo de interacción:
+
+- Magia Sagrada del Sanador → mayor efectividad contra **No Muertos**.
+
+El catálogo de Tipos es extensible si más adelante una familia de enemigos necesita una interacción propia, pero no se crearán Tipos nuevos sin una función real de juego.
+
+**Rareza y Tipo nunca son lo mismo.**
+
+Ejemplo:
+
+> Lobo Alfa = Tipo Animal / Rareza Raro.  
+> Gran Jabalí = Tipo Animal / Rareza Boss.  
+> Zombi común = Tipo No Muerto / Rareza Común.
+
 ### Progresión de nivel y XP — marco de balance EN PRUEBA
 
 La experiencia de los aventureros debe avanzar en relación con el ritmo de crecimiento de la ciudad. No se balanceará como un sistema aislado.
@@ -1928,6 +2038,7 @@ Cuando una misión/salida necesita resolver un enfrentamiento, el motor toma una
 - enemigo(s);
 - cantidad;
 - rareza;
+- tipo de enemigo;
 - terreno/amenaza;
 - preparación, comida, afilado, provisiones, etc.
 
