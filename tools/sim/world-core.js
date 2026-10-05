@@ -433,10 +433,12 @@ function repairStep(state,a,rng){
   const urgency=ratio<=0?1:.75;
   if(rng()>clamp(profile.shop*3*urgency,.25,1))return false;
 
-  const price=Math.max(2,Math.round(it.price*REPAIR_RATE));
+  const repairBase=it.founder?8:it.price;
+  const price=Math.max(2,Math.round(repairBase*REPAIR_RATE));
   if(a.coins<price){city.repairBlocked++;return false;}
 
   a.coins-=price;a.spent+=price;a.spending.repair+=price;a.repairs++;
+  if(it.founder)a.founderRepairs++;
   city.coins+=price;city.serviceRevenue+=price;city.repairRevenue+=price;
   eq.durability=eq.maxDurability;
   return true;
@@ -617,6 +619,7 @@ function prepLossFactor(a){
 
 function commonRisk(a,enemy,count){
   const itemBonus=equipScore(a),levelBonus=(a.level-1)*.08;
+  const origin=equipmentOriginEffects(a);
   let meanLoss,win;
   if(enemy==='wolf'){
     meanLoss={warrior:.105,explorer:.080,healer:.150,mage:.125}[a.cls];
@@ -628,17 +631,18 @@ function commonRisk(a,enemy,count){
   meanLoss*=1+Math.max(0,count-1)*.55;
   win-=Math.max(0,count-1)*(enemy==='wolf'?.055:.08);
   meanLoss*=clamp(1-itemBonus*.018-levelBonus,.45,1);
-  win=clamp(win+itemBonus*.0015+levelBonus*.08,.60,.999);
-  return {meanLoss,win};
+  meanLoss*=1-origin.resilience;
+  win=clamp(win+itemBonus*.0015+levelBonus*.08+origin.tempo*.10,.60,.999);
+  return {meanLoss,win,manaFactor:1-origin.tempo*.55};
 }
 
 function commonEncounter(state,a,enemy,rng){
   const {city}=state;
   const count=enemy==='wolf'?(rng()<.60?1:(rng()<.75?2:3)):(rng()<.80?1:2);
-  const {meanLoss,win}=commonRisk(a,enemy,count);
+  const {meanLoss,win,manaFactor}=commonRisk(a,enemy,count);
   const prep=prepLossFactor(a);
   a.hp=Math.max(0,a.hp-Math.ceil(a.hpMax*meanLoss*(.65+rng()*.70)*prep.hp));
-  a.mana=Math.max(0,a.mana-Math.ceil(a.manaMax*({warrior:.10,explorer:.22,healer:.26,mage:.30}[a.cls])*(.65+rng()*.70)*prep.mana));
+  a.mana=Math.max(0,a.mana-Math.ceil(a.manaMax*({warrior:.10,explorer:.22,healer:.26,mage:.30}[a.cls])*(.65+rng()*.70)*prep.mana*manaFactor));
   a.fights++;wearEquipment(a,1,rng);
 
   const won=rng()<win&&a.hp>0;
@@ -664,6 +668,8 @@ const groupPower=group=>group.reduce((s,a)=>s+a.attack*2+a.defense*2+a.hpMax*.08
 function groupEncounter(state,group,kind,rng){
   const {city}=state;
   const prepared=group.reduce((s,a)=>s+equipScore(a),0),levelAvg=mean(group.map(a=>a.level));
+  const resilience=mean(group.map(a=>equipmentOriginEffects(a).resilience));
+  const tempo=mean(group.map(a=>equipmentOriginEffects(a).tempo));
   let win,hpLossMean,downChance,manaUse,xpTotal,reward,presenceDrop;
 
   if(kind==='alpha'){
@@ -679,6 +685,10 @@ function groupEncounter(state,group,kind,rng){
     manaUse=.84+prepIndex*(.82-.84);
     xpTotal=90;reward=60;presenceDrop=25;
   }
+
+  hpLossMean*=1-resilience;
+  manaUse*=1-tempo*.55;
+  win=clamp(win+tempo*.08,.80,.9999);
 
   for(const a of group)rationStep(state,a,rng,true);
 
