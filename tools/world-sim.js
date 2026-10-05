@@ -32,10 +32,11 @@ function main(){
     console.log(`  Textilería: ${pct(r.textileRate)} | media ${r.textileMean.toFixed(1)} min`);
     console.log(`  Fundadores al llegar a Nv.3: nivel medio ${r.foundersLevelAtCity3.toFixed(2)} | Nv.2+ ${pct(r.foundersAtLeast2AtCity3)} | al min 90 ${r.foundersLevelMean.toFixed(2)}`);
     console.log(`  Incapacitaciones: ${r.downsMean.toFixed(2)} | XP perdida: ${r.xpLostMean.toFixed(1)} | combates: ${r.fightsMean.toFixed(1)}`);
-    console.log(`  Descansos: ${r.restsMean.toFixed(2)} | reparaciones: ${r.repairsMean.toFixed(2)}`);
-    console.log(`  Gasto equipo/descanso/reparación: ${r.gearSpendMean.toFixed(1)} / ${r.restSpendMean.toFixed(1)} / ${r.repairSpendMean.toFixed(1)}`);
+    console.log(`  Descansos: ${r.restsMean.toFixed(2)} | reparaciones: ${r.repairsMean.toFixed(2)} | platos: ${r.mealsMean.toFixed(2)} | raciones: ${r.rationsMean.toFixed(2)}`);
+    console.log(`  Gasto equipo/descanso/reparación/comida: ${r.gearSpendMean.toFixed(1)} / ${r.restSpendMean.toFixed(1)} / ${r.repairSpendMean.toFixed(1)} / ${r.foodSpendMean.toFixed(1)}`);
     console.log(`  Reinversión total: ${pct(r.reinvestRate)} | recurrente: ${pct(r.recurringReinvestRate)}`);
     console.log(`  Demanda satisfecha: ${pct(r.demandFulfilledRate)} | sin stock: ${pct(r.demandStockMissRate)} | sin dinero: ${pct(r.demandCoinMissRate)}`);
+    console.log(`  Botín ofrecido: ${r.lootOfferUnitsMean.toFixed(1)} u | comprado: ${pct(r.lootAcceptedRate)} | sin demanda: ${pct(r.lootNoDemandRate)} | tesorería: ${pct(r.lootTreasuryRejectRate)} | pagado: ${r.lootPurchaseValueMean.toFixed(1)}`);
     console.log(`  Monedas ciudad final: ${r.cityCoinsMean.toFixed(1)} | compras bloqueadas: ${r.blockedPurchasesMean.toFixed(1)}`);
     console.log(`  Alfa visto: ${pct(r.alphaSeenRate)} | Boss visto: ${pct(r.bossSeenRate)} | Boss derrotado: ${pct(r.bossDefeatRate)}`);
     console.log(`  Presencia final Lobo/Jabalí: ${r.wolfPresenceMean.toFixed(1)} / ${r.boarPresenceMean.toFixed(1)} | incidentes: ${r.threatIncidentsMean.toFixed(2)} | ataques: ${r.cityAttacksMean.toFixed(2)}\n`);
