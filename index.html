@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17130f">
 <meta name="description" content="Pueblos de Gremios - gestión de un pueblo fantástico y su reino.">
-<link rel="manifest" href="./manifest.webmanifest?v=0.3.0">
-<link rel="icon" href="./icons/icon.svg?v=0.3.0" type="image/svg+xml">
-<link rel="stylesheet" href="./styles.css?v=0.3.0">
+<link rel="manifest" href="./manifest.webmanifest?v=0.4.0">
+<link rel="icon" href="./icons/icon.svg?v=0.4.0" type="image/svg+xml">
+<link rel="stylesheet" href="./styles.css?v=0.4.0">
 <title>Pueblos de Gremios</title>
 </head>
 <body>
@@ -56,6 +56,8 @@
         <p>Minera · Nv. <span id="maraProfessionLevel">1</span></p>
         <small>Minería <span id="maraMiningLevel">1</span> · <span id="maraMiningXp">0</span>/<span id="maraNextXp">100</span> XP</small>
         <progress class="skill-progress" id="maraXpProgress" value="0" max="100"></progress>
+        <small class="stamina-label">Resistencia <span id="maraStaminaWorker">100</span>/100</small>
+        <progress class="stamina-progress" id="maraStaminaWorkerProgress" value="100" max="100"></progress>
       </div>
       <span class="state" id="maraState">Disponible</span>
     </article>
@@ -102,7 +104,7 @@
     </div>
     <div class="kv"><span>Coste</span><strong>5 hierro</strong></div>
     <div class="kv"><span>Tiempo de prueba</span><strong>20 s</strong></div>
-    <div class="kv"><span>Experiencia</span><strong>+20 XP Herrería</strong></div>
+    <div class="kv"><span>Experiencia</span><strong>+40 XP Herrería</strong></div>
     <div class="craft-status">
       <div class="kv"><span>Estado</span><strong id="craftStatus">Lista para fabricar</strong></div>
       <progress id="craftProgress" value="0" max="100"></progress>
@@ -134,6 +136,43 @@
   </article>
 </section>
 
+
+<section class="screen" data-screen="inn">
+  <button class="back-link" data-go="city">← Volver a la ciudad</button>
+
+  <div class="hero-card inn-art">
+    <span class="badge">Posada · Nv. 1</span>
+    <h2>Descanso de trabajadores</h2>
+    <p>Los trabajadores recuperan Resistencia lentamente mientras están libres. La Posada acelera mucho el descanso.</p>
+  </div>
+
+  <article class="panel inn-worker-card">
+    <div class="smithy-worker-head">
+      <div class="avatar">M</div>
+      <div>
+        <p class="eyebrow">Trabajadora</p>
+        <h3>Mara · Minera Nv. <span id="innMaraLevel">1</span></h3>
+      </div>
+      <span class="state" id="innMaraState">Disponible</span>
+    </div>
+
+    <div class="stamina-block">
+      <div class="kv"><span>Resistencia</span><strong><span id="innMaraStamina">100</span>/100</strong></div>
+      <progress class="stamina-progress" id="innMaraStaminaProgress" value="100" max="100"></progress>
+      <div class="kv"><span>Recuperación normal</span><strong>+1 cada 10 s</strong></div>
+      <div class="kv"><span>Descansando en Posada</span><strong>+5 cada 10 s</strong></div>
+    </div>
+
+    <button class="primary" id="toggleInnRest">Descansar en Posada</button>
+    <p class="feedback" id="innFeedback" aria-live="polite"></p>
+  </article>
+
+  <article class="panel">
+    <p class="eyebrow">Regla de prueba</p>
+    <p class="muted">La recuperación usa tiempo real y continúa con la PWA cerrada. La velocidad está acelerada para poder probarla; después ajustaremos el balance definitivo.</p>
+  </article>
+</section>
+
 <section class="screen" data-screen="expedition">
   <div class="hero-card expedition-art">
     <span class="badge danger">Riesgo medio</span>
@@ -144,6 +183,9 @@
     <div class="kv"><span>Duración de prueba</span><strong>30 s</strong></div>
     <div class="kv"><span>Minería recomendada</span><strong>1</strong></div>
     <div class="kv"><span>Trabajador</span><strong>Mara</strong></div>
+    <div class="kv"><span>Coste de Resistencia</span><strong>20</strong></div>
+    <div class="kv"><span>Resistencia actual</span><strong><span id="expeditionStamina">100</span>/100</strong></div>
+    <progress class="stamina-progress" id="expeditionStaminaProgress" value="100" max="100"></progress>
     <div class="kv"><span>Posibles recursos</span><strong>⛏️ 4–7 · 🪨 2–4</strong></div>
     <div class="expedition-status" id="expeditionStatusBox">
       <div class="kv"><span>Estado</span><strong id="expeditionStatus">Lista para partir</strong></div>
@@ -195,8 +237,8 @@
     <button id="installBtn">📲<span id="installLabel">Instalar PWA</span></button>
   </div>
   <div class="panel">
-    <p><strong>Versión:</strong> v0.3.0 — Herrería</p>
-    <p class="muted">Producción persistente, progreso de Borin, productos e incremento de Prestigio mediante mejora del edificio.</p>
+    <p><strong>Versión:</strong> v0.4.0 — Resistencia y Posada</p>
+    <p class="muted">Mara gasta Resistencia en expediciones, se recupera con tiempo real y puede descansar más rápido en la Posada.</p>
   </div>
 </section>
 
@@ -222,6 +264,6 @@
   </form>
 </dialog>
 </main>
-<script src="./app.js?v=0.3.0" defer></script>
+<script src="./app.js?v=0.4.0" defer></script>
 </body>
 </html>
