@@ -565,6 +565,14 @@ function materialTarget(city,key){
   if(!cfg)return 0;
   return cfg.target[Math.max(0,Math.min(2,city.level-1))]||0;
 }
+
+function materialHaveForDemand(city,key){
+  let have=city.resources[key]||0;
+  const originEntry=Object.values(TEXTILE_ORIGIN).find(cfg=>cfg.rawResource===key);
+  if(originEntry)have+=city.resources[originEntry.tannedResource]||0;
+  return have;
+}
+
 function sellLootStep(state,a,rng){
   const {city,profile}=state;
   if(rng()>profile.sellLoot)return false;
@@ -580,7 +588,7 @@ function sellLootStep(state,a,rng){
 
     city.lootMarket.offerUnits+=qty;
     const target=materialTarget(city,key);
-    const have=city.resources[key]||0;
+    const have=materialHaveForDemand(city,key);
     const need=Math.max(0,target-have);
 
     if(need<=0){
@@ -930,6 +938,7 @@ function runCity(seed,profileKey){
     wolfPresence:city.presence.wolf,boarPresence:city.presence.boar,
     threatIncidents:city.threatIncidents,cityAttacks:city.cityAttacks,workerInjuries:city.workerInjuries,
     resourceLossValue:city.resourceLossValue,
+    tannedProduced:{...city.tannedProduced},
     textileProduced:{...city.textileProduced},
     textileSold:{...city.textileSold},
     missionsCompleted:city.missionsCompleted,workerOutings:city.workerOutings,
@@ -993,6 +1002,7 @@ function summarize(profileKey,rows){
     bossDefeatRate:rows.filter(r=>r.bossDefeated>0).length/rows.length,
     wolfPresenceMean:mean(rows.map(r=>r.wolfPresence)),boarPresenceMean:mean(rows.map(r=>r.boarPresence)),
     threatIncidentsMean:mean(rows.map(r=>r.threatIncidents)),cityAttacksMean:mean(rows.map(r=>r.cityAttacks)),
+    tannedProducedMean:Object.fromEntries(Object.keys(TEXTILE_ORIGIN).map(origin=>[origin,mean(rows.map(r=>r.tannedProduced[origin]||0))])),
     textileProducedMean:Object.fromEntries(Object.keys(TEXTILE_ORIGIN).map(origin=>[origin,mean(rows.map(r=>r.textileProduced[origin]||0))])),
     textileSoldMean:Object.fromEntries(Object.keys(TEXTILE_ORIGIN).map(origin=>[origin,mean(rows.map(r=>r.textileSold[origin]||0))])),
     missionsMean:mean(rows.map(r=>r.missionsCompleted)),workerOutingsMean:mean(rows.map(r=>r.workerOutings)),
