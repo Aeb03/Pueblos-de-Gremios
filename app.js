@@ -1,4 +1,4 @@
-const APP_VERSION='0.6.0';
+const APP_VERSION='0.7.0';
 const SAVE_KEY='pueblos-gremios-save-v0.2.0';
 
 const EXPEDITION_DURATION_MS=30_000;
@@ -41,6 +41,39 @@ const INN_STAMINA_PER_TICK=5;
 const HARD_VEIN_CHANCE=0.15;
 const HARD_VEIN_IRON_MIN=5;
 const HARD_VEIN_IRON_MAX=8;
+
+const SMITHY_VISIT_MIN_MS=45_000;
+const SMITHY_VISIT_MAX_MS=90_000;
+const SMITHY_VISIT_DURATION_MS=15_000;
+const SMITHY_BOOK_DETAIL_LIMIT=20;
+const SMITHY_OFFLINE_VISIT_CAP=6;
+
+const ADVENTURER_BLUEPRINTS={
+  kael:{
+    name:'Kael',
+    role:'Guerrero',
+    personality:'Prudente',
+    affinity:.95,
+    needRange:[.55,.92],
+    weights:{need:.35,affinity:.15,upgrade:.25,value:.15,affordability:.10}
+  },
+  lyra:{
+    name:'Lyra',
+    role:'Exploradora',
+    personality:'Ahorradora',
+    affinity:.72,
+    needRange:[.42,.82],
+    weights:{need:.25,affinity:.15,upgrade:.20,value:.25,affordability:.15}
+  },
+  darek:{
+    name:'Darek',
+    role:'Mercenario',
+    personality:'Ambicioso',
+    affinity:.90,
+    needRange:[.48,.88],
+    weights:{need:.30,affinity:.15,upgrade:.35,value:.10,affordability:.10}
+  }
+};
 
 const titles={
   city:'Villa del Roble',
@@ -92,6 +125,20 @@ const defaultState=()=>({
   buildings:{
     smithy:{level:1,craftedCount:0}
   },
+  adventurers:{
+    kael:{coins:480,weaponDamage:7,weaponQuality:52,visits:0,purchases:0},
+    lyra:{coins:350,weaponDamage:7,weaponQuality:58,visits:0,purchases:0},
+    darek:{coins:620,weaponDamage:8,weaponQuality:64,visits:0,purchases:0}
+  },
+  smithyTraffic:{
+    nextVisitAt:Date.now()+60_000,
+    activeVisitor:null
+  },
+  smithyBook:{
+    entries:[],
+    unread:0,
+    archive:{visits:0,purchases:0,noPurchase:0,revenue:0}
+  },
   activeExpedition:null,
   activeCraft:null,
   activeCarpentry:null,
@@ -109,7 +156,7 @@ function loadState(){
     const saved=JSON.parse(raw);
     const base=defaultState();
 
-    return {
+    const merged={
       ...base,
       ...saved,
       version:APP_VERSION,
@@ -127,8 +174,25 @@ function loadState(){
         ...base.buildings,
         ...(saved.buildings||{}),
         smithy:{...base.buildings.smithy,...(saved.buildings?.smithy||{})}
+      },
+      adventurers:{
+        kael:{...base.adventurers.kael,...(saved.adventurers?.kael||{})},
+        lyra:{...base.adventurers.lyra,...(saved.adventurers?.lyra||{})},
+        darek:{...base.adventurers.darek,...(saved.adventurers?.darek||{})}
+      },
+      smithyTraffic:{...base.smithyTraffic,...(saved.smithyTraffic||{})},
+      smithyBook:{
+        ...base.smithyBook,
+        ...(saved.smithyBook||{}),
+        archive:{...base.smithyBook.archive,...(saved.smithyBook?.archive||{})}
       }
     };
+
+    merged.inventory.ironSwords=Array.isArray(merged.inventory.ironSwords)
+      ?merged.inventory.ironSwords.map(sword=>({...sword,listed:Boolean(sword.listed)}))
+      :[];
+    merged.smithyBook.entries=Array.isArray(merged.smithyBook.entries)?merged.smithyBook.entries:[];
+    return merged;
   }catch{
     return defaultState();
   }
@@ -141,11 +205,31 @@ function saveState(){
   localStorage.setItem(SAVE_KEY,JSON.stringify(state));
 }
 
+function currentScreen(){
+  return document.querySelector('.screen.is-active')?.dataset.screen||'city';
+}
+
+function markSmithyBookRead(){
+  let changed=false;
+  state.smithyBook.entries.forEach(entry=>{
+    if(entry.unread){
+      entry.unread=false;
+      changed=true;
+    }
+  });
+  if(state.smithyBook.unread!==0){
+    state.smithyBook.unread=0;
+    changed=true;
+  }
+  if(changed)saveState();
+}
+
 function showScreen(name){
   screens.forEach(s=>s.classList.toggle('is-active',s.dataset.screen===name));
   const navTarget=['smithy','carpenter','inn'].includes(name)?'city':name;
   nav.forEach(b=>b.classList.toggle('is-active',b.dataset.target===navTarget));
   title.textContent=titles[name]||'Pueblos de Gremios';
+  if(name==='smithy')markSmithyBookRead();
   window.scrollTo({top:0,behavior:'smooth'});
   render();
 }
@@ -231,6 +315,7 @@ const els={
   cityPrestige:document.getElementById('cityPrestige'),
   cityPrestigeProgress:document.getElementById('cityPrestigeProgress'),
   smithyLevelCity:document.getElementById('smithyLevelCity'),
+  smithyVisitBadge:document.getElementById('smithyVisitBadge'),
 
   inventoryCoins:document.getElementById('inventoryCoins'),
   inventoryWood:document.getElementById('inventoryWood'),
@@ -308,6 +393,13 @@ const els={
   swordExcellentChance:document.getElementById('swordExcellentChance'),
   swordQualityDistribution:document.getElementById('swordQualityDistribution'),
   startSwordCraft:document.getElementById('startSwordCraft'),
+  smithyVisitorState:document.getElementById('smithyVisitorState'),
+  smithyVisitorCard:document.getElementById('smithyVisitorCard'),
+  smithyExhibitionCount:document.getElementById('smithyExhibitionCount'),
+  smithyExhibitionList:document.getElementById('smithyExhibitionList'),
+  smithyBookSummary:document.getElementById('smithyBookSummary'),
+  smithyBookList:document.getElementById('smithyBookList'),
+  clearSmithyBook:document.getElementById('clearSmithyBook'),
 
   smithyUpgradeTitle:document.getElementById('smithyUpgradeTitle'),
   smithyUpgradeCopy:document.getElementById('smithyUpgradeCopy'),
@@ -420,8 +512,250 @@ function createIronSword(){
     durability,
     estimatedValue,
     salePrice:estimatedValue,
+    listed:false,
     createdAt:Date.now()
   };
+}
+
+function randomVisitDelay(){
+  return randomInt(SMITHY_VISIT_MIN_MS,SMITHY_VISIT_MAX_MS);
+}
+
+function clamp(value,min,max){
+  return Math.max(min,Math.min(max,value));
+}
+
+function formatClock(timestamp){
+  return new Date(timestamp).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+}
+
+function visitorContext(need){
+  if(need>=.82)return 'Su arma está muy desgastada y busca reemplazo.';
+  if(need>=.62)return 'Se prepara para una expedición y revisa posibles mejoras.';
+  return 'Está recorriendo la ciudad y compara equipo sin urgencia.';
+}
+
+function createSmithyVisitor(startedAt=Date.now()){
+  const ids=Object.keys(ADVENTURER_BLUEPRINTS);
+  const npcId=ids[randomInt(0,ids.length-1)];
+  const bp=ADVENTURER_BLUEPRINTS[npcId];
+  const npc=state.adventurers[npcId];
+  const needMin=bp.needRange[0];
+  const needMax=bp.needRange[1];
+  const need=needMin+(Math.random()*(needMax-needMin));
+
+  npc.coins=Math.min(800,npc.coins+randomInt(15,55));
+  npc.visits+=1;
+
+  return {
+    id:createActionId(),
+    npcId,
+    name:bp.name,
+    role:bp.role,
+    personality:bp.personality,
+    need:Number(need.toFixed(2)),
+    context:visitorContext(need),
+    coinsAtVisit:npc.coins,
+    weaponDamage:npc.weaponDamage,
+    startedAt,
+    endsAt:startedAt+SMITHY_VISIT_DURATION_MS,
+    offers:state.inventory.ironSwords
+      .filter(sword=>sword.listed)
+      .map(sword=>({id:sword.id,price:sword.salePrice}))
+  };
+}
+
+function evaluateSwordForVisitor(visitor,sword,price){
+  const bp=ADVENTURER_BLUEPRINTS[visitor.npcId];
+  const npc=state.adventurers[visitor.npcId];
+  const upgradeDelta=sword.damage-npc.weaponDamage;
+  const upgrade=clamp(35+(upgradeDelta*22)+((sword.qualityScore-50)*.35),0,100);
+  const value=clamp((sword.estimatedValue/Math.max(1,price))*72,0,100);
+  const affordability=price>npc.coins
+    ?0
+    :clamp(105-((price/npc.coins)*60),25,100);
+
+  const parts={
+    need:visitor.need*100,
+    affinity:bp.affinity*100,
+    upgrade,
+    value,
+    affordability
+  };
+
+  const score=Object.entries(bp.weights)
+    .reduce((total,[key,weight])=>total+(parts[key]*weight),0)
+    +randomInt(-5,5);
+
+  return {
+    score:Math.round(score),
+    affordable:price<=npc.coins,
+    upgradeDelta,
+    parts
+  };
+}
+
+function archiveSmithyEntry(entry){
+  const archive=state.smithyBook.archive;
+  archive.visits+=1;
+  if(entry.type==='sale'){
+    archive.purchases+=1;
+    archive.revenue+=Number(entry.price)||0;
+  }else{
+    archive.noPurchase+=1;
+  }
+}
+
+function addSmithyBookEntry(entry){
+  const isOpen=currentScreen()==='smithy';
+  const normalized={
+    id:createActionId(),
+    timestamp:Date.now(),
+    unread:!isOpen,
+    ...entry
+  };
+
+  state.smithyBook.entries.unshift(normalized);
+  if(normalized.unread)state.smithyBook.unread+=1;
+
+  while(state.smithyBook.entries.length>SMITHY_BOOK_DETAIL_LIMIT){
+    const old=state.smithyBook.entries.pop();
+    if(old.unread)state.smithyBook.unread=Math.max(0,state.smithyBook.unread-1);
+    archiveSmithyEntry(old);
+  }
+}
+
+function resolveSmithyVisitor(visitor){
+  const npc=state.adventurers[visitor.npcId];
+  const offers=visitor.offers
+    .map(offer=>{
+      const sword=state.inventory.ironSwords.find(item=>item.id===offer.id);
+      return sword?{sword,price:offer.price}:null;
+    })
+    .filter(Boolean);
+
+  let type='no-sale';
+  let text='';
+  let price=0;
+
+  if(!offers.length){
+    text='No compró: no había Espadas de hierro en Exhibición cuando entró.';
+  }else{
+    const evaluated=offers
+      .map(({sword,price:offerPrice})=>({
+        sword,
+        price:offerPrice,
+        evaluation:evaluateSwordForVisitor(visitor,sword,offerPrice)
+      }))
+      .sort((a,b)=>b.evaluation.score-a.evaluation.score);
+
+    const best=evaluated[0];
+
+    if(best.evaluation.affordable&&best.evaluation.score>=62){
+      type='sale';
+      price=best.price;
+      state.resources.coins+=price;
+      npc.coins-=price;
+      npc.weaponDamage=best.sword.damage;
+      npc.weaponQuality=best.sword.qualityScore;
+      npc.purchases+=1;
+      state.inventory.ironSwords=state.inventory.ironSwords.filter(item=>item.id!==best.sword.id);
+      swordInventorySignature='';
+      smithyExhibitionSignature='';
+      text=`Compró ${best.sword.name} · ${best.sword.qualityLabel} (${best.sword.qualityScore}) por ${formatNumber(price)} 🪙. Motivo: la mejora, su necesidad actual y el precio formaron una compra suficientemente atractiva.`;
+    }else if(!evaluated.some(item=>item.evaluation.affordable)){
+      text='No compró: todas las piezas que le interesaban superaban sus monedas disponibles.';
+    }else if(best.price>best.sword.estimatedValue*1.25){
+      text=`No compró: la pieza que más le interesó costaba ${formatNumber(best.price)} 🪙 y consideró el precio alto para lo que obtenía.`;
+    }else if(best.evaluation.upgradeDelta<=0){
+      text='No compró: ninguna pieza mejoraba lo suficiente el arma que ya llevaba.';
+    }else if(visitor.need<.55){
+      text='No compró: encontró una posible mejora, pero su necesidad actual era baja y prefirió guardar sus monedas.';
+    }else{
+      text='No compró: evaluó la mejora, la calidad y el precio, pero la intención final de compra no fue suficiente.';
+    }
+  }
+
+  addSmithyBookEntry({
+    type,
+    npcId:visitor.npcId,
+    npcName:visitor.name,
+    role:visitor.role,
+    personality:visitor.personality,
+    context:visitor.context,
+    text,
+    price
+  });
+
+  state.smithyTraffic.activeVisitor=null;
+  state.smithyTraffic.nextVisitAt=Date.now()+randomVisitDelay();
+  saveState();
+}
+
+function startLiveSmithyVisit(){
+  if(state.smithyTraffic.activeVisitor)return false;
+  const visitor=createSmithyVisitor(Date.now());
+  state.smithyTraffic.activeVisitor=visitor;
+  saveState();
+  return true;
+}
+
+function simulateOfflineSmithyVisit(at){
+  const visitor=createSmithyVisitor(at);
+  visitor.endsAt=at;
+  resolveSmithyVisitor(visitor);
+}
+
+function catchUpSmithyTraffic(){
+  const now=Date.now();
+
+  if(state.smithyTraffic.activeVisitor&&now>=state.smithyTraffic.activeVisitor.endsAt){
+    resolveSmithyVisitor(state.smithyTraffic.activeVisitor);
+  }
+
+  if(state.smithyTraffic.activeVisitor)return;
+
+  let due=Number(state.smithyTraffic.nextVisitAt)||now+randomVisitDelay();
+  let count=0;
+
+  while(due<=now-(SMITHY_VISIT_DURATION_MS*2)&&count<SMITHY_OFFLINE_VISIT_CAP){
+    simulateOfflineSmithyVisit(due);
+    due=state.smithyTraffic.nextVisitAt;
+    count+=1;
+  }
+
+  if(due<=now-(SMITHY_VISIT_DURATION_MS*2)){
+    state.smithyTraffic.nextVisitAt=now+randomVisitDelay();
+    saveState();
+  }
+}
+
+function tickSmithyTraffic(){
+  const now=Date.now();
+  const active=state.smithyTraffic.activeVisitor;
+
+  if(active){
+    if(now>=active.endsAt)resolveSmithyVisitor(active);
+    return;
+  }
+
+  if(now>=state.smithyTraffic.nextVisitAt&&!document.hidden){
+    startLiveSmithyVisit();
+  }
+}
+
+function clearReadSmithyBook(){
+  const keep=[];
+  state.smithyBook.entries.forEach(entry=>{
+    if(entry.unread){
+      keep.push(entry);
+    }else{
+      archiveSmithyEntry(entry);
+    }
+  });
+  state.smithyBook.entries=keep;
+  saveState();
+  renderSmithyBook(true);
 }
 
 function formatNumber(value){
@@ -975,10 +1309,12 @@ function renderInnWorker(workerKey,stateEl,buttonEl,feedbackEl){
 }
 
 let swordInventorySignature='';
+let smithyExhibitionSignature='';
+let smithyBookSignature='';
 
 function renderSwordInventory(){
   const swords=state.inventory.ironSwords;
-  const signature=swords.map(s=>`${s.id}:${s.salePrice}`).join('|');
+  const signature=swords.map(s=>`${s.id}:${s.salePrice}:${s.listed?1:0}`).join('|');
 
   if(signature===swordInventorySignature)return;
   swordInventorySignature=signature;
@@ -1008,8 +1344,110 @@ function renderSwordInventory(){
     price.className='sword-price';
     price.innerHTML=`<span>Tu precio</span><input type="number" min="5" max="9999" step="5" value="${sword.salePrice}" data-sword-price="${sword.id}" aria-label="Precio de venta de Espada #${index+1}">`;
 
-    card.append(head,stats,price);
+    const listButton=document.createElement('button');
+    listButton.className='small-action exhibition-toggle';
+    listButton.dataset.swordList=sword.id;
+    listButton.textContent=sword.listed?'Quitar de Exhibición':'Poner en Exhibición';
+
+    card.append(head,stats,price,listButton);
     els.swordInventoryList.append(card);
+  });
+}
+
+function renderSmithyExhibition(){
+  const listed=state.inventory.ironSwords.filter(sword=>sword.listed);
+  const signature=listed.map(s=>`${s.id}:${s.salePrice}`).join('|');
+
+  els.smithyExhibitionCount.textContent=`${listed.length} ${listed.length===1?'pieza':'piezas'}`;
+
+  if(signature===smithyExhibitionSignature)return;
+  smithyExhibitionSignature=signature;
+  els.smithyExhibitionList.replaceChildren();
+
+  if(!listed.length){
+    const empty=document.createElement('p');
+    empty.className='muted';
+    empty.textContent='No hay objetos en Exhibición. Podés colocar una espada desde Inventario.';
+    els.smithyExhibitionList.append(empty);
+    return;
+  }
+
+  listed.forEach(sword=>{
+    const row=document.createElement('div');
+    row.className='exhibition-row';
+    row.innerHTML=`<span>⚔️ ${sword.qualityLabel} · ${sword.qualityScore} · Daño ${sword.damage}</span><strong>${formatNumber(sword.salePrice)} 🪙</strong>`;
+    els.smithyExhibitionList.append(row);
+  });
+}
+
+function renderSmithyVisitor(){
+  const visitor=state.smithyTraffic.activeVisitor;
+  const unread=state.smithyBook.unread;
+
+  if(visitor){
+    els.smithyVisitBadge.hidden=false;
+    els.smithyVisitBadge.textContent='👤 Cliente';
+    els.smithyVisitorState.textContent='Mirando Exhibición';
+    els.smithyVisitorState.classList.add('is-busy');
+    els.smithyVisitorCard.innerHTML=`
+      <div class="visitor-name"><strong>${visitor.name}</strong><span>${visitor.role} · ${visitor.personality}</span></div>
+      <div class="visitor-thoughts">
+        <span>🪙 ${formatNumber(visitor.coinsAtVisit)}</span>
+        <span>⚔️ Arma actual: daño ${visitor.weaponDamage}</span>
+        <span>Necesidad: ${Math.round(visitor.need*100)}%</span>
+      </div>
+      <p>${visitor.context}</p>
+      <small>Está evaluando ${visitor.offers.length} ${visitor.offers.length===1?'pieza':'piezas'} de la Exhibición.</small>
+    `;
+  }else{
+    els.smithyVisitorState.textContent='Sin visitantes';
+    els.smithyVisitorState.classList.remove('is-busy');
+    els.smithyVisitorCard.innerHTML='<p class="muted">No hay nadie en la Herrería ahora. Las visitas continúan aunque estés en otra pantalla y sus resultados quedan anotados.</p>';
+
+    if(unread>0){
+      els.smithyVisitBadge.hidden=false;
+      els.smithyVisitBadge.textContent=`📖 ${unread} ${unread===1?'nueva':'nuevas'}`;
+    }else{
+      els.smithyVisitBadge.hidden=true;
+    }
+  }
+}
+
+function renderSmithyBook(force=false){
+  const archive=state.smithyBook.archive;
+  const entries=state.smithyBook.entries;
+  const signature=`${archive.visits}:${archive.purchases}:${archive.noPurchase}:${archive.revenue}|`+
+    entries.map(e=>`${e.id}:${e.unread?1:0}`).join('|');
+
+  if(!force&&signature===smithyBookSignature)return;
+  smithyBookSignature=signature;
+
+  els.smithyBookSummary.innerHTML=archive.visits>0
+    ?`<strong>Resumen archivado</strong><span>${archive.visits} visitas · ${archive.purchases} ventas · ${archive.noPurchase} sin compra · ${formatNumber(archive.revenue)} 🪙 ingresadas</span>`
+    :'<span class="muted">Todavía no hay visitas archivadas.</span>';
+
+  els.smithyBookList.replaceChildren();
+
+  if(!entries.length){
+    const empty=document.createElement('p');
+    empty.className='muted';
+    empty.textContent='El libro todavía no tiene anotaciones.';
+    els.smithyBookList.append(empty);
+    return;
+  }
+
+  entries.forEach(entry=>{
+    const item=document.createElement('article');
+    item.className=`book-entry ${entry.unread?'is-unread':''}`;
+    item.innerHTML=`
+      <div class="book-entry-head">
+        <strong>${entry.type==='sale'?'🪙':'👤'} ${entry.npcName} · ${entry.role}</strong>
+        <time>${formatClock(entry.timestamp)}</time>
+      </div>
+      <small>${entry.personality} · ${entry.context}</small>
+      <p>${entry.text}</p>
+    `;
+    els.smithyBookList.append(item);
   });
 }
 
@@ -1018,6 +1456,7 @@ function render(){
   resolveExpiredCraft();
   resolveExpiredCarpentry();
   syncAllWorkerStamina();
+  tickSmithyTraffic();
 
   els.coins.textContent=formatNumber(state.resources.coins);
 
@@ -1035,6 +1474,9 @@ function render(){
   els.inventoryIronSwords.textContent=formatNumber(state.inventory.ironSwords.length);
   els.inventoryMaraTool.textContent=hasIronPickaxeEquipped()?'Pico de hierro':'Sin equipar';
   renderSwordInventory();
+  renderSmithyExhibition();
+  renderSmithyVisitor();
+  renderSmithyBook();
 
   if(dialog.open&&currentBuilding)renderBuildingResources(currentBuilding);
 
@@ -1350,12 +1792,38 @@ els.swordInventoryList.addEventListener('change',event=>{
   sword.salePrice=price;
   input.value=price;
   swordInventorySignature='';
+  smithyExhibitionSignature='';
   saveState();
 });
 
+els.swordInventoryList.addEventListener('click',event=>{
+  const button=event.target.closest('[data-sword-list]');
+  if(!button)return;
+
+  const sword=state.inventory.ironSwords.find(item=>item.id===button.dataset.swordList);
+  if(!sword)return;
+
+  sword.listed=!sword.listed;
+  swordInventorySignature='';
+  smithyExhibitionSignature='';
+  saveState();
+  render();
+});
+
+els.clearSmithyBook.addEventListener('click',clearReadSmithyBook);
+
+catchUpSmithyTraffic();
 setInterval(render,500);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)render();});
-window.addEventListener('focus',render);
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden){
+    catchUpSmithyTraffic();
+    render();
+  }
+});
+window.addEventListener('focus',()=>{
+  catchUpSmithyTraffic();
+  render();
+});
 
 let deferredPrompt=null;
 const installBtn=document.getElementById('installBtn');
@@ -1394,7 +1862,7 @@ if('serviceWorker' in navigator){
 
   window.addEventListener('load',async()=>{
     try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=0.6.0',{updateViaCache:'none'});
+      const reg=await navigator.serviceWorker.register('./sw.js?v=0.7.0',{updateViaCache:'none'});
       await reg.update();
     }catch{}
   });
