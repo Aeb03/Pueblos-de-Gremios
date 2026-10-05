@@ -158,6 +158,14 @@ La pantalla Reino muestra:
 
 Menú incluye **Reiniciar Reino de prueba** para volver a ejecutar el proceso de fundación y probar el generador desde cero.
 
+## Diseño consolidado en prueba
+
+La discusión de diseño más reciente quedó consolidada en:
+
+- [Diseño aprobado EN PRUEBA — Era, ciudad inicial y tramo Nv.1–3](docs/diseno-aprobado-era-inicial-nv1-3.md)
+
+Este documento reúne temporadas/Eras, estructura territorial, ciudad fundadora, negocios, trabajadores, recursos, amenaza/escoltas, misiones comunes, Textilería Nv.2, balance inicial y enemigos comunes aprobados para el primer tramo. No implica implementación inmediata: sirve como contrato de diseño para los próximos desarrollos y playtests.
+
 ## Próximos pasos
 
 1. validar v0.8.1 en Android;
