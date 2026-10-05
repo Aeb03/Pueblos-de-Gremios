@@ -24,6 +24,20 @@
     }
   };
 
+  // La presión de grupo no escala linealmente: varios enemigos a la vez
+  // deben ser una decisión peligrosa para un aventurero Nv. 1 con equipo inicial.
+  const GROUP_PRESSURE={
+    wolf:{
+      1:{lossMultiplier:1,winPenalty:0,manaMultiplier:1},
+      2:{lossMultiplier:1.75,winPenalty:.08,manaMultiplier:1.10},
+      3:{lossMultiplier:3.10,winPenalty:.21,manaMultiplier:1.22}
+    },
+    boar:{
+      1:{lossMultiplier:1,winPenalty:0,manaMultiplier:1},
+      2:{lossMultiplier:1.90,winPenalty:.18,manaMultiplier:1.15}
+    }
+  };
+
   function enemyConfig(data,enemyKey){
     const enemy=data.activityCombat?.enemies?.[enemyKey];
     if(!enemy)throw new Error('Enemigo inválido');
@@ -75,14 +89,18 @@
     const levelBonus=(level-1)*.08;
     const weaponBonus=weaponUpgradeBonus(adventurer,data);
 
-    let meanHpLossRate=risk.loss*(1+Math.max(0,safeCount-1)*.55);
-    let winChance=risk.win-Math.max(0,safeCount-1)*(enemyKey==='wolf'?.055:.08);
+    const pressure=GROUP_PRESSURE[enemyKey]?.[safeCount]||GROUP_PRESSURE[enemyKey]?.[1]||{
+      lossMultiplier:1,winPenalty:0,manaMultiplier:1
+    };
+
+    let meanHpLossRate=risk.loss*pressure.lossMultiplier;
+    let winChance=risk.win-pressure.winPenalty;
 
     meanHpLossRate*=clamp(1-levelBonus-weaponBonus*.018,.45,1);
-    winChance=clamp(winChance+levelBonus*.08+weaponBonus*.0015,.60,.999);
+    winChance=clamp(winChance+levelBonus*.08+weaponBonus*.0015,.55,.999);
 
     const manaBase=Number(data.activityCombat?.manaUse?.[classKey])||0;
-    const meanManaUseRate=clamp(manaBase*(1+Math.max(0,safeCount-1)*.08),0,1);
+    const meanManaUseRate=clamp(manaBase*pressure.manaMultiplier,0,1);
 
     return {
       combatSchemaVersion:COMBAT_SCHEMA_VERSION,
@@ -239,6 +257,7 @@
   return {
     COMBAT_SCHEMA_VERSION,
     BASE_RISK,
+    GROUP_PRESSURE,
     statsForLevel,
     previewEncounter,
     resolveEncounter,
