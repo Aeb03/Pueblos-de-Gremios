@@ -2325,7 +2325,7 @@ if('serviceWorker' in navigator){
 
   window.addEventListener('load',async()=>{
     try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0a',{updateViaCache:'none'});
+      const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0b',{updateViaCache:'none'});
       await reg.update();
     }catch{}
   });
