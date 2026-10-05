@@ -1176,13 +1176,172 @@ Si un Alfa está activo durante un ataque de Lobos:
 
 No roba monedas ni destruye de forma absurda estructuras pesadas.
 
-### Primer Boss
+### Primer Boss — Gran Jabalí — aprobado EN PRUEBA
 
-El Boss del tramo sigue pendiente de definición.
+**Tipo:** Boss  
+**Nivel mínimo de aparición:** **Nv.3**.  
+**Rango de referencia del primer tramo:** Nv.3.  
+**Rol:** Resistente / embestidor / amenaza territorial mayor.
 
-Candidato actual:
+#### Aparición
 
-- **Gran Jabalí** u otra variante equivalente.
+El Gran Jabalí **no puede aparecer en Nv.1 ni Nv.2**.
+
+Desde Nv.3, su posibilidad de aparición existe siempre mientras la rama Jabalí siga formando parte del ecosistema local. No requiere alcanzar un umbral fijo de Presencia.
+
+La probabilidad base será baja y aumentará dinámicamente según factores como:
+
+- Presencia actual de Jabalíes;
+- nivel de Amenaza;
+- actividad y tamaño de la población de Jabalíes;
+- tiempo transcurrido desde la última aparición de Boss;
+- tiempo transcurrido desde que la ciudad alcanzó Nv.3;
+- futuros modificadores ecológicos o de temporada.
+
+Principio:
+
+**Nv.1–2 = imposible. Desde Nv.3 = posibilidad siempre existente, cuya probabilidad aumenta o disminuye según el estado del mundo.**
+
+La intención es que el Boss pueda surgir naturalmente sin una condición rígida de “llegar a X Presencia”, pero que el sistema de probabilidad acumulativa haga cada vez más probable su aparición si el ecosistema favorece su crecimiento.
+
+#### Encuentro
+
+Referencia inicial:
+
+- 1 Gran Jabalí;
+- normalmente combate solo;
+- pensado para un grupo inicial preparado.
+
+#### Identidad de combate
+
+El Gran Jabalí es la culminación de la identidad de su especie:
+
+- Vida muy alta para el tramo;
+- Defensa alta;
+- Iniciativa baja-media;
+- daño alto por impacto;
+- poco control táctico, pero enorme capacidad de castigo individual y grupal.
+
+#### Habilidades
+
+**Cornada brutal**
+- ataque físico fuerte;
+- puede provocar Herida.
+
+**Embestida arrolladora**
+- ataque de gran impacto;
+- puede afectar al objetivo principal y generar una consecuencia secundaria sobre el grupo;
+- puede reducir temporalmente Defensa.
+
+**Pisotón**
+- daño moderado a varios integrantes del grupo;
+- representa el peligro de permanecer demasiado tiempo frente al Boss.
+
+#### Pasiva — Piel monumental
+
+- reducción moderada de daño físico;
+- hace que el grupo necesite sostener el combate y no dependa de una sola ráfaga de daño.
+
+#### Fase final — Furia acorralada
+
+Cuando baja de cierto porcentaje de Vida:
+
+- aumenta su daño;
+- puede actuar con mayor frecuencia o mejorar su presión ofensiva;
+- no recupera Vida gratuitamente.
+
+La intención es que el final del combate sea más peligroso y memorable.
+
+#### Dificultad conceptual
+
+- 1 aventurero → extremadamente peligrosa / no recomendable.
+- 2 aventureros → muy alta.
+- 3 aventureros iniciales bien preparados → desafío normal-alto.
+- grupo mejor equipado o con buena sinergia → normal.
+
+Debe poder derrotarse con contenido disponible **antes** de cualquier recompensa o material que dependa del propio Boss.
+
+#### XP
+
+Balance provisional:
+
+- aproximadamente **80–100 XP totales** de encuentro, distribuidos por participación según el sistema final.
+
+#### Monedas
+
+- no suelta dinero.
+
+#### Drops
+
+Conserva la familia de materiales Jabalí:
+
+- Carne;
+- **Piel de Gran Jabalí**;
+- **Tendón de Gran Jabalí** si se considera útil;
+- **Colmillo de Gran Jabalí**.
+
+Piel y Colmillo conservan siempre su origen Boss.
+
+#### Identidad material de la rama Jabalí
+
+Dirección provisional:
+
+- Defensa;
+- Resistencia;
+- robustez.
+
+Ejemplo:
+
+- Cuero de Jabalí → mejora defensiva base.
+- Cuero de Gran Jabalí → mejora defensiva superior y puede añadir una propiedad especial.
+
+La propiedad especial se definirá al diseñar la receta concreta; no se crea una receta nueva sólo por usar material Boss.
+
+#### Efecto territorial
+
+Mientras exista un Gran Jabalí activo:
+
+- aumenta la peligrosidad de Caza y caminos silvestres;
+- puede aumentar el riesgo de incidentes durante salidas;
+- ciertas salidas pueden pasar a recomendar o exigir escolta antes de lo habitual;
+- la población de Jabalíes puede ejercer mayor presión territorial.
+
+Derrotarlo produce una reducción fuerte de Presencia/Amenaza de la rama Jabalí.
+
+El valor exacto se balanceará con playtest.
+
+#### Misiones
+
+Cuando aparece, la Sede del Gremio puede mostrar una misión/objetivo especial de Boss:
+
+**Abatir al Gran Jabalí**
+
+- recompensa elegida por la ciudad;
+- requiere grupo adecuado;
+- los aventureros evalúan el riesgo y la recompensa;
+- la victoria y los drops son eventos separados.
+
+#### Ataque a ciudad
+
+Si el Gran Jabalí sigue activo cuando la rama Jabalí alcanza nivel de ataque:
+
+- aumenta el daño a instalaciones exteriores;
+- aumenta el riesgo de trabajadores heridos;
+- puede provocar mayor pérdida de alimentos o recursos expuestos;
+- sigue sin comportarse como un enemigo inteligente que roba dinero.
+
+#### Regla de aparición de Raros y Bosses del ecosistema
+
+Para enemigos ligados a una especie común:
+
+- **Raro:** tiene un nivel mínimo; desde ese nivel la posibilidad existe siempre y aumenta con factores del ecosistema.
+- **Boss:** usa el mismo motor, con un nivel mínimo superior y una probabilidad base menor.
+
+En este primer tramo:
+
+- Lobo Alfa → mínimo Nv.2.
+- Gran Jabalí → mínimo Nv.3.
+
 
 
 ---
