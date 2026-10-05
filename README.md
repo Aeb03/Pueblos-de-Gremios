@@ -4,105 +4,119 @@ PWA de gestión fantástica desarrollada paso a paso.
 
 ## Estado actual
 
-**v0.7.0 — Aventureros y Libro de Herrería**
+**v0.8.0 — Fundación de ciudad**
 
-La Herrería ya tiene actividad autónoma de clientes y la primera versión de la mente de compra de los NPC.
+Esta versión reinicia deliberadamente el ciclo local de prueba para validar desde cero el nacimiento de una ciudad y la población inicial de aventureros.
 
-### Aventureros
+### Fundación
 
-Tres aventureros recurrentes pueden visitar la Herrería durante el playtest:
+En el primer arranque de v0.8.0:
 
-- **Kael** — Guerrero prudente.
-- **Lyra** — Exploradora ahorradora.
-- **Darek** — Mercenario ambicioso.
+- el jugador nombra la ciudad;
+- se crea el asentamiento como **Pueblo**;
+- se entrega el Pack inicial de recursos;
+- continúan los cuatro trabajadores base: Borin, Mara, Eldon y Nara;
+- se generan **3 aventureros Nv. 1**;
+- los aventureros quedan persistidos y pasan a formar parte del Reino de prueba.
 
-Cada uno conserva monedas, arma actual, cantidad de visitas y compras. La necesidad cambia en cada visita y representa situaciones como prepararse para una expedición o necesitar reemplazar un arma gastada.
+La clave de guardado cambia a `pueblos-gremios-save-v0.8.0`, por lo que esta línea comienza con un estado local limpio.
 
-### Exhibición
+### Primer generador de aventureros
 
-Las Espadas de hierro ya no están automáticamente a la venta.
+`game-data.js` contiene los catálogos reutilizables de:
 
-Desde Inventario el jugador puede:
+- nombres y apellidos;
+- roles;
+- personalidades;
+- tiendas;
+- objetos;
+- recetas.
 
-- definir el precio individual;
-- poner una espada en **Exhibición**;
-- quitarla de Exhibición.
+El Pack inicial garantiza tres roles distintos en esta primera prueba:
 
-Sólo las piezas exhibidas pueden ser consideradas por un aventurero.
+- Guerrero;
+- Explorador;
+- Sanador.
 
-### Decisión de compra
+Cada aventurero obtiene:
 
-El NPC no compra por un porcentaje aislado. Para cada pieza considera:
+- ID persistente;
+- nombre + apellido;
+- ciudad y categoría de origen;
+- rol;
+- personalidad;
+- rasgos internos;
+- estadísticas;
+- PV;
+- monedas;
+- equipo inicial;
+- perfil de compra.
 
-- necesidad actual;
-- afinidad del objeto con su perfil;
-- mejora frente a su arma;
-- relación entre valor estimado y precio pedido;
-- dinero disponible;
-- prioridades de su personalidad.
+El nombre completo no se repite dentro del estado generado.
 
-Los pesos cambian según el personaje. Una misma espada puede ser atractiva para un aventurero y poco interesante para otro.
+### Aleatoriedad controlada
 
-Si compra:
+Los stats parten de una base por rol y reciben variaciones pequeñas que redistribuyen puntos, evitando personajes absurdamente fuertes o débiles por puro azar.
 
-- la espada desaparece del inventario;
-- la ciudad recibe las monedas;
-- el aventurero paga con sus propias monedas;
-- su arma registrada mejora.
+Las personalidades conservan rasgos internos y pesos de decisión reutilizables por la IA.
 
-### Visita visible
+### Herrería
 
-Durante una visita en vivo:
+La lógica de visitantes de Herrería ya dejó de depender de Kael/Lyra/Darek fijos.
 
-- la Herrería muestra un indicador **👤 Cliente** en el mapa;
-- dentro de la Herrería aparece el aventurero actual;
-- se muestran rol, personalidad, monedas, daño de su arma y necesidad;
-- la visita dura 15 segundos de playtest.
+Los visitantes salen del grupo de aventureros realmente generado para la ciudad y su IA de compra utiliza el perfil del NPC persistente.
 
-Las visitas se programan cada 45–90 segundos durante esta fase de prueba.
+También se corrigió la ubicación visual de **Visitante actual** y **Exhibición** para que pertenezcan a Herrería y no a Carpintería.
 
-### 📖 Libro de la Herrería
+### Catálogo inicial
 
-Cada visita terminada deja una anotación persistente con:
+Tiendas definidas:
 
-- aventurero;
-- contexto;
-- compra o no compra;
-- motivo principal;
-- pieza y precio si hubo venta.
+- Ayuntamiento;
+- Taberna;
+- Herrería;
+- Carpintería;
+- Posada;
+- Sede del Gremio (preparada, todavía no implementada en UI).
 
-Si el jugador estaba haciendo otra cosa o con la PWA cerrada, las visitas vencidas se recuperan al volver y quedan registradas.
+Recetas actuales en catálogo:
 
-El mapa muestra **📖 N nuevas** cuando hay anotaciones no leídas.
+- Cabeza de pico de hierro;
+- Mango de pico;
+- Pico de hierro;
+- Espada de hierro;
+- Banco de trabajo simple (futuro).
 
-Al entrar a la Herrería las anotaciones pasan a leídas.
+Los costes/tiempos principales de las recetas ya comienzan a leerse desde el catálogo en vez de estar definidos sólo como números aislados.
 
-### Autolimpieza
+### Reino de prueba
 
-El libro conserva un máximo de **20 visitas detalladas**.
+La pantalla Reino muestra:
 
-Cuando se supera ese límite, las más antiguas se compactan en un resumen acumulado con:
+- ciudad fundada;
+- categoría;
+- cantidad de aventureros activos;
+- identidad;
+- rol;
+- personalidad;
+- PV;
+- stats básicos;
+- ciudad de origen.
 
-- visitas;
-- ventas;
-- visitas sin compra;
-- monedas ingresadas.
+### Herramienta de prueba
 
-El botón **Limpiar leídos** permite compactar manualmente las entradas ya vistas sin perder el resumen de actividad.
+Menú incluye **Reiniciar Reino de prueba** para volver a ejecutar el proceso de fundación y probar el generador desde cero.
 
-## Sistemas anteriores que continúan
+## Próximos pasos
 
-- Resistencia y Posada de Mara, Borin y Eldon.
-- Carpintería y fabricación de Mango de pico.
-- Cabeza de pico y ensamblaje de Pico de hierro.
-- Pico equipado a Mara y Veta dura.
-- Espada de hierro con calidad individual, daño, durabilidad y valor estimado.
-- Precio de venta definido por el jugador.
-- Progreso persistente usando la misma clave de guardado.
+La intención es avanzar en bloques pequeños:
 
-## Siguiente bloque previsto
-
-Agregar los **pedidos raros** como una vía distinta de la venta normal en Exhibición.
+1. validar fundación y generador en Android;
+2. reorganizar Herrería por pestañas;
+3. separar stock por negocio y estado pendiente/venta;
+4. definir primera región, mobs y drops;
+5. crear primer motor mínimo de misión/combat no visual;
+6. conectar salud, XP y recuperación de los aventureros.
 
 ## Desarrollo
 

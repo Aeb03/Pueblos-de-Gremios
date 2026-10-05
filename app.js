@@ -1,31 +1,32 @@
-const APP_VERSION='0.7.0';
-const SAVE_KEY='pueblos-gremios-save-v0.2.0';
+const APP_VERSION='0.8.0';
+const SAVE_KEY='pueblos-gremios-save-v0.8.0';
+const DATA=globalThis.PG_DATA;
 
 const EXPEDITION_DURATION_MS=30_000;
-const CRAFT_DURATION_MS=20_000;
-const ASSEMBLY_DURATION_MS=15_000;
-const CARPENTRY_DURATION_MS=20_000;
+const CRAFT_DURATION_MS=DATA.recipes.pickaxeHead.durationMs;
+const ASSEMBLY_DURATION_MS=DATA.recipes.ironPickaxe.durationMs;
+const CARPENTRY_DURATION_MS=DATA.recipes.woodenHandle.durationMs;
 
 const MINING_XP_STEP=100;
 const SMITHING_XP_STEP=100;
 const CARPENTRY_XP_STEP=100;
 
-const CRAFT_IRON_COST=5;
-const CRAFT_SMITHING_XP=40;
-const CRAFT_STAMINA_COST=15;
+const CRAFT_IRON_COST=DATA.recipes.pickaxeHead.materials.iron;
+const CRAFT_SMITHING_XP=DATA.recipes.pickaxeHead.xp;
+const CRAFT_STAMINA_COST=DATA.recipes.pickaxeHead.stamina;
 
-const ASSEMBLY_SMITHING_XP=20;
-const ASSEMBLY_STAMINA_COST=10;
+const ASSEMBLY_SMITHING_XP=DATA.recipes.ironPickaxe.xp;
+const ASSEMBLY_STAMINA_COST=DATA.recipes.ironPickaxe.stamina;
 
-const SWORD_IRON_COST=8;
-const SWORD_DURATION_MS=30_000;
-const SWORD_STAMINA_COST=20;
-const SWORD_SMITHING_XP=50;
-const SWORD_RECIPE_LEVEL=2;
+const SWORD_IRON_COST=DATA.recipes.ironSword.materials.iron;
+const SWORD_DURATION_MS=DATA.recipes.ironSword.durationMs;
+const SWORD_STAMINA_COST=DATA.recipes.ironSword.stamina;
+const SWORD_SMITHING_XP=DATA.recipes.ironSword.xp;
+const SWORD_RECIPE_LEVEL=DATA.recipes.ironSword.requiredLevel;
 
-const HANDLE_WOOD_COST=3;
-const HANDLE_CARPENTRY_XP=40;
-const HANDLE_STAMINA_COST=15;
+const HANDLE_WOOD_COST=DATA.recipes.woodenHandle.materials.wood;
+const HANDLE_CARPENTRY_XP=DATA.recipes.woodenHandle.xp;
+const HANDLE_STAMINA_COST=DATA.recipes.woodenHandle.stamina;
 
 const SMITHY_UPGRADE_COIN_COST=100;
 const SMITHY_UPGRADE_STONE_COST=10;
@@ -48,35 +49,8 @@ const SMITHY_VISIT_DURATION_MS=15_000;
 const SMITHY_BOOK_DETAIL_LIMIT=20;
 const SMITHY_OFFLINE_VISIT_CAP=6;
 
-const ADVENTURER_BLUEPRINTS={
-  kael:{
-    name:'Kael',
-    role:'Guerrero',
-    personality:'Prudente',
-    affinity:.95,
-    needRange:[.55,.92],
-    weights:{need:.35,affinity:.15,upgrade:.25,value:.15,affordability:.10}
-  },
-  lyra:{
-    name:'Lyra',
-    role:'Exploradora',
-    personality:'Ahorradora',
-    affinity:.72,
-    needRange:[.42,.82],
-    weights:{need:.25,affinity:.15,upgrade:.20,value:.25,affordability:.15}
-  },
-  darek:{
-    name:'Darek',
-    role:'Mercenario',
-    personality:'Ambicioso',
-    affinity:.90,
-    needRange:[.48,.88],
-    weights:{need:.30,affinity:.15,upgrade:.35,value:.10,affordability:.10}
-  }
-};
-
 const titles={
-  city:'Villa del Roble',
+  city:'Ciudad',
   workers:'Trabajadores',
   carpenter:'Carpintería',
   smithy:'Herrería',
@@ -93,8 +67,21 @@ const title=document.getElementById('screenTitle');
 
 const defaultState=()=>({
   version:APP_VERSION,
-  city:{prestige:120},
-  resources:{coins:1240,wood:86,iron:42,stone:0},
+  world:{
+    id:DATA.world.id,
+    name:DATA.world.name,
+    kingdom:{...DATA.world.kingdom}
+  },
+  city:{
+    id:null,
+    name:'',
+    tier:DATA.founding.startingTier,
+    prestige:DATA.founding.startingPrestige,
+    founded:false,
+    foundedAt:null,
+    foundingPackGenerated:false
+  },
+  resources:{...DATA.founding.resources},
   inventory:{
     pickaxeHeads:0,
     woodenHandles:0,
@@ -123,15 +110,11 @@ const defaultState=()=>({
     }
   },
   buildings:{
-    smithy:{level:1,craftedCount:0}
+    smithy:{level:DATA.shops.smithy.startingLevel,craftedCount:0}
   },
-  adventurers:{
-    kael:{coins:480,weaponDamage:7,weaponQuality:52,visits:0,purchases:0},
-    lyra:{coins:350,weaponDamage:7,weaponQuality:58,visits:0,purchases:0},
-    darek:{coins:620,weaponDamage:8,weaponQuality:64,visits:0,purchases:0}
-  },
+  adventurers:[],
   smithyTraffic:{
-    nextVisitAt:Date.now()+60_000,
+    nextVisitAt:null,
     activeVisitor:null
   },
   smithyBook:{
@@ -160,6 +143,11 @@ function loadState(){
       ...base,
       ...saved,
       version:APP_VERSION,
+      world:{
+        ...base.world,
+        ...(saved.world||{}),
+        kingdom:{...base.world.kingdom,...(saved.world?.kingdom||{})}
+      },
       city:{...base.city,...(saved.city||{})},
       resources:{...base.resources,...(saved.resources||{})},
       inventory:{...base.inventory,...(saved.inventory||{})},
@@ -175,11 +163,7 @@ function loadState(){
         ...(saved.buildings||{}),
         smithy:{...base.buildings.smithy,...(saved.buildings?.smithy||{})}
       },
-      adventurers:{
-        kael:{...base.adventurers.kael,...(saved.adventurers?.kael||{})},
-        lyra:{...base.adventurers.lyra,...(saved.adventurers?.lyra||{})},
-        darek:{...base.adventurers.darek,...(saved.adventurers?.darek||{})}
-      },
+      adventurers:Array.isArray(saved.adventurers)?saved.adventurers:[],
       smithyTraffic:{...base.smithyTraffic,...(saved.smithyTraffic||{})},
       smithyBook:{
         ...base.smithyBook,
@@ -206,6 +190,167 @@ function saveState(){
   localStorage.setItem(SAVE_KEY,JSON.stringify(state));
 }
 
+
+function randomChoice(list){
+  return list[randomInt(0,list.length-1)];
+}
+
+function shuffled(list){
+  const copy=[...list];
+  for(let i=copy.length-1;i>0;i--){
+    const j=randomInt(0,i);
+    [copy[i],copy[j]]=[copy[j],copy[i]];
+  }
+  return copy;
+}
+
+function uniqueAdventurerName(existingFullNames){
+  const maxAttempts=500;
+  for(let attempt=0;attempt<maxAttempts;attempt++){
+    const firstName=randomChoice(DATA.adventurerNames);
+    const lastName=randomChoice(DATA.adventurerSurnames);
+    const fullName=`${firstName} ${lastName}`;
+    if(!existingFullNames.has(fullName))return {firstName,lastName,fullName};
+  }
+  const fallback=`Viajero ${Date.now().toString(36)}`;
+  return {firstName:'Viajero',lastName:fallback.split(' ')[1],fullName:fallback};
+}
+
+function rollAdventurerStats(role){
+  const variationBudget=2;
+  const stats={...role.baseStats};
+  const keys=['attack','defense','speed','support'];
+  for(let i=0;i<variationBudget;i++){
+    const up=randomChoice(keys);
+    const down=randomChoice(keys.filter(key=>key!==up&&stats[key]>2));
+    stats[up]+=1;
+    stats[down]-=1;
+  }
+  stats.hp+=randomInt(-4,4);
+  return stats;
+}
+
+function generateAdventurer({city,roleKey,existingFullNames}){
+  const role=DATA.adventurerRoles[roleKey];
+  const personality=randomChoice(Object.values(DATA.personalities));
+  const name=uniqueAdventurerName(existingFullNames);
+  existingFullNames.add(name.fullName);
+  const stats=rollAdventurerStats(role);
+  const weaponQuality=randomInt(45,58);
+
+  return {
+    id:createActionId(),
+    firstName:name.firstName,
+    lastName:name.lastName,
+    fullName:name.fullName,
+    originCityId:city.id,
+    originCityName:city.name,
+    originTier:city.tier,
+    currentCityId:city.id,
+    currentCityName:city.name,
+    level:1,
+    xp:0,
+    roleKey:role.id,
+    role:role.label,
+    personalityKey:personality.id,
+    personality:personality.label,
+    traits:{...personality.traits},
+    stats,
+    hpMax:stats.hp,
+    hpCurrent:stats.hp,
+    coins:randomInt(150,260),
+    weaponDamage:role.weaponDamage,
+    weaponQuality,
+    visits:0,
+    purchases:0,
+    active:true,
+    status:'Disponible',
+    equipment:{
+      weapon:{
+        id:'starter-weapon',
+        name:'Equipo inicial',
+        damage:role.weaponDamage,
+        quality:weaponQuality
+      }
+    },
+    inventory:[],
+    createdAt:Date.now(),
+    purchaseProfile:{
+      affinity:role.smithyAffinity,
+      needRange:[...personality.needRange],
+      weights:{...personality.purchaseWeights}
+    }
+  };
+}
+
+function generateFoundingAdventurers(city,count=DATA.founding.adventurerCount){
+  const existingNames=new Set(state.adventurers.map(npc=>npc.fullName));
+  const roleKeys=shuffled(Object.keys(DATA.adventurerRoles));
+  const result=[];
+
+  for(let i=0;i<count;i++){
+    const roleKey=roleKeys[i%roleKeys.length];
+    result.push(generateAdventurer({city,roleKey,existingFullNames:existingNames}));
+  }
+
+  return result;
+}
+
+function getAdventurer(id){
+  return state.adventurers.find(npc=>npc.id===id)||null;
+}
+
+function sanitizeCityName(value){
+  const clean=String(value||'').trim().replace(/\s+/g,' ');
+  return clean.slice(0,28);
+}
+
+function updateFoundationGate(){
+  const gate=document.getElementById('foundationGate');
+  if(!gate)return;
+  gate.hidden=Boolean(state.city.founded);
+}
+
+function foundCity(){
+  if(state.city.founded)return;
+
+  const input=document.getElementById('foundationCityName');
+  const feedback=document.getElementById('foundationFeedback');
+  const name=sanitizeCityName(input?.value)||'Villa del Roble';
+
+  const city={
+    id:createActionId(),
+    name,
+    tier:DATA.founding.startingTier,
+    prestige:DATA.founding.startingPrestige,
+    founded:true,
+    foundedAt:Date.now(),
+    foundingPackGenerated:true
+  };
+
+  state.city=city;
+  state.resources={...DATA.founding.resources};
+  state.adventurers=generateFoundingAdventurers(city);
+  state.smithyTraffic={nextVisitAt:Date.now()+randomVisitDelay(),activeVisitor:null};
+  state.smithyBook={entries:[],unread:0,archive:{visits:0,purchases:0,noPurchase:0,revenue:0}};
+  saveState();
+  updateFoundationGate();
+
+  if(feedback)feedback.textContent=`${name} fue fundada con ${state.adventurers.length} aventureros de origen.`;
+  showScreen('city');
+}
+
+function resetTestWorld(){
+  const ok=globalThis.confirm('¿Reiniciar el Reino de prueba? Se borrará el progreso local de v0.8.0 y volverás a fundar la ciudad.');
+  if(!ok)return;
+  localStorage.removeItem(SAVE_KEY);
+  state=defaultState();
+  updateFoundationGate();
+  const input=document.getElementById('foundationCityName');
+  if(input)input.value='Villa del Roble';
+  render();
+}
+
 function currentScreen(){
   return document.querySelector('.screen.is-active')?.dataset.screen||'city';
 }
@@ -229,7 +374,9 @@ function showScreen(name){
   screens.forEach(s=>s.classList.toggle('is-active',s.dataset.screen===name));
   const navTarget=['smithy','carpenter','inn'].includes(name)?'city':name;
   nav.forEach(b=>b.classList.toggle('is-active',b.dataset.target===navTarget));
-  title.textContent=titles[name]||'Pueblos de Gremios';
+  title.textContent=name==='city'&&state.city.founded
+    ?state.city.name
+    :(titles[name]||'Pueblos de Gremios');
   if(name==='smithy')markSmithyBookRead();
   window.scrollTo({top:0,behavior:'smooth'});
   render();
@@ -315,6 +462,11 @@ const els={
 
   cityPrestige:document.getElementById('cityPrestige'),
   cityPrestigeProgress:document.getElementById('cityPrestigeProgress'),
+  cityTierBadge:document.getElementById('cityTierBadge'),
+  kingdomCityName:document.getElementById('kingdomCityName'),
+  kingdomFoundingMeta:document.getElementById('kingdomFoundingMeta'),
+  kingdomAdventurerCount:document.getElementById('kingdomAdventurerCount'),
+  kingdomAdventurerList:document.getElementById('kingdomAdventurerList'),
   smithyLevelCity:document.getElementById('smithyLevelCity'),
   smithyVisitBadge:document.getElementById('smithyVisitBadge'),
 
@@ -505,7 +657,7 @@ function createIronSword(){
   return {
     id:createActionId(),
     type:'ironSword',
-    name:'Espada de hierro',
+    name:DATA.items.ironSword.name,
     qualityTier:tier,
     qualityLabel:specs.label,
     qualityScore,
@@ -537,23 +689,24 @@ function visitorContext(need){
 }
 
 function createSmithyVisitor(startedAt=Date.now()){
-  const ids=Object.keys(ADVENTURER_BLUEPRINTS);
-  const npcId=ids[randomInt(0,ids.length-1)];
-  const bp=ADVENTURER_BLUEPRINTS[npcId];
-  const npc=state.adventurers[npcId];
-  const needMin=bp.needRange[0];
-  const needMax=bp.needRange[1];
+  const candidates=state.adventurers.filter(npc=>npc.active);
+  if(!candidates.length)return null;
+
+  const npc=randomChoice(candidates);
+  const profile=npc.purchaseProfile;
+  const needMin=profile.needRange[0];
+  const needMax=profile.needRange[1];
   const need=needMin+(Math.random()*(needMax-needMin));
 
-  npc.coins=Math.min(800,npc.coins+randomInt(15,55));
+  npc.coins=Math.min(1200,npc.coins+randomInt(10,35));
   npc.visits+=1;
 
   return {
     id:createActionId(),
-    npcId,
-    name:bp.name,
-    role:bp.role,
-    personality:bp.personality,
+    npcId:npc.id,
+    name:npc.fullName,
+    role:npc.role,
+    personality:npc.personality,
     need:Number(need.toFixed(2)),
     context:visitorContext(need),
     coinsAtVisit:npc.coins,
@@ -567,8 +720,10 @@ function createSmithyVisitor(startedAt=Date.now()){
 }
 
 function evaluateSwordForVisitor(visitor,sword,price){
-  const bp=ADVENTURER_BLUEPRINTS[visitor.npcId];
-  const npc=state.adventurers[visitor.npcId];
+  const npc=getAdventurer(visitor.npcId);
+  if(!npc)return {score:0,affordable:false,upgradeDelta:0,parts:{}};
+
+  const profile=npc.purchaseProfile;
   const upgradeDelta=sword.damage-npc.weaponDamage;
   const upgrade=clamp(35+(upgradeDelta*22)+((sword.qualityScore-50)*.35),0,100);
   const value=clamp((sword.estimatedValue/Math.max(1,price))*72,0,100);
@@ -578,13 +733,13 @@ function evaluateSwordForVisitor(visitor,sword,price){
 
   const parts={
     need:visitor.need*100,
-    affinity:bp.affinity*100,
+    affinity:profile.affinity*100,
     upgrade,
     value,
     affordability
   };
 
-  const score=Object.entries(bp.weights)
+  const score=Object.entries(profile.weights)
     .reduce((total,[key,weight])=>total+(parts[key]*weight),0)
     +randomInt(-5,5);
 
@@ -627,7 +782,13 @@ function addSmithyBookEntry(entry){
 }
 
 function resolveSmithyVisitor(visitor,nextBase=Date.now()){
-  const npc=state.adventurers[visitor.npcId];
+  const npc=getAdventurer(visitor?.npcId);
+  if(!visitor||!npc){
+    state.smithyTraffic.activeVisitor=null;
+    state.smithyTraffic.nextVisitAt=nextBase+randomVisitDelay();
+    saveState();
+    return;
+  }
   const offers=visitor.offers
     .map(offer=>{
       const sword=state.inventory.ironSwords.find(item=>item.id===offer.id);
@@ -695,8 +856,9 @@ function resolveSmithyVisitor(visitor,nextBase=Date.now()){
 }
 
 function startLiveSmithyVisit(){
-  if(state.smithyTraffic.activeVisitor)return false;
+  if(!state.city.founded||state.smithyTraffic.activeVisitor||!state.adventurers.length)return false;
   const visitor=createSmithyVisitor(Date.now());
+  if(!visitor)return false;
   state.smithyTraffic.activeVisitor=visitor;
   saveState();
   return true;
@@ -704,11 +866,13 @@ function startLiveSmithyVisit(){
 
 function simulateOfflineSmithyVisit(at){
   const visitor=createSmithyVisitor(at);
+  if(!visitor)return;
   visitor.endsAt=at;
   resolveSmithyVisitor(visitor,at);
 }
 
 function catchUpSmithyTraffic(){
+  if(!state.city.founded||!state.adventurers.length)return;
   const now=Date.now();
 
   if(state.smithyTraffic.activeVisitor&&now>=state.smithyTraffic.activeVisitor.endsAt){
@@ -734,6 +898,7 @@ function catchUpSmithyTraffic(){
 }
 
 function tickSmithyTraffic(){
+  if(!state.city.founded||!state.adventurers.length)return;
   const now=Date.now();
   const active=state.smithyTraffic.activeVisitor;
 
@@ -1454,7 +1619,53 @@ function renderSmithyBook(force=false){
   });
 }
 
+function renderFoundingAdventurers(){
+  if(!els.kingdomAdventurerList)return;
+
+  els.kingdomCityName.textContent=state.city.founded
+    ?`${state.city.name} · ${state.city.tier}`
+    :'Sin fundar';
+  els.kingdomFoundingMeta.textContent=state.city.founded
+    ?`Fundada en ${state.world.kingdom.name}. Pack inicial generado: ${state.adventurers.length} aventureros.`
+    :'El Pack inicial se genera al fundar la ciudad.';
+  els.kingdomAdventurerCount.textContent=`${state.adventurers.filter(n=>n.active).length} activos`;
+
+  els.kingdomAdventurerList.replaceChildren();
+
+  if(!state.adventurers.length){
+    const empty=document.createElement('p');
+    empty.className='muted';
+    empty.textContent='Todavía no hay aventureros porque la ciudad no fue fundada.';
+    els.kingdomAdventurerList.append(empty);
+    return;
+  }
+
+  state.adventurers.forEach(npc=>{
+    const card=document.createElement('article');
+    card.className='founding-adventurer';
+    card.innerHTML=`
+      <div class="founding-adventurer-head">
+        <div class="avatar">${npc.firstName.slice(0,1)}${npc.lastName.slice(0,1)}</div>
+        <div>
+          <strong>${npc.fullName}</strong>
+          <span>${npc.role} · Nv. ${npc.level} · ${npc.personality}</span>
+        </div>
+      </div>
+      <div class="founding-adventurer-stats">
+        <span>❤️ ${npc.hpCurrent}/${npc.hpMax}</span>
+        <span>⚔️ ${npc.stats.attack}</span>
+        <span>🛡️ ${npc.stats.defense}</span>
+        <span>💨 ${npc.stats.speed}</span>
+        <span>✨ ${npc.stats.support}</span>
+      </div>
+      <small>Originario de ${npc.originTier} ${npc.originCityName} · 🪙 ${formatNumber(npc.coins)}</small>
+    `;
+    els.kingdomAdventurerList.append(card);
+  });
+}
+
 function render(){
+  updateFoundationGate();
   resolveExpiredExpedition();
   resolveExpiredCraft();
   resolveExpiredCarpentry();
@@ -1465,7 +1676,10 @@ function render(){
 
   els.cityPrestige.textContent=formatNumber(state.city.prestige);
   els.cityPrestigeProgress.value=state.city.prestige;
+  if(els.cityTierBadge)els.cityTierBadge.textContent=state.city.tier;
   els.smithyLevelCity.textContent=state.buildings.smithy.level;
+  if(currentScreen()==='city')title.textContent=state.city.founded?state.city.name:'Nueva ciudad';
+  renderFoundingAdventurers();
 
   els.inventoryCoins.textContent=formatNumber(state.resources.coins);
   els.inventoryWood.textContent=formatNumber(state.resources.wood);
@@ -1816,6 +2030,12 @@ els.swordInventoryList.addEventListener('click',event=>{
 els.clearSmithyBook.addEventListener('click',clearReadSmithyBook);
 
 catchUpSmithyTraffic();
+document.getElementById('foundCityBtn')?.addEventListener('click',foundCity);
+document.getElementById('foundationCityName')?.addEventListener('keydown',event=>{
+  if(event.key==='Enter')foundCity();
+});
+document.getElementById('resetWorldBtn')?.addEventListener('click',resetTestWorld);
+
 setInterval(render,500);
 document.addEventListener('visibilitychange',()=>{
   if(!document.hidden){
@@ -1865,7 +2085,7 @@ if('serviceWorker' in navigator){
 
   window.addEventListener('load',async()=>{
     try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=0.7.0',{updateViaCache:'none'});
+      const reg=await navigator.serviceWorker.register('./sw.js?v=0.8.0',{updateViaCache:'none'});
       await reg.update();
     }catch{}
   });

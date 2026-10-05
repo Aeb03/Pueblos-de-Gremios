@@ -10,11 +10,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check JavaScript syntax
-        run: node --check app.js
+        run: |
+          node --check game-data.js
+          node --check app.js
       - name: Check required PWA files
         run: |
           test -f index.html
           test -f styles.css
+          test -f game-data.js
           test -f manifest.webmanifest
           test -f sw.js
           test -f icons/icon.svg
@@ -22,21 +25,30 @@ jobs:
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest OK')"
       - name: Check version wiring
         run: |
-          grep -q "v0.7.0" index.html
-          grep -q "pueblos-gremios-v0.7.0" sw.js
-          grep -q "app.js?v=0.7.0" index.html
-          grep -q "styles.css?v=0.7.0" index.html
-      - name: Check NPC exhibition and book
+          grep -q "v0.8.0" index.html
+          grep -q "pueblos-gremios-v0.8.0" sw.js
+          grep -q "game-data.js?v=0.8.0" index.html
+          grep -q "app.js?v=0.8.0" index.html
+          grep -q "styles.css?v=0.8.0" index.html
+          grep -q "SAVE_KEY='pueblos-gremios-save-v0.8.0'" app.js
+      - name: Check foundation cycle
         run: |
-          grep -q "ADVENTURER_BLUEPRINTS" app.js
-          grep -q "SMITHY_VISIT_MIN_MS=45_000" app.js
-          grep -q "evaluateSwordForVisitor" app.js
-          grep -q "smithyTraffic" app.js
-          grep -q "SMITHY_BOOK_DETAIL_LIMIT=20" app.js
-          grep -q "archiveSmithyEntry" app.js
-          grep -q "data-sword-list" app.js
-          grep -q 'id="smithyVisitorCard"' index.html
-          grep -q 'id="smithyExhibitionList"' index.html
-          grep -q 'id="smithyBookList"' index.html
-          grep -q 'id="smithyVisitBadge"' index.html
-          grep -q "SAVE_KEY='pueblos-gremios-save-v0.2.0'" app.js
+          grep -q "function foundCity" app.js
+          grep -q "generateFoundingAdventurers" app.js
+          grep -q "uniqueAdventurerName" app.js
+          grep -q "originCityName" app.js
+          grep -q "purchaseProfile" app.js
+          grep -q "adventurerCount:3" game-data.js
+          grep -q "adventurerRoles" game-data.js
+          grep -q "personalities" game-data.js
+          grep -q "guildHall" game-data.js
+          grep -q 'id="foundationGate"' index.html
+          grep -q 'id="kingdomAdventurerList"' index.html
+          grep -q 'id="resetWorldBtn"' index.html
+      - name: Check recipe catalog
+        run: |
+          grep -q "pickaxeHead" game-data.js
+          grep -q "woodenHandle" game-data.js
+          grep -q "ironPickaxe" game-data.js
+          grep -q "ironSword" game-data.js
+          grep -q "simpleWorkbench" game-data.js

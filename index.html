@@ -5,15 +5,36 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17130f">
 <meta name="description" content="Pueblos de Gremios - gestión de un pueblo fantástico y su reino.">
-<link rel="manifest" href="./manifest.webmanifest?v=0.7.0">
-<link rel="icon" href="./icons/icon.svg?v=0.7.0" type="image/svg+xml">
-<link rel="stylesheet" href="./styles.css?v=0.7.0">
+<link rel="manifest" href="./manifest.webmanifest?v=0.8.0">
+<link rel="icon" href="./icons/icon.svg?v=0.8.0" type="image/svg+xml">
+<link rel="stylesheet" href="./styles.css?v=0.8.0">
 <title>Pueblos de Gremios</title>
 </head>
 <body>
+<section class="foundation-gate" id="foundationGate">
+  <div class="foundation-card">
+    <p class="eyebrow">Nuevo ciclo de prueba · v0.8.0</p>
+    <h1>Fundar una ciudad</h1>
+    <p>Reiniciamos el Reino de prueba para validar desde cero el nacimiento de una ciudad, sus trabajadores y su primer grupo de aventureros persistentes.</p>
+    <label class="foundation-field">
+      <span>Nombre de la ciudad</span>
+      <input id="foundationCityName" maxlength="28" value="Villa del Roble" autocomplete="off">
+    </label>
+    <div class="foundation-pack">
+      <strong>Pack de Fundación</strong>
+      <span>👥 Borin, Mara, Eldon y Nara</span>
+      <span>🧭 3 aventureros Nv. 1 generados</span>
+      <span>🏘️ 5 edificios base + Sede del Gremio preparada</span>
+      <span>🪙 Recursos iniciales controlados</span>
+    </div>
+    <button class="primary" id="foundCityBtn">Fundar ciudad</button>
+    <p class="muted" id="foundationFeedback">Los nombres, clases, estadísticas y personalidades de los aventureros se generan una sola vez y quedan guardados.</p>
+  </div>
+</section>
+
 <main class="app-shell" id="app">
 <header class="topbar">
-  <div><p class="eyebrow">Pueblos de Gremios</p><h1 id="screenTitle">Villa del Roble</h1></div>
+  <div><p class="eyebrow">Pueblos de Gremios</p><h1 id="screenTitle">Nueva ciudad</h1></div>
   <div class="resource-strip city-resource-strip" aria-label="Recursos generales de la ciudad">
     <span title="Monedas">🪙 <b id="coinsValue">1.240</b></span>
   </div>
@@ -30,8 +51,8 @@
     <div class="road"></div>
   </div>
   <article class="status-card">
-    <div><span class="badge">Pueblo</span><strong>Prestigio <span id="cityPrestige">120</span> / 500</strong></div>
-    <progress id="cityPrestigeProgress" value="120" max="500">120/500</progress>
+    <div><span class="badge" id="cityTierBadge">Pueblo</span><strong>Prestigio <span id="cityPrestige">0</span> / 500</strong></div>
+    <progress id="cityPrestigeProgress" value="0" max="500">0/500</progress>
     <p>Mejorar negocios y servicios aumenta el prestigio del asentamiento.</p>
   </article>
 </section>
@@ -93,31 +114,6 @@
     <div><span>🪚 Mangos</span><strong id="carpenterHandles">0</strong></div>
   </div>
 
-  <article class="panel visitor-panel">
-    <div class="section-head compact">
-      <div>
-        <p class="eyebrow">Actividad de clientes</p>
-        <h3>Visitante actual</h3>
-      </div>
-      <span class="state" id="smithyVisitorState">Sin visitantes</span>
-    </div>
-    <div id="smithyVisitorCard" class="visitor-card">
-      <p class="muted">Los aventureros visitarán la Herrería de forma automática. Si estás en otra parte de la ciudad, la visita quedará registrada en el Libro de la Herrería.</p>
-    </div>
-  </article>
-
-  <article class="panel exhibition-panel">
-    <div class="section-head compact">
-      <div>
-        <p class="eyebrow">Venta frecuente</p>
-        <h3>Exhibición</h3>
-      </div>
-      <span id="smithyExhibitionCount">0 piezas</span>
-    </div>
-    <p class="muted">Sólo los objetos puestos en exhibición pueden ser evaluados por los aventureros.</p>
-    <div id="smithyExhibitionList" class="exhibition-list"></div>
-  </article>
-
   <article class="panel smithy-worker">
     <div class="smithy-worker-head">
       <div class="avatar">E</div>
@@ -169,6 +165,31 @@
     <div><span>⛏️ Hierro</span><strong id="smithyIron">42</strong></div>
     <div><span>🪨 Piedra</span><strong id="smithyStone">0</strong></div>
   </div>
+
+  <article class="panel visitor-panel">
+    <div class="section-head compact">
+      <div>
+        <p class="eyebrow">Actividad de clientes</p>
+        <h3>Visitante actual</h3>
+      </div>
+      <span class="state" id="smithyVisitorState">Sin visitantes</span>
+    </div>
+    <div id="smithyVisitorCard" class="visitor-card">
+      <p class="muted">Los aventureros de la ciudad visitarán la Herrería de forma automática. Si estás en otra pantalla, la visita quedará registrada en el Libro.</p>
+    </div>
+  </article>
+
+  <article class="panel exhibition-panel">
+    <div class="section-head compact">
+      <div>
+        <p class="eyebrow">Venta frecuente</p>
+        <h3>Exhibición</h3>
+      </div>
+      <span id="smithyExhibitionCount">0 piezas</span>
+    </div>
+    <p class="muted">Sólo los objetos puestos en exhibición pueden ser evaluados por los aventureros.</p>
+    <div id="smithyExhibitionList" class="exhibition-list"></div>
+  </article>
 
   <article class="panel smithy-worker">
     <div class="smithy-worker-head">
@@ -395,13 +416,20 @@
 </section>
 
 <section class="screen" data-screen="kingdom">
-  <div class="hero-card kingdom-art"><span class="badge">ONLINE · futuro</span><h2>Reino de Ardel</h2><p>Tu ciudad pertenecerá a un reino persistente junto a las ciudades de otros jugadores.</p></div>
-  <div class="panel kingdom-list">
-    <div><strong>👑 Capital</strong><span>Ciudad Real · Nv. 50</span></div>
-    <div><strong>🏙️ Ciudad Mayor</strong><span>Kharum · Nv. 22</span></div>
-    <div><strong>🏡 Tu ciudad</strong><span>Villa del Roble · Nv. 1</span></div>
-    <p class="muted">Esta pantalla es una maqueta funcional. El modo online se conectará más adelante al backend.</p>
-  </div>
+  <div class="hero-card kingdom-art"><span class="badge">SIMULACIÓN LOCAL</span><h2>Reino de Ardel</h2><p>Primer paso del futuro mundo persistente: una ciudad recién fundada y sus aventureros de origen.</p></div>
+  <article class="panel">
+    <p class="eyebrow">Ciudad fundada</p>
+    <h3 id="kingdomCityName">Sin fundar</h3>
+    <p class="muted" id="kingdomFoundingMeta">El Pack inicial se genera al fundar la ciudad.</p>
+  </article>
+  <article class="panel">
+    <div class="section-head compact"><div><p class="eyebrow">Población inicial</p><h3>Aventureros</h3></div><span id="kingdomAdventurerCount">0 activos</span></div>
+    <div class="founding-adventurer-list" id="kingdomAdventurerList"></div>
+  </article>
+  <article class="panel">
+    <p class="eyebrow">Motor en construcción</p>
+    <p class="muted">Estos NPC conservan identidad, ciudad de origen, clase, estadísticas, personalidad, dinero y equipo. En los siguientes pasos conectaremos salud, misiones, drops, recuperación y migración.</p>
+  </article>
 </section>
 
 <section class="screen" data-screen="inventory">
@@ -445,10 +473,11 @@
     <button data-go="inventory">🎒<span>Inventario</span></button>
     <button data-go="kingdom">👑<span>Reino</span></button>
     <button id="installBtn">📲<span id="installLabel">Instalar PWA</span></button>
+    <button id="resetWorldBtn">♻️<span>Reiniciar Reino de prueba</span></button>
   </div>
   <div class="panel">
-    <p><strong>Versión:</strong> v0.7.0 — Aventureros y Libro</p>
-    <p class="muted">Los aventureros visitan la Herrería, evalúan la Exhibición según su perfil y necesidad, compran o se retiran, y cada resultado queda registrado.</p>
+    <p><strong>Versión:</strong> v0.8.0 — Fundación</p>
+    <p class="muted">Nueva base de prueba: fundación de ciudad, Pack inicial y primer generador reutilizable de aventureros.</p>
   </div>
 </section>
 
@@ -474,6 +503,7 @@
   </form>
 </dialog>
 </main>
-<script src="./app.js?v=0.7.0" defer></script>
+<script src="./game-data.js?v=0.8.0" defer></script>
+<script src="./app.js?v=0.8.0" defer></script>
 </body>
 </html>
