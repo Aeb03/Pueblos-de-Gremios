@@ -1,11 +1,13 @@
-const APP_VERSION='0.9.0b';
+const APP_VERSION='0.9.0c1';
 const SAVE_KEY='pueblos-gremios-save-v0.8.0';
 const DATA=globalThis.PG_DATA;
 const ADV=globalThis.PG_ADVENTURER_CORE;
 const CITY=globalThis.PG_CITY_PROGRESSION;
+const COMBAT=globalThis.PG_ACTIVITY_COMBAT;
 
 if(!ADV)throw new Error('PG_ADVENTURER_CORE no está disponible.');
 if(!CITY)throw new Error('PG_CITY_PROGRESSION no está disponible.');
+if(!COMBAT)throw new Error('PG_ACTIVITY_COMBAT no está disponible.');
 
 const EXPEDITION_DURATION_MS=30_000;
 const CRAFT_DURATION_MS=DATA.recipes.pickaxeHead.durationMs;
@@ -149,11 +151,13 @@ const defaultState=()=>({
   activeExpedition:null,
   activeCraft:null,
   activeCarpentry:null,
+  activityLog:[],
   lastMessage:'',
   lastSmithyMessage:'',
   lastCarpentryMessage:'',
   lastInnMessage:'',
-  lastCityMessage:''
+  lastCityMessage:'',
+  lastActivityMessage:''
 });
 
 function loadState(){
@@ -246,6 +250,7 @@ function loadState(){
 
     merged.smithyBook.entries=Array.isArray(merged.smithyBook.entries)?merged.smithyBook.entries:[];
     merged.smithyBook.unread=merged.smithyBook.entries.filter(entry=>entry.unread).length;
+    merged.activityLog=Array.isArray(merged.activityLog)?merged.activityLog.slice(0,12):[];
     merged.adventurerSchemaVersion=ADV.ADVENTURER_SCHEMA_VERSION;
     merged.city=CITY.normalizeCityProgress(merged.city);
     merged.buildings.meson.level=Math.max(1,Number(merged.buildings.meson.level)||1);
@@ -523,6 +528,15 @@ function reachNextCityLevelForLocalTest(){
   render();
 }
 
+function recoverAdventurersForLocalTest(){
+  if(!isLocalTestHost())return;
+  state.adventurers=state.adventurers.map(npc=>COMBAT.recoverForTest(npc));
+  state.lastActivityMessage='Recuperación local aplicada: Vida y Maná completos para continuar la prueba.';
+  if(els.testProgressFeedback)els.testProgressFeedback.textContent=state.lastActivityMessage;
+  saveState();
+  render();
+}
+
 function currentScreen(){
   return document.querySelector('.screen.is-active')?.dataset.screen||'city';
 }
@@ -641,8 +655,17 @@ const els={
   kingdomFoundingMeta:document.getElementById('kingdomFoundingMeta'),
   kingdomAdventurerCount:document.getElementById('kingdomAdventurerCount'),
   kingdomAdventurerList:document.getElementById('kingdomAdventurerList'),
+  activityState:document.getElementById('activityState'),
+  activityAdventurerSelect:document.getElementById('activityAdventurerSelect'),
+  activityEnemySelect:document.getElementById('activityEnemySelect'),
+  activityEnemyCount:document.getElementById('activityEnemyCount'),
+  activityPreview:document.getElementById('activityPreview'),
+  resolveAdventurerActivity:document.getElementById('resolveAdventurerActivity'),
+  activityResult:document.getElementById('activityResult'),
+  activityLogList:document.getElementById('activityLogList'),
   localTestTools:document.getElementById('localTestTools'),
   testReachNextCityLevel:document.getElementById('testReachNextCityLevel'),
+  testRecoverAdventurers:document.getElementById('testRecoverAdventurers'),
   testProgressFeedback:document.getElementById('testProgressFeedback'),
   smithyLevelCity:document.getElementById('smithyLevelCity'),
   smithyVisitBadge:document.getElementById('smithyVisitBadge'),
@@ -1172,7 +1195,7 @@ function syncWorkerStamina(workerKey){
 
     if(leftInn){
       worker.restingAtInn=false;
-      state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de la Mesón.`;
+      state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de el Mesón.`;
       saveState();
       return true;
     }
@@ -1194,7 +1217,7 @@ function syncWorkerStamina(workerKey){
 
   if(worker.stamina>=STAMINA_MAX&&wasResting){
     worker.restingAtInn=false;
-    state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de la Mesón.`;
+    state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de el Mesón.`;
   }
 
   if(worker.stamina!==previous||worker.restingAtInn!==wasResting){
@@ -1229,7 +1252,7 @@ function toggleInnRest(workerKey){
   if(worker.restingAtInn){
     worker.restingAtInn=false;
     worker.staminaUpdatedAt=Date.now();
-    state.lastInnMessage=`${name} dejó la Mesón. Seguirá recuperando Resistencia lentamente mientras esté libre.`;
+    state.lastInnMessage=`${name} dejó el Mesón. Seguirá recuperando Resistencia lentamente mientras esté libre.`;
   }else{
     if(worker.stamina>=STAMINA_MAX){
       state.lastInnMessage=`${name} ya tiene la Resistencia completa.`;
@@ -1239,7 +1262,7 @@ function toggleInnRest(workerKey){
 
     worker.restingAtInn=true;
     worker.staminaUpdatedAt=Date.now();
-    state.lastInnMessage=`${name} está descansando en la Mesón. Su recuperación está acelerada.`;
+    state.lastInnMessage=`${name} está descansando en el Mesón. Su recuperación está acelerada.`;
   }
 
   saveState();
@@ -1254,7 +1277,7 @@ function startExpedition(){
   const mara=state.workers.mara;
 
   if(mara.restingAtInn){
-    state.lastMessage='Mara está descansando en la Mesón. Terminá su descanso antes de enviarla.';
+    state.lastMessage='Mara está descansando en el Mesón. Terminá su descanso antes de enviarla.';
     render();
     return;
   }
@@ -1353,7 +1376,7 @@ function startHandleCraft(){
   const eldon=state.workers.eldon;
 
   if(eldon.restingAtInn){
-    state.lastCarpentryMessage='Eldon está descansando en la Mesón.';
+    state.lastCarpentryMessage='Eldon está descansando en el Mesón.';
     render();
     return;
   }
@@ -1425,7 +1448,7 @@ function startSmithyCraft(recipe){
   const borin=state.workers.borin;
 
   if(borin.restingAtInn){
-    state.lastSmithyMessage='Borin está descansando en la Mesón. Terminá su descanso antes de ponerlo a trabajar.';
+    state.lastSmithyMessage='Borin está descansando en el Mesón. Terminá su descanso antes de ponerlo a trabajar.';
     render();
     return;
   }
@@ -1868,7 +1891,7 @@ function renderFoundingAdventurers(){
         <div class="avatar">${npc.firstName.slice(0,1)}${npc.lastName.slice(0,1)}</div>
         <div>
           <strong>${npc.fullName}</strong>
-          <span>${npc.role} · Nv. ${npc.level} · ${npc.personality}</span>
+          <span>${npc.role} · Nv. ${npc.level} · ${npc.personality} · ${npc.status}</span>
         </div>
       </div>
       <div class="founding-adventurer-stats">
@@ -1884,6 +1907,180 @@ function renderFoundingAdventurers(){
     `;
     els.kingdomAdventurerList.append(card);
   });
+}
+
+let activityAdventurerSignature='';
+
+function selectedActivityAdventurer(){
+  const selectedId=els.activityAdventurerSelect?.value;
+  return getAdventurer(selectedId)||state.adventurers.find(npc=>npc.active!==false)||null;
+}
+
+function appendActivityPreviewRow(labelText,valueText){
+  const row=document.createElement('div');
+  const label=document.createElement('span');
+  const value=document.createElement('strong');
+  label.textContent=labelText;
+  value.textContent=valueText;
+  row.append(label,value);
+  els.activityPreview.append(row);
+}
+
+function renderActivityLog(){
+  if(!els.activityLogList)return;
+  els.activityLogList.replaceChildren();
+
+  if(!state.activityLog.length){
+    const empty=document.createElement('p');
+    empty.className='muted';
+    empty.textContent='Todavía no hay salidas resueltas.';
+    els.activityLogList.append(empty);
+    return;
+  }
+
+  state.activityLog.forEach(entry=>{
+    const row=document.createElement('div');
+    row.className='activity-log-row '+(entry.won?'is-win':'is-loss');
+
+    const left=document.createElement('span');
+    const leftStrong=document.createElement('strong');
+    const leftSmall=document.createElement('small');
+    leftStrong.textContent=(entry.won?'✅ ':'⚠️ ')+entry.adventurerName;
+    leftSmall.textContent=entry.enemyCount+'× '+entry.enemyName+' · Nv. '+entry.levelAfter;
+    left.append(leftStrong,leftSmall);
+
+    const right=document.createElement('span');
+    const rightStrong=document.createElement('b');
+    const rightSmall=document.createElement('small');
+    rightStrong.textContent=entry.won?('+'+entry.xpGained+' XP'):('-'+entry.xpLost+' XP');
+    rightSmall.textContent='-'+entry.hpLoss+' PV · -'+entry.manaLoss+' Maná';
+    right.append(rightStrong,rightSmall);
+
+    row.append(left,right);
+    els.activityLogList.append(row);
+  });
+}
+
+function renderAdventurerActivity(){
+  if(!els.activityAdventurerSelect)return;
+
+  const active=state.adventurers.filter(npc=>npc.active!==false);
+  const signature=active.map(npc=>[
+    npc.id,npc.level,npc.hpCurrent,npc.manaCurrent,npc.status
+  ].join(':')).join('|');
+  const previous=els.activityAdventurerSelect.value;
+
+  if(signature!==activityAdventurerSignature){
+    activityAdventurerSignature=signature;
+    els.activityAdventurerSelect.replaceChildren();
+
+    active.forEach(npc=>{
+      const option=document.createElement('option');
+      option.value=npc.id;
+      option.textContent=npc.fullName+' · '+npc.role+' Nv. '+npc.level+' · '+npc.hpCurrent+'/'+npc.hpMax+' PV';
+      els.activityAdventurerSelect.append(option);
+    });
+
+    if(active.some(npc=>npc.id===previous))els.activityAdventurerSelect.value=previous;
+  }
+
+  const npc=selectedActivityAdventurer();
+  els.activityPreview.replaceChildren();
+
+  if(!npc){
+    const empty=document.createElement('p');
+    empty.className='muted';
+    empty.textContent='No hay aventureros disponibles.';
+    els.activityPreview.append(empty);
+    els.resolveAdventurerActivity.disabled=true;
+    renderActivityLog();
+    return;
+  }
+
+  const enemyKey=els.activityEnemySelect.value||'wolf';
+  const enemy=DATA.activityCombat.enemies[enemyKey];
+  let count=Math.max(1,Math.floor(Number(els.activityEnemyCount.value)||1));
+  count=Math.min(count,enemy.maxCount);
+  els.activityEnemyCount.value=String(count);
+
+  Array.from(els.activityEnemyCount.options).forEach(option=>{
+    option.disabled=Number(option.value)>enemy.maxCount;
+  });
+
+  const preview=COMBAT.previewEncounter(npc,enemyKey,count,DATA);
+  const hpExpected=Math.ceil(npc.hpMax*preview.meanHpLossRate);
+  const manaExpected=Math.ceil(npc.manaMax*preview.meanManaUseRate);
+  const chance=Math.round(preview.winChance*1000)/10;
+
+  appendActivityPreviewRow('Victoria estimada',chance+'%');
+  appendActivityPreviewRow('Desgaste medio','~'+hpExpected+' PV · ~'+manaExpected+' Maná');
+  appendActivityPreviewRow('Recompensa','+'+preview.xpReward+' XP');
+  appendActivityPreviewRow(
+    'Enemigo',
+    'PV '+preview.enemySnapshot.hp+' · ATQ '+preview.enemySnapshot.attack+' · DEF '+preview.enemySnapshot.defense
+  );
+
+  const incapacitated=npc.hpCurrent<=0||npc.status==='Incapacitado';
+  els.resolveAdventurerActivity.disabled=incapacitated;
+  els.resolveAdventurerActivity.textContent=incapacitated?'Aventurero incapacitado':'Resolver salida';
+  els.activityState.textContent=incapacitated?'Incapacitado':'Lista';
+  els.activityState.classList.toggle('is-busy',incapacitated);
+  els.activityResult.textContent=state.lastActivityMessage||'Elegí aventurero y objetivo. La resolución es instantánea.';
+  renderActivityLog();
+}
+
+function resolveAdventurerActivity(){
+  const npc=selectedActivityAdventurer();
+  if(!npc)return;
+
+  if(npc.hpCurrent<=0||npc.status==='Incapacitado'){
+    state.lastActivityMessage=npc.fullName+' está incapacitado. La recuperación real llegará en v0.9.0d.';
+    render();
+    return;
+  }
+
+  const enemyKey=els.activityEnemySelect.value||'wolf';
+  const enemy=DATA.activityCombat.enemies[enemyKey];
+  const count=Math.min(
+    Math.max(1,Math.floor(Number(els.activityEnemyCount.value)||1)),
+    enemy.maxCount
+  );
+  const result=COMBAT.resolveEncounter(npc,enemyKey,count,DATA,Math.random);
+  const index=state.adventurers.findIndex(item=>item.id===npc.id);
+  if(index<0)return;
+
+  state.adventurers[index]=result.adventurer;
+  state.activityLog.unshift({
+    id:createActionId(),
+    at:Date.now(),
+    adventurerId:npc.id,
+    adventurerName:npc.fullName,
+    enemyKey,
+    enemyName:result.preview.enemyName,
+    enemyCount:result.preview.count,
+    won:result.won,
+    hpLoss:result.hpLoss,
+    manaLoss:result.manaLoss,
+    xpGained:result.xpGained,
+    xpLost:result.xpLost,
+    levelAfter:result.adventurer.level
+  });
+  state.activityLog=state.activityLog.slice(0,12);
+
+  if(result.won){
+    const levelText=result.levelsGained.length
+      ?' Subió a Nv. '+result.adventurer.level+'.'
+      :'';
+    state.lastActivityMessage='✅ '+npc.fullName+' venció '+result.preview.count+'× '+result.preview.enemyName+
+      ': -'+result.hpLoss+' PV, -'+result.manaLoss+' Maná, +'+result.xpGained+' XP.'+levelText;
+  }else{
+    state.lastActivityMessage='⚠️ '+npc.fullName+' fue incapacitado por '+result.preview.count+'× '+
+      result.preview.enemyName+'. Perdió '+result.xpLost+' XP del nivel actual, pero conserva su nivel.';
+  }
+
+  activityAdventurerSignature='';
+  saveState();
+  render();
 }
 
 function render(){
@@ -1912,11 +2109,12 @@ function render(){
   els.cityDevelopmentProgress.value=Math.min(state.city.development,els.cityDevelopmentProgress.max);
   els.cityPopulationSummary.textContent=`Aventureros ${activeResidents}/${residentLimit} · Mesón ${activeResidents}/${mesonCapacity}`;
   els.cityProgressHint.textContent=cityNext.maxed
-    ?'Nivel máximo disponible en v0.9.0b. La población queda limitada a 5 residentes.'
+    ?'Nivel máximo disponible en v0.9.0c. La población queda limitada a 5 residentes.'
     :`Faltan ${cityNext.remaining.toFixed(2)} de Desarrollo para Ciudad Nv. ${cityNext.level}. Expediciones, producción y mejoras hacen crecer la ciudad.`;
   els.smithyLevelCity.textContent=state.buildings.smithy.level;
   if(currentScreen()==='city')title.textContent=state.city.founded?state.city.name:'Nueva ciudad';
   renderFoundingAdventurers();
+  renderAdventurerActivity();
 
   els.inventoryCoins.textContent=formatNumber(state.resources.coins);
   els.inventoryWood.textContent=formatNumber(state.resources.wood);
@@ -2008,7 +2206,7 @@ function render(){
 
     els.maraState.textContent=resting?'Descansando':'Disponible';
     els.maraState.classList.toggle('is-busy',resting);
-    els.expeditionStatus.textContent=resting?'En la Mesón':'Lista para partir';
+    els.expeditionStatus.textContent=resting?'En el Mesón':'Lista para partir';
     els.expeditionProgress.value=0;
     els.expeditionCountdown.textContent='';
 
@@ -2072,7 +2270,7 @@ function render(){
 
     els.eldonState.textContent=resting?'Descansando':'Disponible';
     els.eldonState.classList.toggle('is-busy',resting);
-    els.carpenterEldonState.textContent=resting?'En la Mesón':'Disponible';
+    els.carpenterEldonState.textContent=resting?'En el Mesón':'Disponible';
     els.carpenterEldonState.classList.toggle('is-busy',resting);
     els.carpentryStatus.textContent=resting?'Eldon descansando':'Lista para fabricar';
     els.carpentryProgress.value=0;
@@ -2146,7 +2344,7 @@ function render(){
 
     els.borinState.textContent=resting?'Descansando':'Disponible';
     els.borinState.classList.toggle('is-busy',resting);
-    els.smithyBorinState.textContent=resting?'En la Mesón':'Disponible';
+    els.smithyBorinState.textContent=resting?'En el Mesón':'Disponible';
     els.smithyBorinState.classList.toggle('is-busy',resting);
     els.craftStatus.textContent=resting?'Borin descansando':'Lista para trabajar';
     els.craftProgress.value=0;
@@ -2263,6 +2461,11 @@ els.toggleBorinInnRest.addEventListener('click',()=>toggleInnRest('borin'));
 els.toggleEldonInnRest.addEventListener('click',()=>toggleInnRest('eldon'));
 els.upgradeSmithy.addEventListener('click',upgradeSmithy);
 if(els.testReachNextCityLevel)els.testReachNextCityLevel.addEventListener('click',reachNextCityLevelForLocalTest);
+if(els.testRecoverAdventurers)els.testRecoverAdventurers.addEventListener('click',recoverAdventurersForLocalTest);
+if(els.resolveAdventurerActivity)els.resolveAdventurerActivity.addEventListener('click',resolveAdventurerActivity);
+if(els.activityAdventurerSelect)els.activityAdventurerSelect.addEventListener('change',render);
+if(els.activityEnemySelect)els.activityEnemySelect.addEventListener('change',render);
+if(els.activityEnemyCount)els.activityEnemyCount.addEventListener('change',render);
 
 els.swordInventoryList.addEventListener('change',event=>{
   const input=event.target.closest('[data-sword-price]');
@@ -2372,7 +2575,7 @@ if('serviceWorker' in navigator){
 
     window.addEventListener('load',async()=>{
       try{
-        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0b',{updateViaCache:'none'});
+        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0c1',{updateViaCache:'none'});
         await reg.update();
       }catch{}
     });

@@ -5,15 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17130f">
 <meta name="description" content="Pueblos de Gremios - gestión de un pueblo fantástico y su reino.">
-<link rel="manifest" href="./manifest.webmanifest?v=0.9.0b">
-<link rel="icon" href="./icons/icon.svg?v=0.9.0b" type="image/svg+xml">
-<link rel="stylesheet" href="./styles.css?v=0.9.0b">
+<link rel="manifest" href="./manifest.webmanifest?v=0.9.0c1">
+<link rel="icon" href="./icons/icon.svg?v=0.9.0c1" type="image/svg+xml">
+<link rel="stylesheet" href="./styles.css?v=0.9.0c1">
+<link rel="stylesheet" href="./activity.css?v=0.9.0c1">
 <title>Pueblos de Gremios</title>
 </head>
 <body>
 <section class="foundation-gate" id="foundationGate">
   <div class="foundation-card">
-    <p class="eyebrow">Progresión de ciudad · v0.9.0b</p>
+    <p class="eyebrow">Actividades de aventureros · v0.9.0c1</p>
     <h1>Fundar una ciudad</h1>
     <p>Esta prueba agrega crecimiento de Ciudad Nv. 1→3, población persistente y llegadas controladas de nuevos aventureros.</p>
     <label class="foundation-field">
@@ -463,9 +464,49 @@
     <div class="section-head compact"><div><p class="eyebrow">Población de aventureros</p><h3>Residentes</h3></div><span id="kingdomAdventurerCount">0/3 plazas activas</span></div>
     <div class="founding-adventurer-list" id="kingdomAdventurerList"></div>
   </article>
+  <article class="panel adventure-activity-panel">
+    <div class="section-head compact">
+      <div><p class="eyebrow">Actividad de aventurero</p><h3>Salida de combate</h3></div>
+      <span class="state" id="activityState">Lista</span>
+    </div>
+    <p class="muted">El combate se resuelve como una fotografía probabilística: no hay batalla corriendo en segundo plano.</p>
+
+    <label class="activity-field">
+      <span>Aventurero</span>
+      <select id="activityAdventurerSelect"></select>
+    </label>
+
+    <div class="activity-grid">
+      <label class="activity-field">
+        <span>Objetivo</span>
+        <select id="activityEnemySelect">
+          <option value="wolf">Lobo</option>
+          <option value="boar">Jabalí</option>
+        </select>
+      </label>
+      <label class="activity-field">
+        <span>Cantidad</span>
+        <select id="activityEnemyCount">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="activity-preview" id="activityPreview"></div>
+    <button class="primary" id="resolveAdventurerActivity">Resolver salida</button>
+    <p class="feedback" id="activityResult" aria-live="polite"></p>
+  </article>
+
   <article class="panel">
-    <p class="eyebrow">Regla v0.9.0b</p>
-    <p class="muted">Nv. 2 incorpora un Mago garantizado. Nv. 3 incorpora un quinto residente con clase elegida de forma controlada. El Mesón Nv. 1 sostiene hasta 5 residentes.</p>
+    <div class="section-head compact"><div><p class="eyebrow">Historial breve</p><h3>Últimas salidas</h3></div></div>
+    <div class="activity-log" id="activityLogList"></div>
+  </article>
+
+  <article class="panel">
+    <p class="eyebrow">Regla v0.9.0c1</p>
+    <p class="muted">Lobos y Jabalíes usan resolución instantánea. La salida modifica Vida, Maná y XP persistentes. Llegar a 0 PV incapacita al aventurero y pierde 20% de la XP requerida para su nivel, sin perder el nivel ya alcanzado.</p>
   </article>
 </section>
 
@@ -500,14 +541,15 @@
     <button id="resetWorldBtn">♻️<span>Reiniciar Reino de prueba</span></button>
   </div>
   <div class="panel">
-    <p><strong>Versión:</strong> v0.9.0b — Ciudad + población</p>
-    <p class="muted">Desarrollo de Ciudad Nv. 1→3, Mesón con capacidad 5 y llegadas persistentes: Mago garantizado en Nv. 2 y quinto residente controlado en Nv. 3.</p>
+    <p><strong>Versión:</strong> v0.9.0c1 — Actividades + combate</p>
+    <p class="muted">Resolución probabilística instantánea contra Lobos/Jabalíes, con Vida, Maná, XP, nivel e incapacitación persistentes.</p>
   </div>
   <div class="panel local-test-tools" id="localTestTools" hidden>
     <p class="eyebrow">Herramienta local de prueba</p>
     <h3>Progresión rápida</h3>
     <p class="muted">Sólo aparece en localhost. Completa exactamente el Desarrollo que falta para el próximo nivel sin cambiar los valores de balance reales.</p>
     <button class="primary" id="testReachNextCityLevel">Alcanzar próximo nivel</button>
+    <button class="small-action local-recover-action" id="testRecoverAdventurers">Recuperar aventureros para seguir probando</button>
     <p class="feedback" id="testProgressFeedback"></p>
   </div>
 </section>
@@ -534,9 +576,10 @@
   </form>
 </dialog>
 </main>
-<script src="./game-data.js?v=0.9.0b" defer></script>
-<script src="./adventurer-core.js?v=0.9.0b" defer></script>
-<script src="./city-progression.js?v=0.9.0b" defer></script>
-<script src="./app.js?v=0.9.0b" defer></script>
+<script src="./game-data.js?v=0.9.0c1" defer></script>
+<script src="./adventurer-core.js?v=0.9.0c1" defer></script>
+<script src="./city-progression.js?v=0.9.0c1" defer></script>
+<script src="./activity-combat.js?v=0.9.0c1" defer></script>
+<script src="./app.js?v=0.9.0c1" defer></script>
 </body>
 </html>
