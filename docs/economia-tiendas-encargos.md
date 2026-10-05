@@ -505,3 +505,49 @@ Mientras los trabajadores no tengan patrimonio propio completo, la recompensa se
 - objetos elegidos por el jugador.
 
 Más adelante un trabajador podrá aportar bienes propios si el sistema económico lo permite.
+
+
+## Regla de propiedad de stock por negocio
+
+**Los objetos terminados pertenecen al negocio que los produce y no al inventario general de la ciudad.**
+
+Ejemplo principal:
+
+- una **Espada de hierro** terminada por Borin entra al **Almacén de la Herrería**;
+- allí queda en estado `pendiente`;
+- el jugador revisa su valor sugerido;
+- acepta o modifica el precio;
+- después decide si pasa a **Venta / Exhibición**;
+- mientras no se publique, permanece almacenada en Herrería.
+
+El inventario general de ciudad no debe actuar como depósito universal de mercancías.
+
+El inventario general queda reservado para recursos realmente compartidos o elementos de uso transversal.
+
+La misma regla se aplicará a otros negocios:
+
+- productos de Carpintería → Almacén de Carpintería;
+- productos de Taberna → stock de Taberna;
+- productos de Posada → stock propio cuando corresponda;
+- mercancías futuras de otros negocios → almacén del negocio propietario.
+
+Los componentes intermedios también deben tener una ubicación lógica. Si un componente se fabrica en un negocio pero lo consume otro, el sistema deberá decidir explícitamente si se transfiere al negocio receptor o permanece en el negocio de origen hasta que se use. No se asumirá automáticamente que todo vive en un inventario global.
+
+### Consecuencia para la implementación actual
+
+En v0.8.0 algunos productos, como `ironSwords`, todavía están guardados técnicamente en `state.inventory` por herencia de versiones anteriores.
+
+Esto es **temporal**.
+
+La reorganización de tiendas deberá migrarlos a una estructura de negocio, por ejemplo:
+
+`state.shops.smithy.storage.items`
+
+y separar dentro de Herrería:
+
+- fabricación;
+- almacén;
+- pendientes;
+- venta/exhibición;
+- libro;
+- mejoras.
