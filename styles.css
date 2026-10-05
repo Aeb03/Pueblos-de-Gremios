@@ -367,7 +367,7 @@ dialog form{padding:18px}
 @media (max-width:390px){
   .resource-strip span{padding-inline:4px}
   .resource-strip{font-size:.64rem}
-  .worker-mara small,.worker-borin small{font-size:.72rem}
+  .worker-mara small,.worker-borin small,.worker-eldon small{font-size:.72rem}
 }
 
 
@@ -632,4 +632,34 @@ dialog form{padding:18px}
   .worker-mara .stamina-label{
     font-size:.7rem;
   }
+}
+
+
+/* v0.5.0 — Cadena del Pico */
+.carpenter-art{
+  min-height:190px;
+  background:
+    radial-gradient(circle at 74% 30%,rgba(222,177,102,.22),transparent 20%),
+    linear-gradient(145deg,#4c3724,#6a4a28 48%,#21170f);
+}
+.assembly-card{
+  border-color:#6e5732;
+  background:linear-gradient(180deg,#2a2117,#18130f);
+}
+.equipment-box{
+  margin-top:12px;
+  padding:0 10px 10px;
+  border:1px solid #4c3b28;
+  border-radius:12px;
+  background:#17130f;
+}
+.equipment-box .kv{
+  padding-inline:0;
+}
+.equipment-box .primary{
+  margin-top:10px;
+}
+.equipment-box .muted{
+  margin:.7rem 0 0;
+  line-height:1.35;
 }
