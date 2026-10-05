@@ -14,9 +14,11 @@ jobs:
           node --check game-data.js
           node --check adventurer-core.js
           node --check city-progression.js
+          node --check activity-combat.js
           node --check app.js
           node --check tools/test-adventurer-core.js
           node --check tools/test-city-progression.js
+          node --check tools/test-activity-combat.js
           node --check tools/balance-sim.js
           node --check tools/world-sim.js
           node --check tools/sim/world-config.js
@@ -27,6 +29,9 @@ jobs:
 
       - name: Check city progression
         run: node tools/test-city-progression.js
+
+      - name: Check activity combat
+        run: node tools/test-activity-combat.js
 
       - name: Check balance simulators
         run: |
@@ -41,6 +46,8 @@ jobs:
           test -f game-data.js
           test -f adventurer-core.js
           test -f city-progression.js
+          test -f activity-combat.js
+          test -f activity.css
           test -f manifest.webmanifest
           test -f sw.js
           test -f icons/icon.svg
@@ -48,8 +55,8 @@ jobs:
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest OK')"
       - name: Check version wiring
         run: |
-          grep -q "v0.9.0b" index.html
-          grep -q "pueblos-gremios-v0.9.0b" sw.js
+          grep -q "v0.9.0c" index.html
+          grep -q "pueblos-gremios-v0.9.0c" sw.js
           grep -q "game-data.js?v=0.9.0b" index.html
           grep -q "adventurer-core.js?v=0.9.0b" index.html
           grep -q "city-progression.js?v=0.9.0b" index.html
@@ -114,3 +121,17 @@ jobs:
           grep -q 'id="cityDevelopmentProgress"' index.html
           grep -q 'data-building="Mesón"' index.html
           grep -q 'data-building="Sede del Gremio"' index.html
+
+      - name: Check activity combat system
+        run: |
+          grep -q "activityCombat" game-data.js
+          grep -q "wolf" game-data.js
+          grep -q "boar" game-data.js
+          grep -q "PG_ACTIVITY_COMBAT" app.js
+          grep -q "resolveAdventurerActivity" app.js
+          grep -q "recoverAdventurersForLocalTest" app.js
+          grep -q 'id="activityAdventurerSelect"' index.html
+          grep -q 'id="resolveAdventurerActivity"' index.html
+          grep -q 'id="activityLogList"' index.html
+          grep -q "loseXpOnIncapacitation" activity-combat.js
+          grep -q "statsForLevel" adventurer-core.js
