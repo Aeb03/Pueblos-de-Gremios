@@ -1,4 +1,4 @@
-const APP_VERSION='0.5.0';
+const APP_VERSION='0.6.0';
 const SAVE_KEY='pueblos-gremios-save-v0.2.0';
 
 const EXPEDITION_DURATION_MS=30_000;
@@ -16,6 +16,12 @@ const CRAFT_STAMINA_COST=15;
 
 const ASSEMBLY_SMITHING_XP=20;
 const ASSEMBLY_STAMINA_COST=10;
+
+const SWORD_IRON_COST=8;
+const SWORD_DURATION_MS=30_000;
+const SWORD_STAMINA_COST=20;
+const SWORD_SMITHING_XP=50;
+const SWORD_RECIPE_LEVEL=2;
 
 const HANDLE_WOOD_COST=3;
 const HANDLE_CARPENTRY_XP=40;
@@ -59,7 +65,8 @@ const defaultState=()=>({
   inventory:{
     pickaxeHeads:0,
     woodenHandles:0,
-    ironPickaxes:0
+    ironPickaxes:0,
+    ironSwords:[]
   },
   workers:{
     mara:{
@@ -232,7 +239,9 @@ const els={
   inventoryPickaxeHeads:document.getElementById('inventoryPickaxeHeads'),
   inventoryHandles:document.getElementById('inventoryHandles'),
   inventoryIronPickaxes:document.getElementById('inventoryIronPickaxes'),
+  inventoryIronSwords:document.getElementById('inventoryIronSwords'),
   inventoryMaraTool:document.getElementById('inventoryMaraTool'),
+  swordInventoryList:document.getElementById('swordInventoryList'),
 
   borinProfessionLevel:document.getElementById('borinProfessionLevel'),
   borinSmithingLevel:document.getElementById('borinSmithingLevel'),
@@ -295,6 +304,10 @@ const els={
   smithyPickaxeHeads:document.getElementById('smithyPickaxeHeads'),
   smithyHandles:document.getElementById('smithyHandles'),
   smithyIronPickaxes:document.getElementById('smithyIronPickaxes'),
+  smithyIronSwords:document.getElementById('smithyIronSwords'),
+  swordExcellentChance:document.getElementById('swordExcellentChance'),
+  swordQualityDistribution:document.getElementById('swordQualityDistribution'),
+  startSwordCraft:document.getElementById('startSwordCraft'),
 
   smithyUpgradeTitle:document.getElementById('smithyUpgradeTitle'),
   smithyUpgradeCopy:document.getElementById('smithyUpgradeCopy'),
@@ -349,6 +362,66 @@ function smithingLevel(){
 
 function carpentryLevel(){
   return Math.floor(state.workers.eldon.carpentryXp/CARPENTRY_XP_STEP)+1;
+}
+
+function swordQualityChances(){
+  const skillAbove=Math.max(0,smithingLevel()-SWORD_RECIPE_LEVEL);
+  const buildingAbove=Math.max(0,state.buildings.smithy.level-1);
+
+  const excellent=Math.min(20,2+(skillAbove*2)+(buildingAbove*2));
+  const good=Math.min(55,18+(skillAbove*4)+(buildingAbove*5));
+  const mediocre=Math.max(2,25-(skillAbove*5)-(buildingAbove*4));
+  const normal=Math.max(0,100-excellent-good-mediocre);
+
+  return {mediocre,normal,good,excellent};
+}
+
+function rollSwordQualityTier(){
+  const chances=swordQualityChances();
+  const roll=Math.random()*100;
+
+  if(roll<chances.mediocre)return 'mediocre';
+  if(roll<chances.mediocre+chances.normal)return 'normal';
+  if(roll<chances.mediocre+chances.normal+chances.good)return 'good';
+  return 'excellent';
+}
+
+function randomInt(min,max){
+  return min+Math.floor(Math.random()*(max-min+1));
+}
+
+function roundToFive(value){
+  return Math.max(5,Math.round(value/5)*5);
+}
+
+function createIronSword(){
+  const tier=rollSwordQualityTier();
+  const specs={
+    mediocre:{label:'Mediocre',score:[35,49],damage:7,durability:[72,88],valueMultiplier:.78},
+    normal:{label:'Normal',score:[50,64],damage:8,durability:[90,105],valueMultiplier:1},
+    good:{label:'Buena',score:[65,79],damage:9,durability:[106,122],valueMultiplier:1.25},
+    excellent:{label:'Excelente',score:[80,95],damage:10,durability:[123,142],valueMultiplier:1.65}
+  }[tier];
+
+  const qualityScore=randomInt(specs.score[0],specs.score[1]);
+  const durability=randomInt(specs.durability[0],specs.durability[1]);
+  const estimatedValue=roundToFive(
+    (110+(specs.damage*8)+(durability*.45)+(qualityScore*.9))*specs.valueMultiplier
+  );
+
+  return {
+    id:createActionId(),
+    type:'ironSword',
+    name:'Espada de hierro',
+    qualityTier:tier,
+    qualityLabel:specs.label,
+    qualityScore,
+    damage:specs.damage,
+    durability,
+    estimatedValue,
+    salePrice:estimatedValue,
+    createdAt:Date.now()
+  };
 }
 
 function formatNumber(value){
@@ -697,6 +770,43 @@ function startSmithyCraft(recipe){
     };
 
     state.lastSmithyMessage='Borin comenzó a forjar una cabeza de pico.';
+  }else if(recipe==='ironSword'){
+    if(smithingLevel()<SWORD_RECIPE_LEVEL){
+      state.lastSmithyMessage=`Borin necesita Herrería Nv. ${SWORD_RECIPE_LEVEL} para intentar esta receta.`;
+      render();
+      return;
+    }
+
+    if(borin.stamina<SWORD_STAMINA_COST){
+      state.lastSmithyMessage=`Borin necesita ${SWORD_STAMINA_COST} de Resistencia para forjar la espada.`;
+      render();
+      return;
+    }
+
+    if(state.resources.iron<SWORD_IRON_COST){
+      state.lastSmithyMessage=`Faltan ${SWORD_IRON_COST-state.resources.iron} de hierro para forjar la espada.`;
+      render();
+      return;
+    }
+
+    state.resources.iron-=SWORD_IRON_COST;
+    borin.stamina-=SWORD_STAMINA_COST;
+
+    const now=Date.now();
+    borin.staminaUpdatedAt=now;
+    const sword=createIronSword();
+
+    state.activeCraft={
+      id:createActionId(),
+      recipe:'ironSword',
+      label:'Forjando Espada de hierro',
+      worker:'borin',
+      startedAt:now,
+      endsAt:now+SWORD_DURATION_MS,
+      result:{ironSwords:[sword],smithingXp:SWORD_SMITHING_XP}
+    };
+
+    state.lastSmithyMessage='Borin comenzó a forjar una Espada de hierro. La calidad final ya quedó determinada y no puede repetirse recargando la app.';
   }else if(recipe==='ironPickaxe'){
     if(borin.stamina<ASSEMBLY_STAMINA_COST){
       state.lastSmithyMessage=`Borin necesita ${ASSEMBLY_STAMINA_COST} de Resistencia para ensamblar el pico.`;
@@ -737,10 +847,12 @@ function startSmithyCraft(recipe){
 function completeCraft(craft){
   const heads=Number(craft.result?.pickaxeHeads)||0;
   const pickaxes=Number(craft.result?.ironPickaxes)||0;
+  const swords=Array.isArray(craft.result?.ironSwords)?craft.result.ironSwords:[];
   const xp=Number(craft.result?.smithingXp)||0;
 
   state.inventory.pickaxeHeads+=heads;
   state.inventory.ironPickaxes+=pickaxes;
+  state.inventory.ironSwords.push(...swords);
   state.workers.borin.smithingXp+=xp;
 
   if(heads>0){
@@ -750,7 +862,10 @@ function completeCraft(craft){
   state.activeCraft=null;
   state.workers.borin.staminaUpdatedAt=craft.endsAt||Date.now();
 
-  if(pickaxes>0){
+  if(swords.length>0){
+    const sword=swords[0];
+    state.lastSmithyMessage=`Espada terminada: calidad ${sword.qualityLabel} (${sword.qualityScore}), daño ${sword.damage}, durabilidad ${sword.durability}. +${xp} XP de Herrería.`;
+  }else if(pickaxes>0){
     state.lastSmithyMessage=`Ensamblaje completado: +${pickaxes} Pico de hierro y +${xp} XP de Herrería.`;
   }else{
     state.lastSmithyMessage=`Fabricación completada: +${heads} cabeza de pico y +${xp} XP de Herrería.`;
@@ -859,6 +974,45 @@ function renderInnWorker(workerKey,stateEl,buttonEl,feedbackEl){
   feedbackEl.textContent=state.lastInnMessage||'Libre: +1 cada 10 s. En Posada: +5 cada 10 s.';
 }
 
+let swordInventorySignature='';
+
+function renderSwordInventory(){
+  const swords=state.inventory.ironSwords;
+  const signature=swords.map(s=>`${s.id}:${s.salePrice}`).join('|');
+
+  if(signature===swordInventorySignature)return;
+  swordInventorySignature=signature;
+  els.swordInventoryList.replaceChildren();
+
+  if(!swords.length){
+    const empty=document.createElement('p');
+    empty.className='muted';
+    empty.textContent='Todavía no fabricaste ninguna Espada de hierro.';
+    els.swordInventoryList.append(empty);
+    return;
+  }
+
+  swords.forEach((sword,index)=>{
+    const card=document.createElement('article');
+    card.className=`sword-item quality-${sword.qualityTier}`;
+
+    const head=document.createElement('div');
+    head.className='sword-item-head';
+    head.innerHTML=`<strong>⚔️ Espada #${index+1}</strong><span>${sword.qualityLabel} · ${sword.qualityScore}</span>`;
+
+    const stats=document.createElement('div');
+    stats.className='sword-stats';
+    stats.innerHTML=`<span>Daño <b>${sword.damage}</b></span><span>Durabilidad <b>${sword.durability}</b></span><span>Valor <b>${formatNumber(sword.estimatedValue)} 🪙</b></span>`;
+
+    const price=document.createElement('label');
+    price.className='sword-price';
+    price.innerHTML=`<span>Tu precio</span><input type="number" min="5" max="9999" step="5" value="${sword.salePrice}" data-sword-price="${sword.id}" aria-label="Precio de venta de Espada #${index+1}">`;
+
+    card.append(head,stats,price);
+    els.swordInventoryList.append(card);
+  });
+}
+
 function render(){
   resolveExpiredExpedition();
   resolveExpiredCraft();
@@ -878,7 +1032,9 @@ function render(){
   els.inventoryPickaxeHeads.textContent=formatNumber(state.inventory.pickaxeHeads);
   els.inventoryHandles.textContent=formatNumber(state.inventory.woodenHandles);
   els.inventoryIronPickaxes.textContent=formatNumber(state.inventory.ironPickaxes);
+  els.inventoryIronSwords.textContent=formatNumber(state.inventory.ironSwords.length);
   els.inventoryMaraTool.textContent=hasIronPickaxeEquipped()?'Pico de hierro':'Sin equipar';
+  renderSwordInventory();
 
   if(dialog.open&&currentBuilding)renderBuildingResources(currentBuilding);
 
@@ -1054,6 +1210,12 @@ function render(){
   els.smithyPickaxeHeads.textContent=formatNumber(state.inventory.pickaxeHeads);
   els.smithyHandles.textContent=formatNumber(state.inventory.woodenHandles);
   els.smithyIronPickaxes.textContent=formatNumber(state.inventory.ironPickaxes);
+  els.smithyIronSwords.textContent=formatNumber(state.inventory.ironSwords.length);
+
+  const qualityChances=swordQualityChances();
+  els.swordExcellentChance.textContent=`${qualityChances.excellent}%`;
+  els.swordQualityDistribution.textContent=
+    `Mediocre ${qualityChances.mediocre}% · Normal ${qualityChances.normal}% · Buena ${qualityChances.good}% · Excelente ${qualityChances.excellent}%`;
 
   const craft=state.activeCraft;
 
@@ -1074,12 +1236,17 @@ function render(){
     els.startHeadCraft.textContent='Borin está trabajando';
     els.startPickaxeAssembly.disabled=true;
     els.startPickaxeAssembly.textContent='Borin está trabajando';
+    els.startSwordCraft.disabled=true;
+    els.startSwordCraft.textContent='Borin está trabajando';
   }else{
     const resting=state.workers.borin.restingAtInn;
     const headStamina=state.workers.borin.stamina>=CRAFT_STAMINA_COST;
     const assemblyStamina=state.workers.borin.stamina>=ASSEMBLY_STAMINA_COST;
     const enoughIron=state.resources.iron>=CRAFT_IRON_COST;
     const hasComponents=state.inventory.pickaxeHeads>=1&&state.inventory.woodenHandles>=1;
+    const swordUnlocked=smithingLevel()>=SWORD_RECIPE_LEVEL;
+    const swordStamina=state.workers.borin.stamina>=SWORD_STAMINA_COST;
+    const swordIron=state.resources.iron>=SWORD_IRON_COST;
 
     els.borinState.textContent=resting?'Descansando':'Disponible';
     els.borinState.classList.toggle('is-busy',resting);
@@ -1094,6 +1261,8 @@ function render(){
       els.startHeadCraft.textContent='Borin está descansando';
       els.startPickaxeAssembly.disabled=true;
       els.startPickaxeAssembly.textContent='Borin está descansando';
+      els.startSwordCraft.disabled=true;
+      els.startSwordCraft.textContent='Borin está descansando';
     }else{
       els.startHeadCraft.disabled=!headStamina||!enoughIron;
       els.startHeadCraft.textContent=!headStamina
@@ -1108,6 +1277,15 @@ function render(){
         :!hasComponents
           ?'Falta cabeza o mango'
           :'Ensamblar Pico de hierro';
+
+      els.startSwordCraft.disabled=!swordUnlocked||!swordStamina||!swordIron;
+      els.startSwordCraft.textContent=!swordUnlocked
+        ?`Requiere Herrería Nv. ${SWORD_RECIPE_LEVEL}`
+        :!swordStamina
+          ?'Falta Resistencia'
+          :!swordIron
+            ?`Faltan ${SWORD_IRON_COST-state.resources.iron} hierro`
+            :'Forjar Espada de hierro';
     }
   }
 
@@ -1155,10 +1333,25 @@ els.equipIronPickaxe.addEventListener('click',equipIronPickaxe);
 els.startHandleCraft.addEventListener('click',startHandleCraft);
 els.startHeadCraft.addEventListener('click',()=>startSmithyCraft('pickaxeHead'));
 els.startPickaxeAssembly.addEventListener('click',()=>startSmithyCraft('ironPickaxe'));
+els.startSwordCraft.addEventListener('click',()=>startSmithyCraft('ironSword'));
 els.toggleMaraInnRest.addEventListener('click',()=>toggleInnRest('mara'));
 els.toggleBorinInnRest.addEventListener('click',()=>toggleInnRest('borin'));
 els.toggleEldonInnRest.addEventListener('click',()=>toggleInnRest('eldon'));
 els.upgradeSmithy.addEventListener('click',upgradeSmithy);
+
+els.swordInventoryList.addEventListener('change',event=>{
+  const input=event.target.closest('[data-sword-price]');
+  if(!input)return;
+
+  const sword=state.inventory.ironSwords.find(item=>item.id===input.dataset.swordPrice);
+  if(!sword)return;
+
+  const price=Math.max(5,Math.min(9999,Math.round(Number(input.value)||sword.estimatedValue)));
+  sword.salePrice=price;
+  input.value=price;
+  swordInventorySignature='';
+  saveState();
+});
 
 setInterval(render,500);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)render();});
@@ -1201,7 +1394,7 @@ if('serviceWorker' in navigator){
 
   window.addEventListener('load',async()=>{
     try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=0.5.0',{updateViaCache:'none'});
+      const reg=await navigator.serviceWorker.register('./sw.js?v=0.6.0',{updateViaCache:'none'});
       await reg.update();
     }catch{}
   });

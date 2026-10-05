@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17130f">
 <meta name="description" content="Pueblos de Gremios - gestión de un pueblo fantástico y su reino.">
-<link rel="manifest" href="./manifest.webmanifest?v=0.5.0">
-<link rel="icon" href="./icons/icon.svg?v=0.5.0" type="image/svg+xml">
-<link rel="stylesheet" href="./styles.css?v=0.5.0">
+<link rel="manifest" href="./manifest.webmanifest?v=0.6.0">
+<link rel="icon" href="./icons/icon.svg?v=0.6.0" type="image/svg+xml">
+<link rel="stylesheet" href="./styles.css?v=0.6.0">
 <title>Pueblos de Gremios</title>
 </head>
 <body>
@@ -192,6 +192,27 @@
     <button class="primary" id="startPickaxeAssembly">Ensamblar Pico de hierro</button>
   </article>
 
+  <article class="panel recipe-card quality-recipe-card">
+    <p class="eyebrow">Objeto para aventureros · Dificultad Nv. 2</p>
+    <div class="recipe-title">
+      <div class="recipe-icon">⚔️</div>
+      <div>
+        <h3>Espada de hierro</h3>
+        <p>Primer objeto vendible con calidad individual. Requiere Herrería Nv. 2 para intentar fabricarla.</p>
+      </div>
+    </div>
+    <div class="kv"><span>Coste</span><strong>8 hierro</strong></div>
+    <div class="kv"><span>Tiempo de prueba</span><strong>30 s</strong></div>
+    <div class="kv"><span>Coste de Resistencia</span><strong>20</strong></div>
+    <div class="kv"><span>Experiencia</span><strong>+50 XP Herrería</strong></div>
+    <div class="quality-preview">
+      <div class="kv"><span>Excelente ahora</span><strong id="swordExcellentChance">2%</strong></div>
+      <div class="quality-distribution" id="swordQualityDistribution"></div>
+      <p class="muted">La dificultad sigue siendo importante. Nivel de Borin y Herrería sólo mejoran gradualmente las posibilidades; futuras herramientas, materiales y trabajo manual podrán sumar pequeñas mejoras.</p>
+    </div>
+    <button class="primary" id="startSwordCraft">Forjar Espada de hierro</button>
+  </article>
+
   <article class="panel">
     <p class="eyebrow">Trabajo actual</p>
     <div class="craft-status">
@@ -207,6 +228,7 @@
     <div class="inventory-row"><span>⛏️ Cabezas de pico</span><strong id="smithyPickaxeHeads">0</strong></div>
     <div class="inventory-row"><span>🪵 Mangos de pico</span><strong id="smithyHandles">0</strong></div>
     <div class="inventory-row"><span>🛠️ Picos de hierro</span><strong id="smithyIronPickaxes">0</strong></div>
+    <div class="inventory-row"><span>⚔️ Espadas de hierro</span><strong id="smithyIronSwords">0</strong></div>
   </article>
 
   <article class="panel upgrade-card">
@@ -362,10 +384,17 @@
       <div class="inventory-row"><span>⛏️ Cabeza de pico de hierro</span><strong id="inventoryPickaxeHeads">0</strong></div>
       <div class="inventory-row"><span>🪵 Mango de pico</span><strong id="inventoryHandles">0</strong></div>
       <div class="inventory-row"><span>🛠️ Pico de hierro</span><strong id="inventoryIronPickaxes">0</strong></div>
+      <div class="inventory-row"><span>⚔️ Espadas de hierro</span><strong id="inventoryIronSwords">0</strong></div>
     </article>
     <article class="panel inventory-group">
       <p class="eyebrow">Equipamiento</p>
       <div class="inventory-row"><span>⛏️ Herramienta de Mara</span><strong id="inventoryMaraTool">Sin equipar</strong></div>
+    </article>
+    <article class="panel inventory-group sword-inventory-panel">
+      <p class="eyebrow">Piezas individuales · futuras ventas</p>
+      <h3>Espadas de hierro</h3>
+      <p class="muted">Cada espada conserva su calidad, características, valor estimado y tu precio de venta. Todavía no llegan compradores en esta versión.</p>
+      <div id="swordInventoryList" class="sword-inventory-list"></div>
     </article>
     <p class="muted inventory-note">El stock es único para toda la ciudad. Cada negocio muestra sólo lo que necesita.</p>
   </div>
@@ -380,8 +409,8 @@
     <button id="installBtn">📲<span id="installLabel">Instalar PWA</span></button>
   </div>
   <div class="panel">
-    <p><strong>Versión:</strong> v0.5.0 — Cadena del Pico</p>
-    <p class="muted">Mara, Eldon y Borin ya forman una cadena productiva: recursos → componentes → Pico de hierro → Veta dura.</p>
+    <p><strong>Versión:</strong> v0.6.0 — Calidad de objetos</p>
+    <p class="muted">La Espada de hierro introduce piezas individuales, calidad difícil de obtener, características propias, valor estimado y precio definido por el jugador.</p>
   </div>
 </section>
 
@@ -407,6 +436,6 @@
   </form>
 </dialog>
 </main>
-<script src="./app.js?v=0.5.0" defer></script>
+<script src="./app.js?v=0.6.0" defer></script>
 </body>
 </html>
