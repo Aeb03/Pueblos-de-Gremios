@@ -240,16 +240,18 @@ Las habilidades no se ejecutan de manera persistente. Sus datos alimentan la res
 
 Los Estados modifican el resultado esperado. No requieren almacenar rondas de combate reales.
 
-### Afinidad inicial de Estados por clase
+### Afinidad potencial de Estados por clase
 
-Los Estados **no pertenecen todos al Mago**. Cada clase tiene acceso natural a un subconjunto que refuerza su identidad.
+Los Estados **no pertenecen todos al Mago**. Cada clase tiene afinidad natural con determinados Estados, pero eso **no significa que un aventurero Nv.1 empiece con habilidades capaces de aplicarlos**.
 
-| Clase | Estados naturales iniciales |
+| Clase | Estados de su línea potencial |
 |---|---|
 | **Guerrero** | Herida, Aturdido |
 | **Explorador** | Herida, Veneno, Parálisis |
 | **Sanador** | Sin Estado ofensivo base; cura/limpia Estados |
 | **Mago** | Quemadura, Parálisis |
+
+El desbloqueo real se repartirá a lo largo de los niveles y dependerá de las habilidades aprendidas.
 
 Lectura de diseño:
 
@@ -260,7 +262,9 @@ Lectura de diseño:
 - **Quemadura** pertenece inicialmente al daño elemental de Fuego del Mago.
 - **Sanador** se especializa en remover/mitigar Estados y sostener al grupo, no en repartir Estados ofensivos.
 
-Estas afinidades son la base de clase, no una prohibición eterna. Equipamiento, materiales especiales y futuras especializaciones pueden abrir otras formas de aplicar Estados cuando exista una razón de juego.
+Estas afinidades son la base de clase, no una lista de habilidades iniciales ni una prohibición eterna. Equipamiento, materiales especiales y futuras especializaciones pueden abrir otras formas de aplicar Estados cuando exista una razón de juego.
+
+**Regla para el simulador Nv.1:** no asumir ningún Estado ofensivo de clase como desbloqueado hasta definir la progresión de habilidades por nivel.
 
 
 ### Herida
