@@ -437,3 +437,152 @@ dialog form{padding:18px}
     grid-template-columns:1fr;
   }
 }
+
+
+/* v0.3.0 — Herrería */
+.smithy-art{
+  min-height:190px;
+  background:
+    radial-gradient(circle at 78% 34%,rgba(255,154,61,.32),transparent 18%),
+    linear-gradient(145deg,#35251b,#5a3520 48%,#1d1713);
+}
+.back-link{
+  border:0;
+  background:transparent;
+  color:var(--gold2);
+  padding:4px 0 2px;
+  font-weight:700;
+}
+.trade-resource-strip{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:12px;
+}
+.trade-resource-strip>div{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:11px 12px;
+  border:1px solid #4d3c2a;
+  border-radius:12px;
+  background:#1c1712;
+}
+.trade-resource-strip span{
+  color:var(--muted);
+  font-size:.84rem;
+}
+.trade-resource-strip strong{
+  color:var(--gold2);
+  font-variant-numeric:tabular-nums;
+}
+.smithy-worker-head{
+  display:grid;
+  grid-template-columns:52px 1fr auto;
+  align-items:center;
+  gap:10px;
+}
+.smithy-worker h3{
+  margin:.15rem 0 0;
+}
+.smithy-worker>small{
+  display:block;
+  margin-top:10px;
+  color:var(--muted);
+}
+.recipe-title{
+  display:grid;
+  grid-template-columns:58px 1fr;
+  gap:12px;
+  align-items:center;
+  margin:7px 0 8px;
+}
+.recipe-title h3{
+  margin:0 0 3px;
+  font-family:Georgia,serif;
+}
+.recipe-title p{
+  margin:0;
+  color:var(--muted);
+  font-size:.84rem;
+}
+.recipe-icon{
+  width:58px;
+  height:58px;
+  border-radius:14px;
+  display:grid;
+  place-items:center;
+  font-size:1.8rem;
+  border:1px solid #765334;
+  background:linear-gradient(145deg,#443021,#1c1712);
+}
+.craft-status{
+  margin-top:10px;
+  padding:0 10px 8px;
+  border:1px solid #3f3428;
+  border-radius:12px;
+  background:#15120f;
+}
+.craft-status .kv{
+  padding-inline:0;
+}
+.craft-status progress{
+  height:10px;
+}
+.section-head.compact h3{
+  margin:.1rem 0 .35rem;
+}
+.product-stock .inventory-row{
+  padding-top:8px;
+}
+.requirement-list{
+  display:grid;
+  gap:7px;
+  margin-top:12px;
+}
+.requirement-list>div{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:9px 10px;
+  border:1px solid #493a2a;
+  border-radius:10px;
+  background:#191510;
+}
+.requirement-list>div span{
+  color:var(--muted);
+  font-size:.85rem;
+}
+.requirement-list>div strong{
+  font-variant-numeric:tabular-nums;
+}
+.requirement-list>div.is-met{
+  border-color:#4d673a;
+  background:#1d2818;
+}
+.requirement-list>div.is-met span,
+.requirement-list>div.is-met strong{
+  color:#c5e0ac;
+}
+.upgrade-reward{
+  margin-top:10px;
+  padding:10px 11px;
+  border:1px dashed #705930;
+  border-radius:10px;
+  color:var(--gold2);
+  background:#201a12;
+}
+@media (max-width:390px){
+  .smithy-worker-head{
+    grid-template-columns:48px 1fr;
+  }
+  .smithy-worker-head .state{
+    grid-column:2;
+    justify-self:start;
+    display:inline-block;
+  }
+  .trade-resource-strip{
+    grid-template-columns:1fr 1fr;
+  }
+}
