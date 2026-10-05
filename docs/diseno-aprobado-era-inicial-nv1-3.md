@@ -204,15 +204,74 @@ El Ayuntamiento lo gestiona directamente el jugador.
 
 La Sede del Gremio no necesita un trabajador adicional en Nv.1.
 
-### Aventureros iniciales
+### Aventureros iniciales y crecimiento de población
 
-Se mantienen 3 aventureros fundadores persistentes:
+La ciudad comienza con **3 aventureros fundadores persistentes**:
 
 - Guerrero
 - Explorador
 - Sanador
 
 Todos llegan con equipo básico funcional para no quedar bloqueados esperando producción de la ciudad.
+
+Estos 3 no representan la población máxima de aventureros de una ciudad. La cantidad de aventureros **crece junto con la ciudad**.
+
+#### Regla de llegada
+
+El disparador principal será el **Nivel de Ciudad**, no el nivel aislado de un único negocio.
+
+Cada nivel importante de Ciudad puede habilitar uno o más **cupos de llegada**. Al activarse un cupo aparece un nuevo aventurero persistente.
+
+Durante el comienzo de la temporada, antes de que existan viajes entre ciudades:
+
+- los nuevos aventureros se generan como **originarios de esa misma ciudad**;
+- conservan esa ciudad como lugar de origen para siempre;
+- no se presentan como inmigrantes de ciudades que todavía no participan del sistema.
+
+Cuando el mundo abra viajes y circulación entre asentamientos, una llegada podrá ser:
+
+- nuevo aventurero originario local;
+- aventurero procedente de otra ciudad;
+- aventurero que cambia temporal o permanentemente de residencia.
+
+#### Primer tramo — balance inicial
+
+Para la primera hora se usará como referencia:
+
+- **Ciudad Nv.1:** 3 aventureros fundadores.
+- **Ciudad Nv.2:** llega 1 aventurero nuevo → total objetivo **4**.
+- **Ciudad Nv.3:** llega 1 aventurero nuevo → total objetivo **5**.
+
+Como el prototipo introduce una cuarta clase, el primer cupo de Nv.2 puede garantizar inicialmente la llegada de un **Mago**, permitiendo probar las cuatro identidades básicas sin alterar el trío fundador.
+
+El quinto aventurero de Nv.3 puede elegirse entre las clases disponibles mediante generación controlada, evitando composiciones absurdamente repetidas.
+
+#### Papel del Mesón
+
+El **Nivel de Ciudad desbloquea las llegadas**.
+
+El **Mesón regula capacidad y atractivo**, no el evento de progreso en sí.
+
+El Mesón puede definir:
+
+- cuántos aventureros pueden residir cómodamente en la ciudad;
+- calidad de alojamiento;
+- velocidad/probabilidad de futuras llegadas;
+- atractivo para visitantes y migrantes.
+
+Para no crear un bloqueo temprano, **Mesón Nv.1 tendrá capacidad suficiente para alojar al menos 5 aventureros**, cubriendo todo el tramo Ciudad Nv.1–3.
+
+En niveles posteriores, mejorar el Mesón será necesario para sostener una población aventurera mayor.
+
+#### Antiabuso
+
+Los cupos de llegada por progreso son **hitos de una sola vez**.
+
+- bajar/subir nuevamente un edificio no vuelve a generar aventureros;
+- reconstruir el Mesón no repite llegadas ya consumidas;
+- refundar una ciudad dentro de la misma temporada no debe permitir crear indefinidamente nuevos aventureros persistentes mediante los mismos hitos fundacionales.
+
+El sistema debe registrar qué cupos de población de la temporada ya fueron consumidos por la cuenta/linaje de ciudad correspondiente.
 
 ---
 
