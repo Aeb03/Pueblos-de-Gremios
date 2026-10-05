@@ -212,24 +212,24 @@ Una misión debe poder modificar:
 
 Esto evita que los aventureros sean “fichas” que se resetean entre visitas.
 
-## 9. Vida en 0 — decisión todavía pendiente
+## 9. Vida en 0 — regla base aprobada
 
-Debe definirse explícitamente qué ocurre cuando un aventurero llega a **0 de vida** durante una simulación.
+**Los aventureros no mueren de forma permanente al llegar a 0 PV.**
 
-Requisito ya asentado:
+La razón de diseño es que cada NPC acumula una historia persistente: nivel, equipo, compras, misiones, relaciones, éxitos y fracasos. Perder definitivamente ese personaje por una resolución aleatoria destruiría demasiado progreso narrativo y sistémico.
 
-- 0 de vida debe tener una consecuencia persistente y coherente;
-- no puede simplemente recuperar toda la vida al terminar;
-- debe afectar su disponibilidad y/o estado posterior;
-- el sistema debe distinguir caer durante el combate de completar la misión sano.
+### 0 PV = incapacitado
 
-### Propuesta para debatir
+Cuando un aventurero llega a 0 PV durante una simulación:
 
-Opción recomendada para la base del juego:
+- queda **incapacitado** para el resto de ese combate;
+- su caída queda registrada en el informe;
+- no recupera inmediatamente toda su vida al finalizar;
+- recibe una consecuencia persistente;
+- puede quedar indisponible durante un periodo de recuperación;
+- sufre una **pérdida visible de experiencia**.
 
-**0 PV = incapacitado, no muerte automática.**
-
-Después de la misión se determina gravedad según:
+La gravedad posterior puede depender de:
 
 - dificultad del enemigo;
 - cuánto daño excedió 0;
@@ -239,16 +239,40 @@ Después de la misión se determina gravedad según:
 - región/distancia;
 - posibles rescates.
 
-Posibles consecuencias:
+### Pérdida de experiencia
+
+La derrota debe dejar una pérdida clara sin borrar la identidad construida del NPC.
+
+Regla base recomendada:
+
+- se pierde una parte del **progreso de XP dentro del nivel actual**;
+- el aventurero **no baja de nivel**;
+- la XP nunca cae por debajo del mínimo correspondiente a su nivel actual;
+- la cantidad perdida puede escalar según la gravedad de la incapacitación.
+
+Los porcentajes exactos quedan para balance de playtest.
+
+Ejemplo conceptual:
+
+> Kael · Nv. 5  
+> Progreso antes de caer: 68/100 XP hacia Nv. 6  
+> Penalización por incapacitación: -18 XP  
+> Progreso posterior: 50/100 XP
+
+Así la derrota importa y queda visible, pero no borra niveles completos ni años de historia del personaje.
+
+### Otras consecuencias posibles
+
+Además de la pérdida de XP, una incapacitación puede generar:
 
 - herida leve;
 - herida seria;
 - estado crítico;
 - recuperación en Posada/servicio médico futuro;
-- varios minutos/horas/días de indisponibilidad según balance;
+- tiempo de indisponibilidad;
 - penalizaciones temporales.
 
-La muerte permanente queda **sin aprobar**. Si algún día se incorpora debería ser una decisión de diseño explícita y no un efecto común de una tirada aleatoria.
+Estas consecuencias pueden acumularse según la severidad, pero **la muerte permanente queda descartada como regla del sistema base**.
 
 ## 10. Informes de misión
 
@@ -295,7 +319,7 @@ Antes de crear cientos de criaturas o regiones:
 5. crear 3 aventureros persistentes;
 6. crear un simulador mínimo;
 7. validar daño, experiencia y consecuencias;
-8. definir definitivamente 0 PV;
+8. balancear penalización de XP, heridas y recuperación al llegar a 0 PV;
 9. conectar drops con Sede del Gremio;
 10. conectar Encargos;
 11. recién después ampliar el catálogo.
