@@ -443,3 +443,91 @@ Sólo cuando todo está listo se confirma la fundación.
 Si cualquier parte falla, no se crea una ciudad incompleta.
 
 Esta regla es especialmente importante porque los aventureros iniciales son parte del **motor económico de arranque**, no contenido decorativo.
+
+
+## 20. Jubilación de aventureros
+
+La **jubilación** será la salida natural de un NPC del sistema de aventureros activos.
+
+Un aventurero jubilado:
+
+- no muere;
+- no se borra;
+- conserva su `adventurer_id`;
+- conserva nombre, origen, historial, nivel alcanzado, equipo histórico y relaciones;
+- deja de aceptar misiones y Encargos como aventurero activo;
+- libera un lugar dentro de la población activa de aventureros del Mundo/Reino.
+
+La jubilación permite controlar el crecimiento poblacional sin destruir personajes que ya acumularon historia.
+
+### Motivos de jubilación
+
+No debe depender únicamente de una edad cronológica.
+
+Puede surgir de una combinación de:
+
+- carrera muy prolongada;
+- nivel alto;
+- cantidad de misiones completadas;
+- riqueza acumulada;
+- lesiones graves repetidas;
+- personalidad;
+- cumplimiento de objetivos personales;
+- etapa del Mundo/Servidor.
+
+Los valores exactos quedan para balance posterior.
+
+La jubilación no debe sentirse como una tirada aleatoria repentina. Debe tener señales previas y ser coherente con la historia del NPC.
+
+### Después de jubilarse
+
+Un aventurero jubilado puede quedar registrado simplemente como personaje histórico o, en casos relevantes, adquirir una función futura.
+
+Posibles destinos:
+
+- residente de una ciudad;
+- cliente;
+- instructor/mentor;
+- miembro de la Sede del Gremio;
+- comerciante o contacto;
+- personaje de eventos;
+- figura histórica consultable.
+
+No todos los jubilados necesitan convertirse en NPC activos de ciudad; eso evitará trasladar el problema de población a otro sistema.
+
+### Historia visible
+
+La ficha histórica debe poder mostrar algo como:
+
+> Kael Doran  
+> Originario de Villa del Roble  
+> Aventurero retirado · Nv. 14  
+> 126 misiones · 9 Encargos mayores  
+> Actualmente residente en Brumaria
+
+La ciudad de origen permanece aunque esa ciudad crezca, cambie de categoría o desaparezca.
+
+### Población activa vs. población histórica
+
+El Mundo debe distinguir:
+
+- **aventureros activos**: cuentan contra la capacidad operativa y pueden viajar, comerciar y tomar misiones;
+- **aventureros jubilados/históricos**: permanecen en la base de datos pero no consumen un cupo de aventurero activo.
+
+Esto permite que un servidor acumule historia durante años sin que su ecosistema activo crezca indefinidamente.
+
+### Reposición natural futura
+
+La jubilación puede abrir espacio para que el motor poblacional genere nuevos aventureros cuando el Mundo/Reino necesite recuperar población activa.
+
+Esa reposición no debe ser inmediata ni automática en todos los casos.
+
+Debe respetar:
+
+- capacidad del Reino;
+- demanda de aventureros;
+- ciudades capaces de sostener nuevos NPC;
+- hitos poblacionales;
+- prioridad absoluta de los Packs iniciales de ciudades nuevas.
+
+Así pueden convivir generaciones de aventureros sin romper los límites del Mundo.
