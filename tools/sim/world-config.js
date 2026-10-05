@@ -19,17 +19,17 @@ const CLASS={
 };
 
 const ITEM={
-  dagger:{price:24,class:['explorer'],attack:2,defense:0,initiative:0,mana:0,durability:14,slot:'weapon'},
-  bow:{price:28,class:['explorer'],attack:3,defense:0,initiative:1,mana:0,durability:14,slot:'weapon'},
-  staff:{price:26,class:['healer','mage'],attack:1,defense:0,initiative:0,mana:12,durability:14,slot:'weapon'},
-  shield:{price:22,class:['warrior'],attack:0,defense:3,initiative:-1,mana:0,durability:14,slot:'offhand'},
-  leather:{price:24,class:['warrior','explorer','healer','mage'],attack:0,defense:3,initiative:0,mana:0,durability:16,slot:'body'},
-  gloves:{price:12,class:['warrior','explorer','healer','mage'],attack:0,defense:1,initiative:0,mana:0,durability:12,slot:'hands'},
-  boots:{price:12,class:['warrior','explorer','healer','mage'],attack:0,defense:0,initiative:1,mana:0,durability:12,slot:'feet'}
+  dagger:{price:24,class:['explorer'],attack:2,defense:0,initiative:0,mana:0,durability:9,slot:'weapon'},
+  bow:{price:28,class:['explorer'],attack:3,defense:0,initiative:1,mana:0,durability:9,slot:'weapon'},
+  staff:{price:26,class:['healer','mage'],attack:1,defense:0,initiative:0,mana:12,durability:9,slot:'weapon'},
+  shield:{price:22,class:['warrior'],attack:0,defense:3,initiative:-1,mana:0,durability:10,slot:'offhand'},
+  leather:{price:24,class:['warrior','explorer','healer','mage'],attack:0,defense:3,initiative:0,mana:0,durability:12,slot:'body'},
+  gloves:{price:12,class:['warrior','explorer','healer','mage'],attack:0,defense:1,initiative:0,mana:0,durability:8,slot:'hands'},
+  boots:{price:12,class:['warrior','explorer','healer','mage'],attack:0,defense:0,initiative:1,mana:0,durability:8,slot:'feet'}
 };
 
 const REPAIR_RATE=.22;
-const REPAIR_THRESHOLD=.35;
+const REPAIR_THRESHOLD=.40;
 
 const RECIPES={
   dagger:{iron:3,firewood:1},
