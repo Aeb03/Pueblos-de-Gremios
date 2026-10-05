@@ -252,21 +252,89 @@ function maybeBuildTextile(state,minute){
 function equipmentEntries(a){
   return Object.entries(a.equipment);
 }
-function hasSlot(a,slot){
-  return equipmentEntries(a).some(([key])=>ITEM[key].slot===slot);
+
+function slotEntry(a,slot){
+  return equipmentEntries(a).find(([key])=>ITEM[key].slot===slot)||null;
 }
+
+function hasCommercialSlot(a,slot){
+  const entry=slotEntry(a,slot);
+  return !!entry&&!ITEM[entry[0]].founder;
+}
+
+function originConfig(origin='neutral'){
+  return TEXTILE_ORIGIN[origin]||TEXTILE_ORIGIN.neutral;
+}
+
+function itemStats(key,eq={}){
+  const it=ITEM[key];
+  const origin=it.textile?originConfig(eq.origin):TEXTILE_ORIGIN.neutral;
+  return {
+    attack:it.attack||0,
+    defense:(it.defense||0)+(origin.defense||0),
+    initiative:(it.initiative||0)+(origin.initiative||0),
+    mana:it.mana||0,
+    evasion:(it.evasion||0)+(origin.evasion||0),
+    damageReduction:origin.damageReduction||0
+  };
+}
+
 function equipScore(a){
   let s=0;
   for(const [key,eq] of equipmentEntries(a)){
-    if(eq.durability<=0)continue;
     const it=ITEM[key];
-    s+=it.attack*2+it.defense*2+it.initiative+it.mana*.15;
+    if(it.founder){
+      if(eq.durability<=0)s-=it.breakPenalty||0;
+      continue;
+    }
+    if(eq.durability<=0)continue;
+    const stats=itemStats(key,eq);
+    s+=stats.attack*2+stats.defense*2+stats.initiative+stats.mana*.15+stats.evasion*20+stats.damageReduction*30;
   }
   return s;
 }
+
+function equipmentOriginEffects(a){
+  let resilience=0,tempo=0;
+  for(const [key,eq] of equipmentEntries(a)){
+    if(eq.durability<=0||!ITEM[key].textile)continue;
+    const origin=originConfig(eq.origin);
+    resilience+=(origin.defense||0)*.025+(origin.damageReduction||0);
+    tempo+=(origin.initiative||0)*.025+(origin.evasion||0)*.30;
+  }
+  return {resilience:clamp(resilience,0,.22),tempo:clamp(tempo,0,.18)};
+}
+
+function originPreference(a,origin){
+  const o=originConfig(origin);
+  const defWeight=a.cls==='warrior'?1.45:(a.cls==='explorer'?.80:1.10);
+  const iniWeight=a.cls==='explorer'?1.50:(a.cls==='warrior'?.55:1.00);
+  const special=(o.damageReduction||0)*18;
+  return (o.defense||0)*defWeight+(o.initiative||0)*iniWeight+(o.evasion||0)*20+special;
+}
+
+function variantPrice(item,origin='neutral'){
+  return Math.max(1,Math.round(ITEM[item].price*originConfig(origin).priceMul));
+}
+
+function bestTextileVariant(city,a,item){
+  const variants=city.variantStock[item];
+  if(!variants)return null;
+  const options=Object.entries(variants)
+    .filter(([,qty])=>qty>0)
+    .map(([origin])=>{
+      const price=variantPrice(item,origin);
+      const preference=originPreference(a,origin);
+      const affordability=a.coins>=price?0.35:-.45;
+      return {origin,price,score:preference+affordability};
+    })
+    .sort((x,y)=>y.score-x.score);
+  return options[0]||null;
+}
+
 function itemNeedScore(a,item,city){
   const it=ITEM[item];
-  if(!it.class.includes(a.cls)||hasSlot(a,it.slot))return 0;
+  if(!it.purchasable||!it.class.includes(a.cls)||hasCommercialSlot(a,it.slot))return 0;
 
   const hpRatio=a.hp/a.hpMax;
   let score=.25;
@@ -288,13 +356,24 @@ function itemNeedScore(a,item,city){
     score=.34+(a.cls==='warrior'?.08:0);
   }
 
-  return clamp(score,0,1.2);
+  if(it.textile){
+    const variant=bestTextileVariant(city,a,item);
+    if(variant)score+=Math.min(.22,originPreference(a,variant.origin)*.06);
+  }
+
+  return clamp(score,0,1.35);
+}
+
+function removeFounderInSlot(a,slot){
+  const entry=slotEntry(a,slot);
+  if(entry&&ITEM[entry[0]].founder)delete a.equipment[entry[0]];
 }
 
 function buyStep(state,rng){
   const {city,adv,profile}=state;
   for(const a of adv){
     const candidates=Object.keys(ITEM)
+      .filter(item=>ITEM[item].purchasable)
       .map(item=>({item,score:itemNeedScore(a,item,city)}))
       .filter(x=>x.score>=.40)
       .sort((x,y)=>y.score-x.score);
@@ -311,14 +390,33 @@ function buyStep(state,rng){
       city.demand.stockMiss++;
       continue;
     }
-    if(a.coins<it.price){
+
+    let origin='neutral';
+    let price=it.price;
+    if(it.textile){
+      const variant=bestTextileVariant(city,a,item);
+      if(!variant){
+        city.demand.stockMiss++;
+        continue;
+      }
+      origin=variant.origin;
+      price=variant.price;
+    }
+
+    if(a.coins<price){
       city.blockedPurchases++;city.demand.coinMiss++;
       continue;
     }
 
-    a.coins-=it.price;a.spent+=it.price;a.spending.gear+=it.price;
-    city.coins+=it.price;city.sales+=it.price;city.stock[item]--;
-    a.equipment[item]={durability:it.durability,maxDurability:it.durability};
+    a.coins-=price;a.spent+=price;a.spending.gear+=price;
+    city.coins+=price;city.sales+=price;city.stock[item]--;
+    if(it.textile){
+      city.variantStock[item][origin]--;
+      city.textileSold[origin]++;
+    }
+
+    removeFounderInSlot(a,it.slot);
+    a.equipment[item]={durability:it.durability,maxDurability:it.durability,origin,founder:false};
     city.demand.fulfilled++;
   }
 }
