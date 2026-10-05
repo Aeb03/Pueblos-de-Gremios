@@ -1,15 +1,15 @@
-const CACHE='pueblos-gremios-v0.9.0c';
+const CACHE='pueblos-gremios-v0.9.0c1';
 const ASSETS=[
-  './index.html?v=0.9.0c',
-  './styles.css?v=0.9.0c',
-  './activity.css?v=0.9.0c',
-  './game-data.js?v=0.9.0c',
-  './adventurer-core.js?v=0.9.0c',
-  './city-progression.js?v=0.9.0c',
-  './activity-combat.js?v=0.9.0c',
-  './app.js?v=0.9.0c',
-  './manifest.webmanifest?v=0.9.0c',
-  './icons/icon.svg?v=0.9.0c'
+  './index.html?v=0.9.0c1',
+  './styles.css?v=0.9.0c1',
+  './activity.css?v=0.9.0c1',
+  './game-data.js?v=0.9.0c1',
+  './adventurer-core.js?v=0.9.0c1',
+  './city-progression.js?v=0.9.0c1',
+  './activity-combat.js?v=0.9.0c1',
+  './app.js?v=0.9.0c1',
+  './manifest.webmanifest?v=0.9.0c1',
+  './icons/icon.svg?v=0.9.0c1'
 ];
 
 self.addEventListener('install',e=>e.waitUntil(
@@ -31,10 +31,10 @@ self.addEventListener('fetch',e=>{
       fetch(e.request,{cache:'no-store'})
         .then(r=>{
           const clone=r.clone();
-          caches.open(CACHE).then(c=>c.put('./index.html?v=0.9.0c',clone));
+          caches.open(CACHE).then(c=>c.put('./index.html?v=0.9.0c1',clone));
           return r;
         })
-        .catch(()=>caches.match('./index.html?v=0.9.0c'))
+        .catch(()=>caches.match('./index.html?v=0.9.0c1'))
     );
     return;
   }
