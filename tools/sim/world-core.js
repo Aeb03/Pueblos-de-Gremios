@@ -254,38 +254,46 @@ function chooseTextileOrigin(city,item,qty,rng){
   return available[0];
 }
 
-function craftStep(state,rng){
+function craftOne(state,rng,candidatesPool){
   const {city,profile}=state;
+  if(rng()>profile.worker)return false;
+
+  const candidates=candidatesPool
+    .filter(i=>city.stock[i]<2&&canCraft(city,i))
+    .sort((a,b)=>city.stock[a]-city.stock[b]);
+  if(!candidates.length)return false;
+
+  const item=candidates[0];
+  let origin='neutral';
+  const hideQty=RECIPES[item].tannedHide||0;
+
+  if(ITEM[item].textile){
+    origin=chooseTextileOrigin(city,item,hideQty,rng);
+    if(!origin)return false;
+  }
+
+  for(const [k,v] of Object.entries(RECIPES[item]))consumeInput(city,k,v,origin);
+
+  city.stock[item]++;
+  city.produced[item]++;
+  if(ITEM[item].textile){
+    city.variantStock[item][origin]++;
+    city.textileProduced[origin]++;
+  }
+  city.dev+=.45;
+  return true;
+}
+
+function craftStep(state,rng){
+  const {city}=state;
   if(city.textile)tanStep(state,rng);
 
-  const available=['dagger','bow','staff','shield'];
-  if(city.textile)available.push('leather','gloves','boots');
+  const corePool=['dagger','bow','staff','shield'];
+  for(let i=0;i<2;i++)craftOne(state,rng,corePool);
 
-  for(let slot=0;slot<(city.textile?3:2);slot++){
-    if(rng()>profile.worker)continue;
-    const candidates=available
-      .filter(i=>city.stock[i]<2&&canCraft(city,i))
-      .sort((a,b)=>city.stock[a]-city.stock[b]);
-    if(!candidates.length)break;
-
-    const item=candidates[0];
-    let origin='neutral';
-    const hideQty=RECIPES[item].tannedHide||0;
-
-    if(ITEM[item].textile){
-      origin=chooseTextileOrigin(city,item,hideQty,rng);
-      if(!origin)continue;
-    }
-
-    for(const [k,v] of Object.entries(RECIPES[item]))consumeInput(city,k,v,origin);
-
-    city.stock[item]++;
-    city.produced[item]++;
-    if(ITEM[item].textile){
-      city.variantStock[item][origin]++;
-      city.textileProduced[origin]++;
-    }
-    city.dev+=.45;
+  if(city.textile){
+    const textilePool=['leather','gloves','boots'];
+    craftOne(state,rng,textilePool);
   }
 }
 
