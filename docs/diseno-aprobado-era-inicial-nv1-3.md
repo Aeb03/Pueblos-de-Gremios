@@ -1962,7 +1962,7 @@ Los costes exactos de Maná y probabilidades se fijan en la hoja de balance téc
 
 Los Estados son modificadores del cálculo probabilístico del encuentro. No requieren una ejecución turno por turno persistente.
 
-**Distribución natural por clase:**
+**Afinidad potencial por clase:**
 
 - **Guerrero:** Herida + Aturdido.
 - **Explorador:** Herida + Veneno + Parálisis.
@@ -1971,7 +1971,9 @@ Los Estados son modificadores del cálculo probabilístico del encuentro. No req
 
 Esto evita convertir al Mago en “la clase de todos los Estados”. Cada Estado refuerza una identidad distinta.
 
-La distribución no es una restricción absoluta para todo el juego: futuras especializaciones, materiales o equipamiento pueden permitir combinaciones nuevas.
+**Importante:** esta lista indica qué Estados pertenecen naturalmente al desarrollo de cada clase, **no qué habilidades posee en Nv.1**. Los Estados se irán incorporando mediante habilidades aprendidas al subir de nivel. Los niveles exactos de desbloqueo quedan pendientes de diseño y simulación.
+
+La distribución tampoco es una restricción absoluta para todo el juego: futuras especializaciones, materiales o equipamiento pueden permitir combinaciones nuevas.
 
 
 **Herida**
