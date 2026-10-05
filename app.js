@@ -1,4 +1,4 @@
-const APP_VERSION='0.4.1';
+const APP_VERSION='0.4.2';
 const SAVE_KEY='pueblos-gremios-save-v0.2.0';
 
 const EXPEDITION_DURATION_MS=30_000;
@@ -309,9 +309,20 @@ function syncWorkerStamina(workerKey){
 
   const now=Date.now();
   const updatedAt=Number(worker.staminaUpdatedAt)||now;
+  const name=workerKey==='mara'?'Mara':'Borin';
 
   if(worker.stamina>=STAMINA_MAX){
+    const leftInn=Boolean(worker.restingAtInn);
     worker.stamina=STAMINA_MAX;
+    worker.staminaUpdatedAt=now;
+
+    if(leftInn){
+      worker.restingAtInn=false;
+      state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de la Posada.`;
+      saveState();
+      return true;
+    }
+
     return false;
   }
 
@@ -320,12 +331,19 @@ function syncWorkerStamina(workerKey){
 
   const gainPerTick=worker.restingAtInn?INN_STAMINA_PER_TICK:PASSIVE_STAMINA_PER_TICK;
   const previous=worker.stamina;
+  const wasResting=Boolean(worker.restingAtInn);
+
   worker.stamina=Math.min(STAMINA_MAX,worker.stamina+(ticks*gainPerTick));
   worker.staminaUpdatedAt=worker.stamina>=STAMINA_MAX
     ?now
     :updatedAt+(ticks*STAMINA_TICK_MS);
 
-  if(worker.stamina!==previous){
+  if(worker.stamina>=STAMINA_MAX&&wasResting){
+    worker.restingAtInn=false;
+    state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de la Posada.`;
+  }
+
+  if(worker.stamina!==previous||worker.restingAtInn!==wasResting){
     saveState();
     return true;
   }
@@ -821,7 +839,7 @@ if('serviceWorker' in navigator){
 
   window.addEventListener('load',async()=>{
     try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=0.4.1',{updateViaCache:'none'});
+      const reg=await navigator.serviceWorker.register('./sw.js?v=0.4.2',{updateViaCache:'none'});
       await reg.update();
     }catch{}
   });
