@@ -265,7 +265,7 @@ function restStep(state,a){
   const hpRatio=a.hp/a.hpMax,manaRatio=a.manaMax?a.mana/a.manaMax:1;
   if(hpRatio>=profile.restHp&&manaRatio>=profile.restMana)return false;
 
-  const price=6;
+  const price=4;
   if(a.coins>=price){
     recordSpend(a,'rest',price);city.coins+=price;city.serviceRevenue+=price;
     a.hp=Math.min(a.hpMax,a.hp+Math.ceil(a.hpMax*.45));
