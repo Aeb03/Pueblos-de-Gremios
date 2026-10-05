@@ -167,6 +167,63 @@ Los materiales de especie modifican estos resultados:
 
 La calidad de fabricación se aplica después del material de origen.
 
+### 5.1. Durabilidad comercial — baseline EN PRUEBA
+
+Para validar que Reparación exista como servicio recurrente sin transformarse en micromanejo constante:
+
+| Objeto | Durabilidad de prueba |
+|---|---:|
+| Daga de hierro | 9 |
+| Arco de caza | 9 |
+| Bastón sencillo | 9 |
+| Escudo de madera | 10 |
+| Protección ligera de cuero | 12 |
+| Guantes de cuero | 8 |
+| Botas de cuero | 8 |
+
+Reglas de simulación:
+
+- una salida de combate puede consumir Durabilidad;
+- Raro/Boss generan más desgaste;
+- al llegar a **40 % o menos**, el aventurero empieza a considerar Reparación;
+- un objeto con Durabilidad 0 deja de aportar su bonificación hasta repararse;
+- coste de reparación inicial: aproximadamente **22 % del valor del objeto**.
+
+Resultado perfil Normal tras 1.000 ciclos de 90 min:
+
+- **1,33 reparaciones por ciudad**;
+- gasto medio en reparaciones: **6,9 monedas**.
+
+Se acepta como baseline EN PRUEBA.
+
+### 5.2. Compra guiada por necesidad
+
+El aventurero no visita el mercado al azar para comprar cualquier cosa.
+
+La demanda inicial se deriva de:
+
+- clase;
+- estilo de combate;
+- slot/equipo faltante;
+- desgaste/fragilidad;
+- historial de incapacitación;
+- disponibilidad y precio.
+
+Ejemplo:
+
+- Explorador de arco busca Arco, no Daga por azar;
+- Guerrero prioriza Escudo;
+- Sanador/Mago priorizan Bastón;
+- una pieza defensiva gana interés si el aventurero está sufriendo demasiado daño.
+
+En 1.000 ciclos Normal:
+
+- **84,2 %** de las necesidades de compra se resolvieron;
+- **14,4 %** fallaron por falta de stock;
+- **1,35 %** por falta de dinero.
+
+Esto deja al stock/productor como principal cuello de botella, no a la pobreza permanente del aventurero.
+
 ---
 
 ## 6. Habilidades básicas y Maná
@@ -512,3 +569,53 @@ Los informes deben distinguir:
 
 Nunca presentar una prueba automática como si fuera validación real de dispositivo.
 
+
+## 17. Economía recurrente — baseline v2
+
+Con Descanso básico a **4 monedas**:
+
+Perfil Normal / 90 min:
+
+- equipo permanente: ~252,3 monedas;
+- descanso/recuperación: ~60,3;
+- reparación: ~6,9;
+- gasto recurrente total actual: ~67,1;
+- gasto recurrente / ingresos generados: **~27,3 %**.
+
+Este valor queda dentro del objetivo provisional del 20–30 %.
+
+La inversión en equipo se mide aparte porque es gasto de capital y no debe confundirse con mantenimiento recurrente.
+
+El coste de Descanso de 4 monedas deja margen para sumar después:
+
+- comida;
+- raciones;
+- consumibles;
+- tratamientos;
+- otros servicios.
+
+---
+
+## 18. Amenaza ignorada — baseline v2
+
+Prueba automática especial:
+
+- 1.000 ciudades;
+- 180 min;
+- producción y crecimiento activos;
+- **sin respuesta de aventureros a la fauna**.
+
+Resultado medio:
+
+- Presencia Lobo: **100**;
+- Presencia Jabalí: **92**;
+- 100 % tuvo incidentes;
+- 65,5 % sufrió al menos un ataque;
+- 2,14 lesiones de trabajadores;
+- ~36,9 de pérdida equivalente en recursos/monedas.
+
+Esto valida la dirección:
+
+**controlar territorio evita presión; ignorarlo genera consecuencias recuperables.**
+
+Esta prueba representa abandono activo del problema, no castigo por desconexión. La gracia offline se diseñará aparte.
