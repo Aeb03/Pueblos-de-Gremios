@@ -4,9 +4,11 @@ PWA de gestión fantástica desarrollada paso a paso.
 
 ## Estado actual
 
-**v0.8.0 — Fundación de ciudad**
+**v0.8.0 — Fundación de ciudad — 📌 ESTABLE EN ANDROID**
 
 Esta versión reinicia deliberadamente el ciclo local de prueba para validar desde cero el nacimiento de una ciudad y la población inicial de aventureros.
+
+✅ Validación real en Android completada: fundación, persistencia general y **Reiniciar Reino de prueba** funcionan correctamente.
 
 ### Fundación
 
