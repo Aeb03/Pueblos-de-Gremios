@@ -132,7 +132,8 @@
     const combatStyle=combatStyleFor(classKey,npc?.combatStyle);
 
     const oldMax=Math.max(1,Number(npc?.hpMax)||Number(npc?.stats?.hp)||stats.hp);
-    const oldCurrent=clamp(Number(npc?.hpCurrent)||oldMax,0,oldMax);
+    const parsedHpCurrent=Number(npc?.hpCurrent);
+    const oldCurrent=clamp(Number.isFinite(parsedHpCurrent)?parsedHpCurrent:oldMax,0,oldMax);
     const hpRatio=oldCurrent/oldMax;
 
     const oldManaMax=Math.max(0,Number(npc?.manaMax)||Number(npc?.stats?.mana)||stats.mana);
