@@ -61,7 +61,7 @@ function newAdventurer(cls,id,rng){
     id,cls,combatStyle,level:1,xp:0,xpLost:0,
     hpMax:b.hp,hp:b.hp,manaMax:b.mana,mana:b.mana,
     attack:b.attack,defense:b.defense,initiative:b.initiative,evasion:b.evasion,
-    coins:randInt(rng,55,75),earned:0,spent:0,rests:0,repairs:0,founderRepairs:0,downs:0,fights:0,
+    coins:randInt(rng,55,75),earned:0,spent:0,rests:0,repairs:0,founderRepairs:0,founderBreaks:0,equipmentBreaks:0,downs:0,fights:0,
     meals:0,rations:0,rationPrepared:false,
     loot:{},lootGenerated:0,lootSold:0,lootOfferMemory:{},
     spending:{gear:0,rest:0,repair:0,consumable:0},
@@ -450,7 +450,12 @@ function wearEquipment(a,intensity,rng){
     if(rng()<clamp(.80*intensity,0,1)){
       let wear=1;
       if(intensity>=1.8&&rng()<.45)wear++;
+      const before=eq.durability;
       eq.durability=Math.max(0,eq.durability-wear);
+      if(before>0&&eq.durability===0){
+        a.equipmentBreaks++;
+        if(eq.founder)a.founderBreaks++;
+      }
     }
   }
 }
@@ -835,6 +840,9 @@ function runCity(seed,profileKey){
     totalXpLost:adv.reduce((s,a)=>s+a.xpLost,0),
     totalFights:adv.reduce((s,a)=>s+a.fights,0),
     rests:adv.reduce((s,a)=>s+a.rests,0),repairs:adv.reduce((s,a)=>s+a.repairs,0),
+    founderRepairs:adv.reduce((s,a)=>s+a.founderRepairs,0),
+    founderBreaks:adv.reduce((s,a)=>s+a.founderBreaks,0),
+    equipmentBreaks:adv.reduce((s,a)=>s+a.equipmentBreaks,0),
     meals:adv.reduce((s,a)=>s+a.meals,0),rations:adv.reduce((s,a)=>s+a.rations,0),
     earnings:earned,spending:spent,gearSpend:spend.gear,restSpend:spend.rest,repairSpend:spend.repair,foodSpend:spend.consumable,
     recurringSpend:recurring,
@@ -856,6 +864,8 @@ function runCity(seed,profileKey){
     wolfPresence:city.presence.wolf,boarPresence:city.presence.boar,
     threatIncidents:city.threatIncidents,cityAttacks:city.cityAttacks,workerInjuries:city.workerInjuries,
     resourceLossValue:city.resourceLossValue,
+    textileProduced:{...city.textileProduced},
+    textileSold:{...city.textileSold},
     missionsCompleted:city.missionsCompleted,workerOutings:city.workerOutings,
     produced:Object.values(city.produced).reduce((a,b)=>a+b,0)
   };
@@ -890,6 +900,9 @@ function summarize(profileKey,rows){
     downsMean:mean(rows.map(r=>r.totalDowns)),xpLostMean:mean(rows.map(r=>r.totalXpLost)),
     fightsMean:mean(rows.map(r=>r.totalFights)),
     restsMean:mean(rows.map(r=>r.rests)),repairsMean:mean(rows.map(r=>r.repairs)),
+    founderRepairsMean:mean(rows.map(r=>r.founderRepairs)),
+    founderBreaksMean:mean(rows.map(r=>r.founderBreaks)),
+    equipmentBreaksMean:mean(rows.map(r=>r.equipmentBreaks)),
     mealsMean:mean(rows.map(r=>r.meals)),rationsMean:mean(rows.map(r=>r.rations)),
     gearSpendMean:mean(rows.map(r=>r.gearSpend)),restSpendMean:mean(rows.map(r=>r.restSpend)),
     repairSpendMean:mean(rows.map(r=>r.repairSpend)),foodSpendMean:mean(rows.map(r=>r.foodSpend)),
@@ -914,6 +927,8 @@ function summarize(profileKey,rows){
     bossDefeatRate:rows.filter(r=>r.bossDefeated>0).length/rows.length,
     wolfPresenceMean:mean(rows.map(r=>r.wolfPresence)),boarPresenceMean:mean(rows.map(r=>r.boarPresence)),
     threatIncidentsMean:mean(rows.map(r=>r.threatIncidents)),cityAttacksMean:mean(rows.map(r=>r.cityAttacks)),
+    textileProducedMean:Object.fromEntries(Object.keys(TEXTILE_ORIGIN).map(origin=>[origin,mean(rows.map(r=>r.textileProduced[origin]||0))])),
+    textileSoldMean:Object.fromEntries(Object.keys(TEXTILE_ORIGIN).map(origin=>[origin,mean(rows.map(r=>r.textileSold[origin]||0))])),
     missionsMean:mean(rows.map(r=>r.missionsCompleted)),workerOutingsMean:mean(rows.map(r=>r.workerOutings)),
     productionMean:mean(rows.map(r=>r.produced))
   };
