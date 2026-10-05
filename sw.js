@@ -1,11 +1,12 @@
-const CACHE='pueblos-gremios-v0.8.1';
+const CACHE='pueblos-gremios-v0.9.0a';
 const ASSETS=[
-  './index.html?v=0.8.0',
-  './styles.css?v=0.8.0',
-  './game-data.js?v=0.8.0',
-  './app.js?v=0.8.0',
-  './manifest.webmanifest?v=0.8.0',
-  './icons/icon.svg?v=0.8.0'
+  './index.html?v=0.9.0a',
+  './styles.css?v=0.9.0a',
+  './game-data.js?v=0.9.0a',
+  './adventurer-core.js?v=0.9.0a',
+  './app.js?v=0.9.0a',
+  './manifest.webmanifest?v=0.9.0a',
+  './icons/icon.svg?v=0.9.0a'
 ];
 
 self.addEventListener('install',e=>e.waitUntil(
@@ -27,10 +28,10 @@ self.addEventListener('fetch',e=>{
       fetch(e.request,{cache:'no-store'})
         .then(r=>{
           const clone=r.clone();
-          caches.open(CACHE).then(c=>c.put('./index.html?v=0.8.0',clone));
+          caches.open(CACHE).then(c=>c.put('./index.html?v=0.9.0a',clone));
           return r;
         })
-        .catch(()=>caches.match('./index.html?v=0.8.0'))
+        .catch(()=>caches.match('./index.html?v=0.9.0a'))
     );
     return;
   }
