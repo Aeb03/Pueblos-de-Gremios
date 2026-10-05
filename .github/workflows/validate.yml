@@ -22,14 +22,19 @@ jobs:
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest OK')"
       - name: Check version wiring
         run: |
-          grep -q "v0.4.2" index.html
-          grep -q "pueblos-gremios-v0.4.2" sw.js
-          grep -q "index.html?v=0.4.2" sw.js
-          grep -q "styles.css?v=0.4.2" sw.js
-          grep -q "app.js?v=0.4.2" sw.js
-      - name: Check automatic inn exit
+          grep -q "v0.5.0" index.html
+          grep -q "pueblos-gremios-v0.5.0" sw.js
+          grep -q "app.js?v=0.5.0" index.html
+          grep -q "styles.css?v=0.5.0" index.html
+      - name: Check pickaxe production chain
         run: |
-          grep -q "terminó de descansar" app.js
-          grep -q "worker.restingAtInn=false" app.js
-          grep -q "Terminar descanso" app.js
+          grep -q 'data-screen="carpenter"' index.html
+          grep -q "HANDLE_WOOD_COST=3" app.js
+          grep -q "ASSEMBLY_STAMINA_COST=10" app.js
+          grep -q "woodenHandles" app.js
+          grep -q "ironPickaxes" app.js
+          grep -q "equipIronPickaxe" app.js
+          grep -q "HARD_VEIN_CHANCE=0.15" app.js
+          grep -q "hardVeinIron" app.js
+          grep -q "activeCarpentry" app.js
           grep -q "SAVE_KEY='pueblos-gremios-save-v0.2.0'" app.js

@@ -1,13 +1,26 @@
-const APP_VERSION='0.4.2';
+const APP_VERSION='0.5.0';
 const SAVE_KEY='pueblos-gremios-save-v0.2.0';
 
 const EXPEDITION_DURATION_MS=30_000;
 const CRAFT_DURATION_MS=20_000;
+const ASSEMBLY_DURATION_MS=15_000;
+const CARPENTRY_DURATION_MS=20_000;
+
 const MINING_XP_STEP=100;
 const SMITHING_XP_STEP=100;
+const CARPENTRY_XP_STEP=100;
+
 const CRAFT_IRON_COST=5;
 const CRAFT_SMITHING_XP=40;
 const CRAFT_STAMINA_COST=15;
+
+const ASSEMBLY_SMITHING_XP=20;
+const ASSEMBLY_STAMINA_COST=10;
+
+const HANDLE_WOOD_COST=3;
+const HANDLE_CARPENTRY_XP=40;
+const HANDLE_STAMINA_COST=15;
+
 const SMITHY_UPGRADE_COIN_COST=100;
 const SMITHY_UPGRADE_STONE_COST=10;
 const SMITHY_UPGRADE_CRAFTED_REQUIRED=3;
@@ -19,9 +32,14 @@ const STAMINA_TICK_MS=10_000;
 const PASSIVE_STAMINA_PER_TICK=1;
 const INN_STAMINA_PER_TICK=5;
 
+const HARD_VEIN_CHANCE=0.15;
+const HARD_VEIN_IRON_MIN=5;
+const HARD_VEIN_IRON_MAX=8;
+
 const titles={
   city:'Villa del Roble',
   workers:'Trabajadores',
+  carpenter:'Carpintería',
   smithy:'Herrería',
   inn:'Posada',
   expedition:'Expedición',
@@ -38,16 +56,27 @@ const defaultState=()=>({
   version:APP_VERSION,
   city:{prestige:120},
   resources:{coins:1240,wood:86,iron:42,stone:0},
-  inventory:{pickaxeHeads:0},
+  inventory:{
+    pickaxeHeads:0,
+    woodenHandles:0,
+    ironPickaxes:0
+  },
   workers:{
     mara:{
       miningXp:0,
       stamina:STAMINA_MAX,
       staminaUpdatedAt:Date.now(),
-      restingAtInn:false
+      restingAtInn:false,
+      equippedPickaxe:null
     },
     borin:{
       smithingXp:0,
+      stamina:STAMINA_MAX,
+      staminaUpdatedAt:Date.now(),
+      restingAtInn:false
+    },
+    eldon:{
+      carpentryXp:0,
       stamina:STAMINA_MAX,
       staminaUpdatedAt:Date.now(),
       restingAtInn:false
@@ -58,8 +87,10 @@ const defaultState=()=>({
   },
   activeExpedition:null,
   activeCraft:null,
+  activeCarpentry:null,
   lastMessage:'',
   lastSmithyMessage:'',
+  lastCarpentryMessage:'',
   lastInnMessage:''
 });
 
@@ -82,7 +113,8 @@ function loadState(){
         ...base.workers,
         ...(saved.workers||{}),
         mara:{...base.workers.mara,...(saved.workers?.mara||{})},
-        borin:{...base.workers.borin,...(saved.workers?.borin||{})}
+        borin:{...base.workers.borin,...(saved.workers?.borin||{})},
+        eldon:{...base.workers.eldon,...(saved.workers?.eldon||{})}
       },
       buildings:{
         ...base.buildings,
@@ -104,7 +136,7 @@ function saveState(){
 
 function showScreen(name){
   screens.forEach(s=>s.classList.toggle('is-active',s.dataset.screen===name));
-  const navTarget=(name==='smithy'||name==='inn')?'city':name;
+  const navTarget=['smithy','carpenter','inn'].includes(name)?'city':name;
   nav.forEach(b=>b.classList.toggle('is-active',b.dataset.target===navTarget));
   title.textContent=titles[name]||'Pueblos de Gremios';
   window.scrollTo({top:0,behavior:'smooth'});
@@ -132,15 +164,10 @@ const buildingInfo={
     resources:[],
     empty:'Los alimentos, bebidas e ingredientes aparecerán aquí cuando incorporemos la producción de Taberna.'
   },
-  Carpintería:{
-    copy:'Madera, muebles, herramientas y componentes para otros edificios.',
-    resources:[{icon:'🪵',label:'Madera',key:'wood'}],
-    empty:''
-  },
   Posada:{
     copy:'Alojamiento para aventureros, descanso y servicios de hospedaje.',
     resources:[],
-    empty:'La Posada mostrará aquí ocupación y suministros cuando incorporemos su sistema.'
+    empty:'Los trabajadores pueden descansar aquí para recuperar Resistencia más rápido.'
   }
 };
 
@@ -174,6 +201,11 @@ document.querySelectorAll('[data-building]').forEach(b=>b.addEventListener('clic
     return;
   }
 
+  if(n==='Carpintería'){
+    showScreen('carpenter');
+    return;
+  }
+
   if(n==='Posada'){
     showScreen('inn');
     return;
@@ -198,6 +230,9 @@ const els={
   inventoryIron:document.getElementById('inventoryIron'),
   inventoryStone:document.getElementById('inventoryStone'),
   inventoryPickaxeHeads:document.getElementById('inventoryPickaxeHeads'),
+  inventoryHandles:document.getElementById('inventoryHandles'),
+  inventoryIronPickaxes:document.getElementById('inventoryIronPickaxes'),
+  inventoryMaraTool:document.getElementById('inventoryMaraTool'),
 
   borinProfessionLevel:document.getElementById('borinProfessionLevel'),
   borinSmithingLevel:document.getElementById('borinSmithingLevel'),
@@ -217,6 +252,30 @@ const els={
   maraStaminaWorkerProgress:document.getElementById('maraStaminaWorkerProgress'),
   maraState:document.getElementById('maraState'),
 
+  eldonProfessionLevel:document.getElementById('eldonProfessionLevel'),
+  eldonCarpentryLevel:document.getElementById('eldonCarpentryLevel'),
+  eldonCarpentryXp:document.getElementById('eldonCarpentryXp'),
+  eldonNextXp:document.getElementById('eldonNextXp'),
+  eldonXpProgress:document.getElementById('eldonXpProgress'),
+  eldonStaminaWorker:document.getElementById('eldonStaminaWorker'),
+  eldonStaminaWorkerProgress:document.getElementById('eldonStaminaWorkerProgress'),
+  eldonState:document.getElementById('eldonState'),
+
+  carpenterWood:document.getElementById('carpenterWood'),
+  carpenterHandles:document.getElementById('carpenterHandles'),
+  carpenterEldonLevel:document.getElementById('carpenterEldonLevel'),
+  carpenterEldonState:document.getElementById('carpenterEldonState'),
+  carpenterEldonXp:document.getElementById('carpenterEldonXp'),
+  carpenterEldonNextXp:document.getElementById('carpenterEldonNextXp'),
+  carpenterEldonProgress:document.getElementById('carpenterEldonProgress'),
+  carpenterEldonStamina:document.getElementById('carpenterEldonStamina'),
+  carpenterEldonStaminaProgress:document.getElementById('carpenterEldonStaminaProgress'),
+  carpentryStatus:document.getElementById('carpentryStatus'),
+  carpentryProgress:document.getElementById('carpentryProgress'),
+  carpentryCountdown:document.getElementById('carpentryCountdown'),
+  startHandleCraft:document.getElementById('startHandleCraft'),
+  carpentryFeedback:document.getElementById('carpentryFeedback'),
+
   smithyLevelHero:document.getElementById('smithyLevelHero'),
   smithyIron:document.getElementById('smithyIron'),
   smithyStone:document.getElementById('smithyStone'),
@@ -230,9 +289,12 @@ const els={
   craftStatus:document.getElementById('craftStatus'),
   craftProgress:document.getElementById('craftProgress'),
   craftCountdown:document.getElementById('craftCountdown'),
-  startCraft:document.getElementById('startCraft'),
+  startHeadCraft:document.getElementById('startHeadCraft'),
+  startPickaxeAssembly:document.getElementById('startPickaxeAssembly'),
   smithyFeedback:document.getElementById('smithyFeedback'),
   smithyPickaxeHeads:document.getElementById('smithyPickaxeHeads'),
+  smithyHandles:document.getElementById('smithyHandles'),
+  smithyIronPickaxes:document.getElementById('smithyIronPickaxes'),
 
   smithyUpgradeTitle:document.getElementById('smithyUpgradeTitle'),
   smithyUpgradeCopy:document.getElementById('smithyUpgradeCopy'),
@@ -257,8 +319,19 @@ const els={
   toggleBorinInnRest:document.getElementById('toggleBorinInnRest'),
   borinInnFeedback:document.getElementById('borinInnFeedback'),
 
+  innEldonLevel:document.getElementById('innEldonLevel'),
+  innEldonState:document.getElementById('innEldonState'),
+  innEldonStamina:document.getElementById('innEldonStamina'),
+  innEldonStaminaProgress:document.getElementById('innEldonStaminaProgress'),
+  toggleEldonInnRest:document.getElementById('toggleEldonInnRest'),
+  eldonInnFeedback:document.getElementById('eldonInnFeedback'),
+
   expeditionStamina:document.getElementById('expeditionStamina'),
   expeditionStaminaProgress:document.getElementById('expeditionStaminaProgress'),
+  expeditionTool:document.getElementById('expeditionTool'),
+  hardVeinChance:document.getElementById('hardVeinChance'),
+  expeditionPickaxes:document.getElementById('expeditionPickaxes'),
+  equipIronPickaxe:document.getElementById('equipIronPickaxe'),
   expeditionStatus:document.getElementById('expeditionStatus'),
   expeditionProgress:document.getElementById('expeditionProgress'),
   expeditionCountdown:document.getElementById('expeditionCountdown'),
@@ -272,6 +345,10 @@ function miningLevel(){
 
 function smithingLevel(){
   return Math.floor(state.workers.borin.smithingXp/SMITHING_XP_STEP)+1;
+}
+
+function carpentryLevel(){
+  return Math.floor(state.workers.eldon.carpentryXp/CARPENTRY_XP_STEP)+1;
 }
 
 function formatNumber(value){
@@ -290,17 +367,33 @@ function createActionId(){
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function workerName(workerKey){
+  return {mara:'Mara',borin:'Borin',eldon:'Eldon'}[workerKey]||workerKey;
+}
+
+function hasIronPickaxeEquipped(){
+  return state.workers.mara.equippedPickaxe==='ironPickaxe';
+}
+
 function rollReward(){
+  const hardVein=hasIronPickaxeEquipped()&&Math.random()<HARD_VEIN_CHANCE;
+  const hardVeinIron=hardVein
+    ?HARD_VEIN_IRON_MIN+Math.floor(Math.random()*(HARD_VEIN_IRON_MAX-HARD_VEIN_IRON_MIN+1))
+    :0;
+
   return {
     iron:4+Math.floor(Math.random()*4),
     stone:2+Math.floor(Math.random()*3),
-    miningXp:20
+    miningXp:20,
+    hardVein,
+    hardVeinIron
   };
 }
 
 function isWorkerBusy(workerKey){
   return (workerKey==='mara'&&Boolean(state.activeExpedition))
-    ||(workerKey==='borin'&&Boolean(state.activeCraft));
+    ||(workerKey==='borin'&&Boolean(state.activeCraft))
+    ||(workerKey==='eldon'&&Boolean(state.activeCarpentry));
 }
 
 function syncWorkerStamina(workerKey){
@@ -309,7 +402,7 @@ function syncWorkerStamina(workerKey){
 
   const now=Date.now();
   const updatedAt=Number(worker.staminaUpdatedAt)||now;
-  const name=workerKey==='mara'?'Mara':'Borin';
+  const name=workerName(workerKey);
 
   if(worker.stamina>=STAMINA_MAX){
     const leftInn=Boolean(worker.restingAtInn);
@@ -354,15 +447,17 @@ function syncWorkerStamina(workerKey){
 function syncAllWorkerStamina(){
   syncWorkerStamina('mara');
   syncWorkerStamina('borin');
+  syncWorkerStamina('eldon');
 }
 
 function toggleInnRest(workerKey){
   resolveExpiredExpedition();
   resolveExpiredCraft();
+  resolveExpiredCarpentry();
   syncWorkerStamina(workerKey);
 
   const worker=state.workers[workerKey];
-  const name=workerKey==='mara'?'Mara':'Borin';
+  const name=workerName(workerKey);
 
   if(isWorkerBusy(workerKey)){
     state.lastInnMessage=`${name} está trabajando y no puede descansar todavía.`;
@@ -419,32 +514,146 @@ function startExpedition(){
     worker:'mara',
     startedAt:now,
     endsAt:now+EXPEDITION_DURATION_MS,
+    toolAtStart:mara.equippedPickaxe,
     rewards:rollReward()
   };
-  state.lastMessage='Mara partió hacia la Cantera del Este.';
+
+  state.lastMessage=hasIronPickaxeEquipped()
+    ?'Mara partió con su Pico de hierro. La Veta dura ya fue sorteada para esta expedición.'
+    :'Mara partió sin pico: la Veta dura no puede aparecer.';
   saveState();
   render();
 }
 
 function completeExpedition(expedition){
-  state.resources.iron+=expedition.rewards.iron;
-  state.resources.stone+=expedition.rewards.stone;
-  state.workers.mara.miningXp+=expedition.rewards.miningXp;
+  const extraIron=Number(expedition.rewards?.hardVeinIron)||0;
+  const baseIron=Number(expedition.rewards?.iron)||0;
+  const stone=Number(expedition.rewards?.stone)||0;
+  const miningXp=Number(expedition.rewards?.miningXp)||0;
+
+  state.resources.iron+=baseIron+extraIron;
+  state.resources.stone+=stone;
+  state.workers.mara.miningXp+=miningXp;
   state.activeExpedition=null;
-  state.workers.mara.staminaUpdatedAt=expedition.endsAt;
-  state.lastMessage=`Expedición completada: +${expedition.rewards.iron} hierro, +${expedition.rewards.stone} piedra y +${expedition.rewards.miningXp} XP de Minería.`;
+  state.workers.mara.staminaUpdatedAt=expedition.endsAt||Date.now();
+
+  const special=extraIron>0
+    ?` ¡Veta dura encontrada! +${extraIron} hierro adicional.`
+    :'';
+
+  state.lastMessage=`Expedición completada: +${baseIron} hierro, +${stone} piedra y +${miningXp} XP de Minería.${special}`;
   saveState();
 }
 
 function resolveExpiredExpedition(){
   if(!state.activeExpedition)return false;
   if(Date.now()<state.activeExpedition.endsAt)return false;
-  const completed={...state.activeExpedition,rewards:{...state.activeExpedition.rewards}};
+
+  const completed={
+    ...state.activeExpedition,
+    rewards:{...(state.activeExpedition.rewards||{})}
+  };
+
   completeExpedition(completed);
   return true;
 }
 
-function startCraft(){
+function equipIronPickaxe(){
+  resolveExpiredExpedition();
+
+  if(hasIronPickaxeEquipped())return;
+
+  if(state.activeExpedition||state.workers.mara.restingAtInn){
+    state.lastMessage='Mara debe estar disponible en la ciudad para equiparse.';
+    render();
+    return;
+  }
+
+  if(state.inventory.ironPickaxes<1){
+    state.lastMessage='Todavía no hay un Pico de hierro terminado en el inventario.';
+    render();
+    return;
+  }
+
+  state.inventory.ironPickaxes-=1;
+  state.workers.mara.equippedPickaxe='ironPickaxe';
+  state.lastMessage='Mara equipó el Pico de hierro. La Veta dura ahora tiene 15% de probabilidad en cada expedición.';
+  saveState();
+  render();
+}
+
+function startHandleCraft(){
+  resolveExpiredCarpentry();
+  syncWorkerStamina('eldon');
+
+  if(state.activeCarpentry)return;
+
+  const eldon=state.workers.eldon;
+
+  if(eldon.restingAtInn){
+    state.lastCarpentryMessage='Eldon está descansando en la Posada.';
+    render();
+    return;
+  }
+
+  if(eldon.stamina<HANDLE_STAMINA_COST){
+    state.lastCarpentryMessage=`Eldon necesita ${HANDLE_STAMINA_COST} de Resistencia para fabricar el mango.`;
+    render();
+    return;
+  }
+
+  if(state.resources.wood<HANDLE_WOOD_COST){
+    state.lastCarpentryMessage=`Faltan ${HANDLE_WOOD_COST-state.resources.wood} de madera.`;
+    render();
+    return;
+  }
+
+  state.resources.wood-=HANDLE_WOOD_COST;
+  eldon.stamina-=HANDLE_STAMINA_COST;
+
+  const now=Date.now();
+  eldon.staminaUpdatedAt=now;
+
+  state.activeCarpentry={
+    id:createActionId(),
+    recipe:'woodenHandle',
+    worker:'eldon',
+    startedAt:now,
+    endsAt:now+CARPENTRY_DURATION_MS,
+    result:{woodenHandles:1,carpentryXp:HANDLE_CARPENTRY_XP}
+  };
+
+  state.lastCarpentryMessage='Eldon comenzó a fabricar un mango de pico.';
+  saveState();
+  render();
+}
+
+function completeCarpentry(job){
+  const handles=Number(job.result?.woodenHandles)||0;
+  const xp=Number(job.result?.carpentryXp)||0;
+
+  state.inventory.woodenHandles+=handles;
+  state.workers.eldon.carpentryXp+=xp;
+  state.activeCarpentry=null;
+  state.workers.eldon.staminaUpdatedAt=job.endsAt||Date.now();
+  state.lastCarpentryMessage=`Carpintería completada: +${handles} mango de pico y +${xp} XP de Carpintería.`;
+  saveState();
+}
+
+function resolveExpiredCarpentry(){
+  if(!state.activeCarpentry)return false;
+  if(Date.now()<state.activeCarpentry.endsAt)return false;
+
+  const completed={
+    ...state.activeCarpentry,
+    result:{...(state.activeCarpentry.result||{})}
+  };
+
+  completeCarpentry(completed);
+  return true;
+}
+
+function startSmithyCraft(recipe){
   resolveExpiredCraft();
   syncWorkerStamina('borin');
 
@@ -458,54 +667,107 @@ function startCraft(){
     return;
   }
 
-  if(borin.stamina<CRAFT_STAMINA_COST){
-    state.lastSmithyMessage=`Borin necesita ${CRAFT_STAMINA_COST} de Resistencia para fabricar esta pieza.`;
-    render();
-    return;
+  if(recipe==='pickaxeHead'){
+    if(borin.stamina<CRAFT_STAMINA_COST){
+      state.lastSmithyMessage=`Borin necesita ${CRAFT_STAMINA_COST} de Resistencia para fabricar esta pieza.`;
+      render();
+      return;
+    }
+
+    if(state.resources.iron<CRAFT_IRON_COST){
+      state.lastSmithyMessage=`Faltan ${CRAFT_IRON_COST-state.resources.iron} de hierro para iniciar la fabricación.`;
+      render();
+      return;
+    }
+
+    state.resources.iron-=CRAFT_IRON_COST;
+    borin.stamina-=CRAFT_STAMINA_COST;
+
+    const now=Date.now();
+    borin.staminaUpdatedAt=now;
+
+    state.activeCraft={
+      id:createActionId(),
+      recipe:'pickaxeHead',
+      label:'Forjando cabeza de pico',
+      worker:'borin',
+      startedAt:now,
+      endsAt:now+CRAFT_DURATION_MS,
+      result:{pickaxeHeads:1,smithingXp:CRAFT_SMITHING_XP}
+    };
+
+    state.lastSmithyMessage='Borin comenzó a forjar una cabeza de pico.';
+  }else if(recipe==='ironPickaxe'){
+    if(borin.stamina<ASSEMBLY_STAMINA_COST){
+      state.lastSmithyMessage=`Borin necesita ${ASSEMBLY_STAMINA_COST} de Resistencia para ensamblar el pico.`;
+      render();
+      return;
+    }
+
+    if(state.inventory.pickaxeHeads<1||state.inventory.woodenHandles<1){
+      state.lastSmithyMessage='Para ensamblar el Pico de hierro hace falta 1 cabeza y 1 mango.';
+      render();
+      return;
+    }
+
+    state.inventory.pickaxeHeads-=1;
+    state.inventory.woodenHandles-=1;
+    borin.stamina-=ASSEMBLY_STAMINA_COST;
+
+    const now=Date.now();
+    borin.staminaUpdatedAt=now;
+
+    state.activeCraft={
+      id:createActionId(),
+      recipe:'ironPickaxe',
+      label:'Ensamblando Pico de hierro',
+      worker:'borin',
+      startedAt:now,
+      endsAt:now+ASSEMBLY_DURATION_MS,
+      result:{ironPickaxes:1,smithingXp:ASSEMBLY_SMITHING_XP}
+    };
+
+    state.lastSmithyMessage='Borin comenzó a ensamblar el Pico de hierro usando una cabeza y un mango.';
   }
 
-  if(state.resources.iron<CRAFT_IRON_COST){
-    state.lastSmithyMessage=`Faltan ${CRAFT_IRON_COST-state.resources.iron} de hierro para iniciar la fabricación.`;
-    render();
-    return;
-  }
-
-  state.resources.iron-=CRAFT_IRON_COST;
-  borin.stamina-=CRAFT_STAMINA_COST;
-  const now=Date.now();
-  borin.staminaUpdatedAt=now;
-
-  state.activeCraft={
-    id:createActionId(),
-    recipe:'pickaxeHead',
-    worker:'borin',
-    startedAt:now,
-    endsAt:now+CRAFT_DURATION_MS,
-    result:{pickaxeHeads:1,smithingXp:CRAFT_SMITHING_XP}
-  };
-
-  state.lastSmithyMessage='Borin comenzó a forjar una cabeza de pico.';
   saveState();
   render();
 }
 
 function completeCraft(craft){
-  state.inventory.pickaxeHeads+=craft.result.pickaxeHeads;
-  state.workers.borin.smithingXp+=craft.result.smithingXp;
-  state.buildings.smithy.craftedCount+=craft.result.pickaxeHeads;
+  const heads=Number(craft.result?.pickaxeHeads)||0;
+  const pickaxes=Number(craft.result?.ironPickaxes)||0;
+  const xp=Number(craft.result?.smithingXp)||0;
+
+  state.inventory.pickaxeHeads+=heads;
+  state.inventory.ironPickaxes+=pickaxes;
+  state.workers.borin.smithingXp+=xp;
+
+  if(heads>0){
+    state.buildings.smithy.craftedCount+=heads;
+  }
+
   state.activeCraft=null;
-  state.workers.borin.staminaUpdatedAt=craft.endsAt;
-  state.lastSmithyMessage=`Fabricación completada: +1 cabeza de pico y +${craft.result.smithingXp} XP de Herrería.`;
+  state.workers.borin.staminaUpdatedAt=craft.endsAt||Date.now();
+
+  if(pickaxes>0){
+    state.lastSmithyMessage=`Ensamblaje completado: +${pickaxes} Pico de hierro y +${xp} XP de Herrería.`;
+  }else{
+    state.lastSmithyMessage=`Fabricación completada: +${heads} cabeza de pico y +${xp} XP de Herrería.`;
+  }
+
   saveState();
 }
 
 function resolveExpiredCraft(){
   if(!state.activeCraft)return false;
   if(Date.now()<state.activeCraft.endsAt)return false;
+
   const completed={
     ...state.activeCraft,
-    result:{...state.activeCraft.result}
+    result:{...(state.activeCraft.result||{})}
   };
+
   completeCraft(completed);
   return true;
 }
@@ -571,9 +833,36 @@ function setRequirementState(key,met){
   if(row)row.classList.toggle('is-met',met);
 }
 
+function renderInnWorker(workerKey,stateEl,buttonEl,feedbackEl){
+  const worker=state.workers[workerKey];
+  const name=workerName(workerKey);
+
+  if(isWorkerBusy(workerKey)){
+    stateEl.textContent=workerKey==='mara'?'En expedición':'Trabajando';
+    stateEl.classList.add('is-busy');
+    buttonEl.disabled=true;
+    buttonEl.textContent=`${name} está trabajando`;
+  }else if(worker.restingAtInn){
+    stateEl.textContent='Descansando';
+    stateEl.classList.add('is-busy');
+    buttonEl.disabled=false;
+    buttonEl.textContent='Terminar descanso';
+  }else{
+    stateEl.textContent='Disponible';
+    stateEl.classList.remove('is-busy');
+    buttonEl.disabled=worker.stamina>=STAMINA_MAX;
+    buttonEl.textContent=worker.stamina>=STAMINA_MAX
+      ?'Resistencia completa'
+      :'Descansar en Posada';
+  }
+
+  feedbackEl.textContent=state.lastInnMessage||'Libre: +1 cada 10 s. En Posada: +5 cada 10 s.';
+}
+
 function render(){
   resolveExpiredExpedition();
   resolveExpiredCraft();
+  resolveExpiredCarpentry();
   syncAllWorkerStamina();
 
   els.coins.textContent=formatNumber(state.resources.coins);
@@ -587,6 +876,9 @@ function render(){
   els.inventoryIron.textContent=formatNumber(state.resources.iron);
   els.inventoryStone.textContent=formatNumber(state.resources.stone);
   els.inventoryPickaxeHeads.textContent=formatNumber(state.inventory.pickaxeHeads);
+  els.inventoryHandles.textContent=formatNumber(state.inventory.woodenHandles);
+  els.inventoryIronPickaxes.textContent=formatNumber(state.inventory.ironPickaxes);
+  els.inventoryMaraTool.textContent=hasIronPickaxeEquipped()?'Pico de hierro':'Sin equipar';
 
   if(dialog.open&&currentBuilding)renderBuildingResources(currentBuilding);
 
@@ -598,6 +890,28 @@ function render(){
       xp:[els.maraMiningXp],
       next:[els.maraNextXp],
       progress:[els.maraXpProgress]
+    }
+  );
+
+  renderSkillProgress(
+    state.workers.borin.smithingXp,
+    SMITHING_XP_STEP,
+    {
+      level:[els.borinProfessionLevel,els.borinSmithingLevel,els.smithyBorinLevel],
+      xp:[els.borinSmithingXp,els.smithyBorinXp],
+      next:[els.borinNextXp,els.smithyBorinNextXp],
+      progress:[els.borinXpProgress,els.smithyBorinProgress]
+    }
+  );
+
+  renderSkillProgress(
+    state.workers.eldon.carpentryXp,
+    CARPENTRY_XP_STEP,
+    {
+      level:[els.eldonProfessionLevel,els.eldonCarpentryLevel,els.carpenterEldonLevel],
+      xp:[els.eldonCarpentryXp,els.carpenterEldonXp],
+      next:[els.eldonNextXp,els.carpenterEldonNextXp],
+      progress:[els.eldonXpProgress,els.carpenterEldonProgress]
     }
   );
 
@@ -617,18 +931,16 @@ function render(){
   els.innBorinStaminaProgress.value=state.workers.borin.stamina;
   els.innBorinLevel.textContent=smithingLevel();
 
-  renderSkillProgress(
-    state.workers.borin.smithingXp,
-    SMITHING_XP_STEP,
-    {
-      level:[els.borinProfessionLevel,els.borinSmithingLevel,els.smithyBorinLevel],
-      xp:[els.borinSmithingXp,els.smithyBorinXp],
-      next:[els.borinNextXp,els.smithyBorinNextXp],
-      progress:[els.borinXpProgress,els.smithyBorinProgress]
-    }
-  );
+  els.eldonStaminaWorker.textContent=Math.floor(state.workers.eldon.stamina);
+  els.eldonStaminaWorkerProgress.value=state.workers.eldon.stamina;
+  els.carpenterEldonStamina.textContent=Math.floor(state.workers.eldon.stamina);
+  els.carpenterEldonStaminaProgress.value=state.workers.eldon.stamina;
+  els.innEldonStamina.textContent=Math.floor(state.workers.eldon.stamina);
+  els.innEldonStaminaProgress.value=state.workers.eldon.stamina;
+  els.innEldonLevel.textContent=carpentryLevel();
 
   const exp=state.activeExpedition;
+
   if(exp){
     const now=Date.now();
     const elapsed=now-exp.startedAt;
@@ -664,57 +976,87 @@ function render(){
     }
   }
 
-  if(state.activeExpedition){
-    els.innMaraState.textContent='En expedición';
-    els.innMaraState.classList.add('is-busy');
-    els.toggleMaraInnRest.disabled=true;
-    els.toggleMaraInnRest.textContent='Mara está en expedición';
-  }else if(state.workers.mara.restingAtInn){
-    els.innMaraState.textContent='Descansando';
-    els.innMaraState.classList.add('is-busy');
-    els.toggleMaraInnRest.disabled=false;
-    els.toggleMaraInnRest.textContent='Terminar descanso';
-  }else{
-    els.innMaraState.textContent='Disponible';
-    els.innMaraState.classList.remove('is-busy');
-    els.toggleMaraInnRest.disabled=state.workers.mara.stamina>=STAMINA_MAX;
-    els.toggleMaraInnRest.textContent=state.workers.mara.stamina>=STAMINA_MAX
-      ?'Resistencia completa'
-      :'Descansar en Posada';
-  }
+  const pickaxeEquipped=hasIronPickaxeEquipped();
+  els.expeditionTool.textContent=pickaxeEquipped?'Pico de hierro equipado':'Sin pico';
+  els.hardVeinChance.textContent=pickaxeEquipped?'15%':'No disponible';
+  els.expeditionPickaxes.textContent=formatNumber(state.inventory.ironPickaxes);
 
-  if(state.activeCraft){
-    els.innBorinState.textContent='Trabajando';
-    els.innBorinState.classList.add('is-busy');
-    els.toggleBorinInnRest.disabled=true;
-    els.toggleBorinInnRest.textContent='Borin está trabajando';
-  }else if(state.workers.borin.restingAtInn){
-    els.innBorinState.textContent='Descansando';
-    els.innBorinState.classList.add('is-busy');
-    els.toggleBorinInnRest.disabled=false;
-    els.toggleBorinInnRest.textContent='Terminar descanso';
+  if(pickaxeEquipped){
+    els.equipIronPickaxe.disabled=true;
+    els.equipIronPickaxe.textContent='Pico de hierro equipado';
+  }else if(exp||state.workers.mara.restingAtInn){
+    els.equipIronPickaxe.disabled=true;
+    els.equipIronPickaxe.textContent='Mara no está disponible';
+  }else if(state.inventory.ironPickaxes<1){
+    els.equipIronPickaxe.disabled=true;
+    els.equipIronPickaxe.textContent='No hay Pico de hierro';
   }else{
-    els.innBorinState.textContent='Disponible';
-    els.innBorinState.classList.remove('is-busy');
-    els.toggleBorinInnRest.disabled=state.workers.borin.stamina>=STAMINA_MAX;
-    els.toggleBorinInnRest.textContent=state.workers.borin.stamina>=STAMINA_MAX
-      ?'Resistencia completa'
-      :'Descansar en Posada';
+    els.equipIronPickaxe.disabled=false;
+    els.equipIronPickaxe.textContent='Equipar Pico de hierro';
   }
-
-  const innDefault='Libre: +1 cada 10 s. En Posada: +5 cada 10 s.';
-  els.maraInnFeedback.textContent=state.lastInnMessage||innDefault;
-  els.borinInnFeedback.textContent=state.lastInnMessage||innDefault;
 
   els.expeditionFeedback.textContent=state.lastMessage||
     `Esta salida cuesta ${EXPEDITION_STAMINA_COST} de Resistencia.`;
+
+  const carpenterJob=state.activeCarpentry;
+  els.carpenterWood.textContent=formatNumber(state.resources.wood);
+  els.carpenterHandles.textContent=formatNumber(state.inventory.woodenHandles);
+
+  if(carpenterJob){
+    const now=Date.now();
+    const duration=carpenterJob.endsAt-carpenterJob.startedAt;
+    const elapsed=now-carpenterJob.startedAt;
+    const progress=Math.max(0,Math.min(100,(elapsed/duration)*100));
+
+    els.eldonState.textContent='Trabajando';
+    els.eldonState.classList.add('is-busy');
+    els.carpenterEldonState.textContent='Trabajando';
+    els.carpenterEldonState.classList.add('is-busy');
+    els.carpentryStatus.textContent='Fabricando mango';
+    els.carpentryProgress.value=progress;
+    els.carpentryCountdown.textContent=`Termina en ${formatRemaining(carpenterJob.endsAt-now)}`;
+    els.startHandleCraft.disabled=true;
+    els.startHandleCraft.textContent='Eldon está trabajando';
+  }else{
+    const resting=state.workers.eldon.restingAtInn;
+    const enoughStamina=state.workers.eldon.stamina>=HANDLE_STAMINA_COST;
+    const enoughWood=state.resources.wood>=HANDLE_WOOD_COST;
+
+    els.eldonState.textContent=resting?'Descansando':'Disponible';
+    els.eldonState.classList.toggle('is-busy',resting);
+    els.carpenterEldonState.textContent=resting?'En la Posada':'Disponible';
+    els.carpenterEldonState.classList.toggle('is-busy',resting);
+    els.carpentryStatus.textContent=resting?'Eldon descansando':'Lista para fabricar';
+    els.carpentryProgress.value=0;
+    els.carpentryCountdown.textContent='';
+
+    if(resting){
+      els.startHandleCraft.disabled=true;
+      els.startHandleCraft.textContent='Eldon está descansando';
+    }else if(!enoughStamina){
+      els.startHandleCraft.disabled=true;
+      els.startHandleCraft.textContent='Falta Resistencia';
+    }else if(!enoughWood){
+      els.startHandleCraft.disabled=true;
+      els.startHandleCraft.textContent=`Faltan ${HANDLE_WOOD_COST-state.resources.wood} madera`;
+    }else{
+      els.startHandleCraft.disabled=false;
+      els.startHandleCraft.textContent='Fabricar mango';
+    }
+  }
+
+  els.carpentryFeedback.textContent=state.lastCarpentryMessage||
+    'El mango será un componente real del Pico de hierro.';
 
   els.smithyLevelHero.textContent=state.buildings.smithy.level;
   els.smithyIron.textContent=formatNumber(state.resources.iron);
   els.smithyStone.textContent=formatNumber(state.resources.stone);
   els.smithyPickaxeHeads.textContent=formatNumber(state.inventory.pickaxeHeads);
+  els.smithyHandles.textContent=formatNumber(state.inventory.woodenHandles);
+  els.smithyIronPickaxes.textContent=formatNumber(state.inventory.ironPickaxes);
 
   const craft=state.activeCraft;
+
   if(craft){
     const now=Date.now();
     const elapsed=now-craft.startedAt;
@@ -723,40 +1065,58 @@ function render(){
 
     els.borinState.textContent='Trabajando';
     els.borinState.classList.add('is-busy');
-    els.smithyBorinState.textContent='Forjando';
+    els.smithyBorinState.textContent='Trabajando';
     els.smithyBorinState.classList.add('is-busy');
-    els.craftStatus.textContent='En fabricación';
+    els.craftStatus.textContent=craft.label||(craft.recipe==='ironPickaxe'?'Ensamblando Pico':'Forjando cabeza');
     els.craftProgress.value=progress;
     els.craftCountdown.textContent=`Termina en ${formatRemaining(craft.endsAt-now)}`;
-    els.startCraft.disabled=true;
-    els.startCraft.textContent='Borin está forjando';
+    els.startHeadCraft.disabled=true;
+    els.startHeadCraft.textContent='Borin está trabajando';
+    els.startPickaxeAssembly.disabled=true;
+    els.startPickaxeAssembly.textContent='Borin está trabajando';
   }else{
-    const borinResting=state.workers.borin.restingAtInn;
+    const resting=state.workers.borin.restingAtInn;
+    const headStamina=state.workers.borin.stamina>=CRAFT_STAMINA_COST;
+    const assemblyStamina=state.workers.borin.stamina>=ASSEMBLY_STAMINA_COST;
     const enoughIron=state.resources.iron>=CRAFT_IRON_COST;
-    const enoughStamina=state.workers.borin.stamina>=CRAFT_STAMINA_COST;
+    const hasComponents=state.inventory.pickaxeHeads>=1&&state.inventory.woodenHandles>=1;
 
-    els.borinState.textContent=borinResting?'Descansando':'Disponible';
-    els.borinState.classList.toggle('is-busy',borinResting);
-    els.smithyBorinState.textContent=borinResting?'En la Posada':'Disponible';
-    els.smithyBorinState.classList.toggle('is-busy',borinResting);
-    els.craftStatus.textContent=borinResting?'Borin descansando':'Lista para fabricar';
+    els.borinState.textContent=resting?'Descansando':'Disponible';
+    els.borinState.classList.toggle('is-busy',resting);
+    els.smithyBorinState.textContent=resting?'En la Posada':'Disponible';
+    els.smithyBorinState.classList.toggle('is-busy',resting);
+    els.craftStatus.textContent=resting?'Borin descansando':'Lista para trabajar';
     els.craftProgress.value=0;
     els.craftCountdown.textContent='';
 
-    if(borinResting){
-      els.startCraft.disabled=true;
-      els.startCraft.textContent='Borin está descansando';
-    }else if(!enoughStamina){
-      els.startCraft.disabled=true;
-      els.startCraft.textContent='Falta Resistencia';
-    }else if(!enoughIron){
-      els.startCraft.disabled=true;
-      els.startCraft.textContent=`Faltan ${CRAFT_IRON_COST-state.resources.iron} hierro`;
+    if(resting){
+      els.startHeadCraft.disabled=true;
+      els.startHeadCraft.textContent='Borin está descansando';
+      els.startPickaxeAssembly.disabled=true;
+      els.startPickaxeAssembly.textContent='Borin está descansando';
     }else{
-      els.startCraft.disabled=false;
-      els.startCraft.textContent='Fabricar cabeza de pico';
+      els.startHeadCraft.disabled=!headStamina||!enoughIron;
+      els.startHeadCraft.textContent=!headStamina
+        ?'Falta Resistencia'
+        :!enoughIron
+          ?`Faltan ${CRAFT_IRON_COST-state.resources.iron} hierro`
+          :'Fabricar cabeza de pico';
+
+      els.startPickaxeAssembly.disabled=!assemblyStamina||!hasComponents;
+      els.startPickaxeAssembly.textContent=!assemblyStamina
+        ?'Falta Resistencia'
+        :!hasComponents
+          ?'Falta cabeza o mango'
+          :'Ensamblar Pico de hierro';
     }
   }
+
+  els.smithyFeedback.textContent=state.lastSmithyMessage||
+    'La Herrería ensambla el objeto final usando componentes de distintos oficios.';
+
+  renderInnWorker('mara',els.innMaraState,els.toggleMaraInnRest,els.maraInnFeedback);
+  renderInnWorker('borin',els.innBorinState,els.toggleBorinInnRest,els.borinInnFeedback);
+  renderInnWorker('eldon',els.innEldonState,els.toggleEldonInnRest,els.eldonInnFeedback);
 
   const requirements=smithyUpgradeRequirements();
   const smithyAlreadyUpgraded=state.buildings.smithy.level>=2;
@@ -788,14 +1148,16 @@ function render(){
     els.upgradeSmithy.textContent=state.activeCraft?'Borin está trabajando':'Mejorar Herrería';
     els.upgradeFeedback.textContent=state.lastSmithyMessage||'Completá los requisitos para habilitar la mejora.';
   }
-
-  els.smithyFeedback.textContent=state.lastSmithyMessage||`Cada pieza cuesta ${CRAFT_STAMINA_COST} de Resistencia. El trabajo y la recuperación usan tiempo real.`;
 }
 
 els.startExpedition.addEventListener('click',startExpedition);
+els.equipIronPickaxe.addEventListener('click',equipIronPickaxe);
+els.startHandleCraft.addEventListener('click',startHandleCraft);
+els.startHeadCraft.addEventListener('click',()=>startSmithyCraft('pickaxeHead'));
+els.startPickaxeAssembly.addEventListener('click',()=>startSmithyCraft('ironPickaxe'));
 els.toggleMaraInnRest.addEventListener('click',()=>toggleInnRest('mara'));
 els.toggleBorinInnRest.addEventListener('click',()=>toggleInnRest('borin'));
-els.startCraft.addEventListener('click',startCraft);
+els.toggleEldonInnRest.addEventListener('click',()=>toggleInnRest('eldon'));
 els.upgradeSmithy.addEventListener('click',upgradeSmithy);
 
 setInterval(render,500);
@@ -839,7 +1201,7 @@ if('serviceWorker' in navigator){
 
   window.addEventListener('load',async()=>{
     try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=0.4.2',{updateViaCache:'none'});
+      const reg=await navigator.serviceWorker.register('./sw.js?v=0.5.0',{updateViaCache:'none'});
       await reg.update();
     }catch{}
   });
