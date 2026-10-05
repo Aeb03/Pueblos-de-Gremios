@@ -26,8 +26,38 @@ globalThis.PG_DATA={
   adventurerProgression:{
     schemaVersion:1,
     xpToNext:{1:45,2:90,3:150},
+    maxPlayableLevel:4,
     zeroHpXpLossRate:.20,
-    mainStats:['hp','attack','defense','initiative','mana']
+    mainStats:['hp','attack','defense','initiative','mana'],
+    statGrowth:{
+      warrior:{hp:6,attack:1,attackEvery:2,mana:1},
+      explorer:{hp:4,attack:1,mana:2},
+      healer:{hp:3,attack:1,attackEvery:2,mana:4},
+      mage:{hp:3,attack:1,mana:4}
+    }
+  },
+
+  activityCombat:{
+    schemaVersion:1,
+    manaUse:{warrior:.10,explorer:.22,healer:.26,mage:.30},
+    enemies:{
+      wolf:{
+        id:'wolf',
+        name:'Lobo',
+        type:'animal',
+        hp:34,attack:9,defense:2,initiative:7,
+        xp:10,
+        maxCount:3
+      },
+      boar:{
+        id:'boar',
+        name:'Jabalí',
+        type:'animal',
+        hp:55,attack:12,defense:5,initiative:3,
+        xp:14,
+        maxCount:2
+      }
+    }
   },
 
   shops:{
