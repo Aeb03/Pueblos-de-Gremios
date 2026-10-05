@@ -814,6 +814,30 @@ function adventurerStep(state,rng){
   }
 }
 
+function runTextileOriginTrial(seed,cls,origin,runs=5000,enemy='boar',count=2){
+  const rng=mulberry32(seed);
+  let wins=0,hpLoss=0,manaUse=0;
+  for(let i=0;i<runs;i++){
+    const a=newAdventurer(cls,`trial-${i}`,rng);
+    removeFounderInSlot(a,'body');
+    const it=ITEM.leather;
+    a.equipment.leather={durability:it.durability,maxDurability:it.durability,origin,founder:false};
+
+    const {meanLoss,win,manaFactor}=commonRisk(a,enemy,count);
+    const loss=clamp(meanLoss*(.65+rng()*.70),0,1);
+    hpLoss+=loss;
+    const baseMana={warrior:.10,explorer:.22,healer:.26,mage:.30}[a.cls];
+    manaUse+=baseMana*manaFactor;
+    if(rng()<win&&loss<1)wins++;
+  }
+  return {
+    cls,origin,enemy,count,runs,
+    winRate:wins/runs,
+    hpLossMean:hpLoss/runs,
+    manaUseMean:manaUse/runs
+  };
+}
+
 function spendTotals(adv){
   const out={gear:0,rest:0,repair:0,consumable:0};
   for(const a of adv)for(const k of Object.keys(out))out[k]+=a.spending[k]||0;
@@ -949,4 +973,4 @@ function summarizeThreat(rows){
   };
 }
 
-module.exports={runCity,runThreatNeglect,summarize,summarizeThreat,PROFILES,mean,median};
+module.exports={runCity,runThreatNeglect,runTextileOriginTrial,summarize,summarizeThreat,PROFILES,mean,median};
