@@ -586,3 +586,50 @@ dialog form{padding:18px}
     grid-template-columns:1fr 1fr;
   }
 }
+
+
+/* v0.4.0 — Resistencia y Posada */
+.stamina-label{
+  display:block;
+  margin-top:7px;
+  color:#d8c49a !important;
+}
+.stamina-progress{
+  display:block;
+  width:100%;
+  height:9px;
+  margin-top:5px;
+  accent-color:#d4a64f;
+}
+.inn-art{
+  min-height:190px;
+  background:
+    radial-gradient(circle at 72% 26%,rgba(255,221,146,.2),transparent 18%),
+    linear-gradient(145deg,#473424,#6d5334 45%,#211912);
+}
+.inn-worker-card{
+  overflow:hidden;
+}
+.stamina-block{
+  margin-top:12px;
+  padding:0 10px 8px;
+  border:1px solid #3f3428;
+  border-radius:12px;
+  background:#15120f;
+}
+.stamina-block .kv{
+  padding-inline:0;
+}
+.stamina-block .stamina-progress{
+  margin:10px 0 3px;
+  height:11px;
+}
+#expeditionStaminaProgress{
+  margin:8px 0 5px;
+  height:10px;
+}
+@media (max-width:390px){
+  .worker-mara .stamina-label{
+    font-size:.7rem;
+  }
+}
