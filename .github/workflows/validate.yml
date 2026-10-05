@@ -22,20 +22,21 @@ jobs:
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest OK')"
       - name: Check version wiring
         run: |
-          grep -q "v0.6.0" index.html
-          grep -q "pueblos-gremios-v0.6.0" sw.js
-          grep -q "app.js?v=0.6.0" index.html
-          grep -q "styles.css?v=0.6.0" index.html
-      - name: Check item quality system
+          grep -q "v0.7.0" index.html
+          grep -q "pueblos-gremios-v0.7.0" sw.js
+          grep -q "app.js?v=0.7.0" index.html
+          grep -q "styles.css?v=0.7.0" index.html
+      - name: Check NPC exhibition and book
         run: |
-          grep -q "SWORD_RECIPE_LEVEL=2" app.js
-          grep -q "SWORD_IRON_COST=8" app.js
-          grep -q "swordQualityChances" app.js
-          grep -q "createIronSword" app.js
-          grep -q "qualityTier" app.js
-          grep -q "estimatedValue" app.js
-          grep -q "salePrice" app.js
-          grep -q "data-sword-price" app.js
-          grep -q 'id="startSwordCraft"' index.html
-          grep -q 'id="swordInventoryList"' index.html
+          grep -q "ADVENTURER_BLUEPRINTS" app.js
+          grep -q "SMITHY_VISIT_MIN_MS=45_000" app.js
+          grep -q "evaluateSwordForVisitor" app.js
+          grep -q "smithyTraffic" app.js
+          grep -q "SMITHY_BOOK_DETAIL_LIMIT=20" app.js
+          grep -q "archiveSmithyEntry" app.js
+          grep -q "data-sword-list" app.js
+          grep -q 'id="smithyVisitorCard"' index.html
+          grep -q 'id="smithyExhibitionList"' index.html
+          grep -q 'id="smithyBookList"' index.html
+          grep -q 'id="smithyVisitBadge"' index.html
           grep -q "SAVE_KEY='pueblos-gremios-save-v0.2.0'" app.js

@@ -4,51 +4,105 @@ PWA de gestión fantástica desarrollada paso a paso.
 
 ## Estado actual
 
-**v0.6.0 — Calidad de objetos**
+**v0.7.0 — Aventureros y Libro de Herrería**
 
-- Se conserva todo el progreso anterior.
-- Borin puede fabricar una **Espada de hierro** a partir de Herrería Nv. 2.
-- Coste de playtest: 8 hierro, 20 Resistencia, 30 segundos y +50 XP de Herrería.
-- Cada espada es una pieza individual: conserva calidad, puntuación, daño, durabilidad, valor estimado y precio de venta.
-- La calidad se determina al iniciar la fabricación y queda persistida; recargar la PWA no permite volver a tirar.
-- Distribución base de una receta difícil para un artesano justo al nivel:
-  - 25% Mediocre
-  - 55% Normal
-  - 18% Buena
-  - 2% Excelente
-- Las mejoras existentes aportan ventajas pequeñas:
-  - cada nivel de Herrería de Borin por encima de la receta suma gradualmente;
-  - cada nivel del edificio Herrería por encima del inicial suma gradualmente.
-- El conjunto de mejoras puede llevar la probabilidad de Excelente a una franja mucho más razonable, pero nunca vuelve automática una pieza excelente.
-- Las probabilidades de todas las calidades se muestran antes de fabricar.
-- La calidad modifica estadísticas reales:
-  - Mediocre: daño 7, menor durabilidad;
-  - Normal: daño 8;
-  - Buena: daño 9;
-  - Excelente: daño 10 y mayor durabilidad.
-- El juego calcula un **valor estimado** según las características de la pieza.
-- El jugador define su **precio de venta** de forma independiente desde Inventario.
-- En esta versión todavía no hay compradores: prepara la base para Exhibición y la mente de compra de los NPC.
+La Herrería ya tiene actividad autónoma de clientes y la primera versión de la mente de compra de los NPC.
 
-## Filosofía de calidad
+### Aventureros
 
-"Poder fabricar" no significa "poder fabricar bien".
+Tres aventureros recurrentes pueden visitar la Herrería durante el playtest:
 
-Una receta cercana al nivel del artesano debe seguir siendo desafiante. Cada mejora individual aporta poco, pero desarrollar de forma conjunta al trabajador, el edificio y —más adelante— materiales, herramientas y ejecución manual debe elevar de forma perceptible la posibilidad de obtener una pieza excelente.
+- **Kael** — Guerrero prudente.
+- **Lyra** — Exploradora ahorradora.
+- **Darek** — Mercenario ambicioso.
 
-## Circuito productivo existente
+Cada uno conserva monedas, arma actual, cantidad de visitas y compras. La necesidad cambia en cada visita y representa situaciones como prepararse para una expedición o necesitar reemplazar un arma gastada.
 
-Mara consigue hierro → Borin fabrica componentes y objetos → Eldon aporta componentes de madera → Herrería ensambla herramientas → Mara usa el Pico de hierro → puede aparecer Veta dura.
+### Exhibición
 
-Ahora se suma un segundo destino para el hierro:
+Las Espadas de hierro ya no están automáticamente a la venta.
 
-Mara consigue hierro → Borin forja una Espada de hierro → la pieza obtiene calidad y estadísticas propias → el jugador fija su precio → futura Exhibición la ofrecerá a NPC aventureros.
+Desde Inventario el jugador puede:
 
-## Próximo paso previsto
+- definir el precio individual;
+- poner una espada en **Exhibición**;
+- quitarla de Exhibición.
 
-**Exhibición + decisión de compra del NPC.**
+Sólo las piezas exhibidas pueden ser consideradas por un aventurero.
 
-El aventurero evaluará la pieza concreta según utilidad, necesidad actual, mejora frente a su equipo, afinidad con su perfil, dinero disponible y precio solicitado. Los pedidos específicos quedarán como una aparición más rara.
+### Decisión de compra
+
+El NPC no compra por un porcentaje aislado. Para cada pieza considera:
+
+- necesidad actual;
+- afinidad del objeto con su perfil;
+- mejora frente a su arma;
+- relación entre valor estimado y precio pedido;
+- dinero disponible;
+- prioridades de su personalidad.
+
+Los pesos cambian según el personaje. Una misma espada puede ser atractiva para un aventurero y poco interesante para otro.
+
+Si compra:
+
+- la espada desaparece del inventario;
+- la ciudad recibe las monedas;
+- el aventurero paga con sus propias monedas;
+- su arma registrada mejora.
+
+### Visita visible
+
+Durante una visita en vivo:
+
+- la Herrería muestra un indicador **👤 Cliente** en el mapa;
+- dentro de la Herrería aparece el aventurero actual;
+- se muestran rol, personalidad, monedas, daño de su arma y necesidad;
+- la visita dura 15 segundos de playtest.
+
+Las visitas se programan cada 45–90 segundos durante esta fase de prueba.
+
+### 📖 Libro de la Herrería
+
+Cada visita terminada deja una anotación persistente con:
+
+- aventurero;
+- contexto;
+- compra o no compra;
+- motivo principal;
+- pieza y precio si hubo venta.
+
+Si el jugador estaba haciendo otra cosa o con la PWA cerrada, las visitas vencidas se recuperan al volver y quedan registradas.
+
+El mapa muestra **📖 N nuevas** cuando hay anotaciones no leídas.
+
+Al entrar a la Herrería las anotaciones pasan a leídas.
+
+### Autolimpieza
+
+El libro conserva un máximo de **20 visitas detalladas**.
+
+Cuando se supera ese límite, las más antiguas se compactan en un resumen acumulado con:
+
+- visitas;
+- ventas;
+- visitas sin compra;
+- monedas ingresadas.
+
+El botón **Limpiar leídos** permite compactar manualmente las entradas ya vistas sin perder el resumen de actividad.
+
+## Sistemas anteriores que continúan
+
+- Resistencia y Posada de Mara, Borin y Eldon.
+- Carpintería y fabricación de Mango de pico.
+- Cabeza de pico y ensamblaje de Pico de hierro.
+- Pico equipado a Mara y Veta dura.
+- Espada de hierro con calidad individual, daño, durabilidad y valor estimado.
+- Precio de venta definido por el jugador.
+- Progreso persistente usando la misma clave de guardado.
+
+## Siguiente bloque previsto
+
+Agregar los **pedidos raros** como una vía distinta de la venta normal en Exhibición.
 
 ## Desarrollo
 
