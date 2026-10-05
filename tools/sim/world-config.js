@@ -4,11 +4,11 @@ const TICK_MINUTES=5;
 const MAX_MINUTES=90;
 
 const PROFILES={
-  efficient:{label:'Eficiente',worker:.98,adv:.65,shop:.26,restHp:.58,restMana:.36,missionBias:1.08,paidMission:.44},
-  normal:{label:'Normal',worker:.86,adv:.55,shop:.18,restHp:.60,restMana:.40,missionBias:1.00,paidMission:.40},
-  conservative:{label:'Conservador',worker:.78,adv:.45,shop:.12,restHp:.70,restMana:.50,missionBias:.92,paidMission:.34},
-  aggressive:{label:'Agresivo',worker:.88,adv:.70,shop:.24,restHp:.45,restMana:.28,missionBias:1.05,paidMission:.48},
-  poor:{label:'Mala gestión',worker:.58,adv:.38,shop:.08,restHp:.55,restMana:.34,missionBias:.82,paidMission:.30}
+  efficient:{label:'Eficiente',worker:.98,adv:.65,shop:.26,sellLoot:.72,restHp:.58,restMana:.36,missionBias:1.08,paidMission:.44},
+  normal:{label:'Normal',worker:.86,adv:.55,shop:.18,sellLoot:.62,restHp:.60,restMana:.40,missionBias:1.00,paidMission:.40},
+  conservative:{label:'Conservador',worker:.78,adv:.45,shop:.12,sellLoot:.55,restHp:.70,restMana:.50,missionBias:.92,paidMission:.34},
+  aggressive:{label:'Agresivo',worker:.88,adv:.70,shop:.24,sellLoot:.68,restHp:.45,restMana:.28,missionBias:1.05,paidMission:.48},
+  poor:{label:'Mala gestión',worker:.58,adv:.38,shop:.08,sellLoot:.40,restHp:.55,restMana:.34,missionBias:.82,paidMission:.30}
 };
 
 const CLASS={
