@@ -27,9 +27,9 @@ jobs:
         run: |
           grep -q "v0.8.1" index.html
           grep -q "pueblos-gremios-v0.8.1" sw.js
-          grep -q "game-data.js?v=0.8.0" index.html
-          grep -q "app.js?v=0.8.0" index.html
-          grep -q "styles.css?v=0.8.0" index.html
+          grep -q "game-data.js?v=0.8.1" index.html
+          grep -q "app.js?v=0.8.1" index.html
+          grep -q "styles.css?v=0.8.1" index.html
           grep -q "SAVE_KEY='pueblos-gremios-save-v0.8.0'" app.js
       - name: Check foundation cycle
         run: |
