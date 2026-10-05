@@ -39,7 +39,7 @@ function newAdventurer(cls,id,rng){
     attack:b.attack,defense:b.defense,initiative:b.initiative,evasion:b.evasion,
     coins:randInt(rng,55,75),earned:0,spent:0,rests:0,repairs:0,downs:0,fights:0,
     meals:0,rations:0,rationPrepared:false,
-    loot:{},
+    loot:{},lootOfferMemory:{},
     spending:{gear:0,rest:0,repair:0,consumable:0},
     equipment:{},
     active:true
@@ -50,7 +50,7 @@ function initialState(rng,profile){
   return {
     profile,
     city:{
-      level:1,dev:0,level2At:null,level3At:null,
+      level:1,dev:0,marketTick:0,level2At:null,level3At:null,
       foundersLevelAtCity3:null,foundersAtLeast2AtCity3:null,
       coins:240,missionPaid:0,sales:0,serviceRevenue:0,repairRevenue:0,lootPurchases:0,
       resources:{
@@ -355,6 +355,10 @@ function sellLootStep(state,a,rng){
     let qty=Math.floor(qtyRaw||0);
     if(qty<=0||!MATERIAL[key])continue;
 
+    const memory=a.lootOfferMemory[key]||{knownQty:0,retryAt:0};
+    const hasNewLoot=qty>memory.knownQty;
+    if(!hasNewLoot&&city.marketTick<memory.retryAt)continue;
+
     city.lootMarket.offerUnits+=qty;
     const target=materialTarget(city,key);
     const have=city.resources[key]||0;
@@ -362,6 +366,7 @@ function sellLootStep(state,a,rng){
 
     if(need<=0){
       city.lootMarket.noDemandUnits+=qty;
+      a.lootOfferMemory[key]={knownQty:qty,retryAt:city.marketTick+3};
       continue;
     }
 
@@ -372,6 +377,7 @@ function sellLootStep(state,a,rng){
 
     if(accepted<=0){
       city.lootMarket.treasuryRejectUnits+=qty;
+      a.lootOfferMemory[key]={knownQty:qty,retryAt:city.marketTick+2};
       continue;
     }
 
@@ -386,9 +392,12 @@ function sellLootStep(state,a,rng){
     sold=true;
 
     const remaining=qty-accepted;
-    if(remaining>0){
+    if(remaining<=0){
+      delete a.lootOfferMemory[key];
+    }else{
       if(accepted>=need)city.lootMarket.noDemandUnits+=remaining;
       else city.lootMarket.treasuryRejectUnits+=remaining;
+      a.lootOfferMemory[key]={knownQty:remaining,retryAt:city.marketTick+(accepted>=need?3:2)};
     }
   }
   return sold;
@@ -420,12 +429,12 @@ function plateStep(state,a,rng){
   const hp=a.hp/a.hpMax,mana=a.manaMax?a.mana/a.manaMax:1;
   if(hp<state.profile.restHp||mana<state.profile.restMana)return false;
   if(hp>=.88&&mana>=.80)return false;
-  if(rng()>.55)return false;
+  if(rng()>.28)return false;
   return serveFood(state,a,'plate');
 }
 function rationStep(state,a,rng,important=false){
   if(a.rationPrepared)return false;
-  const chance=important?.70:clamp(.12+state.profile.shop*.60,.15,.35);
+  const chance=important?.70:clamp(.06+state.profile.shop*.35,.10,.24);
   if(rng()>chance)return false;
   return serveFood(state,a,'ration');
 }
@@ -628,6 +637,7 @@ function spendTotals(adv){
 function runCity(seed,profileKey){
   const rng=mulberry32(seed),profile=PROFILES[profileKey],state=initialState(rng,profile);
   for(let minute=TICK_MINUTES;minute<=MAX_MINUTES;minute+=TICK_MINUTES){
+    state.city.marketTick++;
     workerStep(state,rng);craftStep(state,rng);maybeBuildTextile(state,minute);buyStep(state,rng);
     adventurerStep(state,rng);threatStep(state,rng);maybeLevelCity(state,minute,rng);
   }
@@ -670,6 +680,7 @@ function runCity(seed,profileKey){
 function runThreatNeglect(seed,profileKey='normal',minutes=180){
   const rng=mulberry32(seed),profile=PROFILES[profileKey],state=initialState(rng,profile);
   for(let minute=TICK_MINUTES;minute<=minutes;minute+=TICK_MINUTES){
+    state.city.marketTick++;
     workerStep(state,rng);craftStep(state,rng);maybeBuildTextile(state,minute);buyStep(state,rng);
     threatStep(state,rng,{allowResponse:false});maybeLevelCity(state,minute,rng);
   }
