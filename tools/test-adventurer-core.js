@@ -36,11 +36,11 @@ function testLegacyMigration(){
   const npc=CORE.normalizeAdventurer(legacy,DATA);
   assert.equal(npc.adventurerSchemaVersion,1);
   assert.equal(npc.classKey,'warrior');
-  assert.deepEqual(npc.stats,{hp:120,attack:10,defense:7,initiative:4,mana:18});
-  assert.equal(npc.hpMax,120);
-  assert.equal(npc.hpCurrent,60,'debe conservar la proporción de Vida del save anterior');
-  assert.equal(npc.manaMax,18);
-  assert.equal(npc.manaCurrent,18);
+  assert.deepEqual(npc.stats,{hp:126,attack:11,defense:7,initiative:4,mana:19});
+  assert.equal(npc.hpMax,126);
+  assert.equal(npc.hpCurrent,63,'debe conservar la proporción de Vida del save anterior con stats de Nv. 2');
+  assert.equal(npc.manaMax,19);
+  assert.equal(npc.manaCurrent,19);
   assert.equal(npc.level,2);
   assert.equal(npc.xp,17);
   assert.equal(npc.coins,211);
@@ -126,4 +126,4 @@ testLegacyStarterMigration();
 testFreshClasses();
 testProgressionData();
 
-console.log('v0.9.0a adventurer-core: 4 suites OK');
+console.log('v0.9.0c adventurer-core: 4 suites OK');
