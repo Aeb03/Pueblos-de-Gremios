@@ -22,10 +22,12 @@ jobs:
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest OK')"
       - name: Check version wiring
         run: |
-          grep -q "v0.2.1" index.html
-          grep -q "pueblos-gremios-v0.2.1" sw.js
-      - name: Check resource context
+          grep -q "v0.3.0" index.html
+          grep -q "pueblos-gremios-v0.3.0" sw.js
+      - name: Check smithy loop
         run: |
-          grep -q "Inventario de la ciudad" index.html
-          grep -q "building-resource-chips" index.html
+          grep -q 'data-screen="smithy"' index.html
+          grep -q "activeCraft" app.js
+          grep -q "SMITHY_UPGRADE_PRESTIGE_REWARD=20" app.js
+          grep -q "city:{prestige:120}" app.js
           grep -q "SAVE_KEY='pueblos-gremios-save-v0.2.0'" app.js
