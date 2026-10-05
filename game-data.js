@@ -9,7 +9,16 @@ globalThis.PG_DATA={
     startingTier:'Pueblo',
     startingPrestige:0,
     adventurerCount:3,
+    founderClassKeys:['warrior','explorer','healer'],
+    adventurerCoinRange:[55,75],
     resources:{coins:900,wood:50,iron:24,stone:8}
+  },
+
+  adventurerProgression:{
+    schemaVersion:1,
+    xpToNext:{1:45,2:90,3:150},
+    zeroHpXpLossRate:.20,
+    mainStats:['hp','attack','defense','initiative','mana']
   },
 
   shops:{
@@ -106,26 +115,46 @@ globalThis.PG_DATA={
     warrior:{
       id:'warrior',
       label:'Guerrero',
-      baseStats:{hp:108,attack:8,defense:8,speed:4,support:1},
-      weaponDamage:7,
-      smithyAffinity:.96
+      identity:'Protector',
+      baseStats:{hp:120,attack:10,defense:7,initiative:4,mana:18},
+      evasion:.02,
+      weaponDamage:4,
+      smithyAffinity:.92,
+      stateAffinity:['wound','stun']
     },
     explorer:{
       id:'explorer',
       label:'Explorador',
-      baseStats:{hp:92,attack:7,defense:5,speed:8,support:3},
-      weaponDamage:7,
-      smithyAffinity:.78
+      identity:'Daño físico / Evasión',
+      baseStats:{hp:90,attack:14,defense:3,initiative:8,mana:32},
+      evasion:.14,
+      weaponDamage:4,
+      smithyAffinity:.82,
+      combatStyles:['bow','daggers'],
+      stateAffinity:['wound','poison','paralysis']
     },
     healer:{
       id:'healer',
       label:'Sanador',
-      baseStats:{hp:88,attack:4,defense:5,speed:5,support:10},
-      weaponDamage:5,
-      smithyAffinity:.54
+      identity:'Soporte sagrado',
+      baseStats:{hp:80,attack:9,defense:5,initiative:5,mana:58},
+      evasion:.03,
+      weaponDamage:3,
+      smithyAffinity:.56,
+      stateAffinity:[]
+    },
+    mage:{
+      id:'mage',
+      label:'Mago',
+      identity:'Daño arcano / elemental',
+      baseStats:{hp:72,attack:16,defense:3,initiative:6,mana:64},
+      evasion:.03,
+      weaponDamage:3,
+      smithyAffinity:.48,
+      stateAffinity:['burn','paralysis'],
+      founder:false
     }
   },
-
   personalities:{
     prudent:{
       id:'prudent',
