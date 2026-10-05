@@ -369,3 +369,71 @@ dialog form{padding:18px}
   .resource-strip{font-size:.64rem}
   .worker-mara small{font-size:.72rem}
 }
+
+
+/* v0.2.1 — recursos por oficio */
+.city-resource-strip{
+  min-width:auto;
+}
+.inventory-groups{
+  display:grid;
+  gap:10px;
+}
+.inventory-group{
+  margin-top:0;
+}
+.inventory-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:11px 0;
+  border-bottom:1px solid #33291f;
+}
+.inventory-row:last-child{
+  border-bottom:0;
+}
+.inventory-note{
+  margin:4px 2px 0;
+}
+.building-resource-panel{
+  margin:14px 0;
+  padding:12px;
+  border:1px solid #3f3428;
+  border-radius:12px;
+  background:#15120f;
+}
+.building-resource-panel .eyebrow{
+  margin-bottom:9px;
+}
+.building-resource-chips{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.building-resource-chip{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 11px;
+  border:1px solid #4a3b2b;
+  border-radius:10px;
+  background:#211b15;
+}
+.building-resource-chip span{
+  color:var(--muted);
+  font-size:.86rem;
+}
+.building-resource-chip strong{
+  color:var(--gold2);
+  font-variant-numeric:tabular-nums;
+}
+.building-resource-empty{
+  margin:0;
+}
+@media (max-width:390px){
+  .building-resource-chips{
+    grid-template-columns:1fr;
+  }
+}

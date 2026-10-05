@@ -5,20 +5,17 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17130f">
 <meta name="description" content="Pueblos de Gremios - gestión de un pueblo fantástico y su reino.">
-<link rel="manifest" href="./manifest.webmanifest?v=0.2.0">
-<link rel="icon" href="./icons/icon.svg?v=0.2.0" type="image/svg+xml">
-<link rel="stylesheet" href="./styles.css?v=0.2.0">
+<link rel="manifest" href="./manifest.webmanifest?v=0.2.1">
+<link rel="icon" href="./icons/icon.svg?v=0.2.1" type="image/svg+xml">
+<link rel="stylesheet" href="./styles.css?v=0.2.1">
 <title>Pueblos de Gremios</title>
 </head>
 <body>
 <main class="app-shell" id="app">
 <header class="topbar">
   <div><p class="eyebrow">Pueblos de Gremios</p><h1 id="screenTitle">Villa del Roble</h1></div>
-  <div class="resource-strip" aria-label="Recursos">
+  <div class="resource-strip city-resource-strip" aria-label="Recursos generales de la ciudad">
     <span title="Monedas">🪙 <b id="coinsValue">1.240</b></span>
-    <span title="Madera">🪵 <b id="woodValue">86</b></span>
-    <span title="Hierro">⛏️ <b id="ironValue">42</b></span>
-    <span title="Piedra">🪨 <b id="stoneValue">0</b></span>
   </div>
 </header>
 
@@ -89,16 +86,34 @@
   </div>
 </section>
 
+<section class="screen" data-screen="inventory">
+  <div class="section-head"><h2>Inventario de la ciudad</h2><span>Vista general</span></div>
+  <div class="inventory-groups">
+    <article class="panel inventory-group">
+      <p class="eyebrow">Economía</p>
+      <div class="inventory-row"><span>🪙 Monedas</span><strong id="inventoryCoins">1.240</strong></div>
+    </article>
+    <article class="panel inventory-group">
+      <p class="eyebrow">Materiales</p>
+      <div class="inventory-row"><span>🪵 Madera</span><strong id="inventoryWood">86</strong></div>
+      <div class="inventory-row"><span>⛏️ Hierro</span><strong id="inventoryIron">42</strong></div>
+      <div class="inventory-row"><span>🪨 Piedra</span><strong id="inventoryStone">0</strong></div>
+    </article>
+    <p class="muted inventory-note">Esta pantalla sirve para consultar todo el stock. Durante el juego normal cada oficio mostrará sólo los recursos que utiliza.</p>
+  </div>
+</section>
+
 <section class="screen" data-screen="menu">
   <div class="menu-grid">
     <button data-go="workers">👥<span>Trabajadores</span></button>
     <button data-go="expedition">🗺️<span>Expediciones</span></button>
+    <button data-go="inventory">🎒<span>Inventario</span></button>
     <button data-go="kingdom">👑<span>Reino</span></button>
     <button id="installBtn">📲<span id="installLabel">Instalar PWA</span></button>
   </div>
   <div class="panel">
-    <p><strong>Versión:</strong> v0.2.0 — Primer bucle jugable</p>
-    <p class="muted">Progreso local guardado automáticamente: recursos, expediciones y experiencia de Minería.</p>
+    <p><strong>Versión:</strong> v0.2.1 — Recursos por oficio</p>
+    <p class="muted">La barra principal muestra sólo recursos generales. Los materiales se consultan en sus oficios o en Inventario.</p>
   </div>
 </section>
 
@@ -114,11 +129,16 @@
   <form method="dialog">
     <div class="dialog-head"><div><p class="eyebrow">Edificio</p><h2 id="buildingName">Herrería</h2></div><button class="icon-btn" value="cancel" aria-label="Cerrar">✕</button></div>
     <p id="buildingCopy">Gestión del edificio.</p>
-    <div class="coming-soon">Esta sección se desarrollará en las próximas versiones.</div>
+    <section class="building-resource-panel">
+      <p class="eyebrow">Recursos del oficio</p>
+      <div class="building-resource-chips" id="buildingResources"></div>
+      <p class="muted building-resource-empty" id="buildingResourceEmpty"></p>
+    </section>
+    <div class="coming-soon">La gestión completa de este edificio se desarrollará en las próximas versiones.</div>
     <button class="primary" value="cancel">Cerrar</button>
   </form>
 </dialog>
 </main>
-<script src="./app.js?v=0.2.0" defer></script>
+<script src="./app.js?v=0.2.1" defer></script>
 </body>
 </html>
