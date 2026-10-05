@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17130f">
 <meta name="description" content="Pueblos de Gremios - gestión de un pueblo fantástico y su reino.">
-<link rel="manifest" href="./manifest.webmanifest?v=0.4.0">
-<link rel="icon" href="./icons/icon.svg?v=0.4.0" type="image/svg+xml">
-<link rel="stylesheet" href="./styles.css?v=0.4.0">
+<link rel="manifest" href="./manifest.webmanifest?v=0.4.1">
+<link rel="icon" href="./icons/icon.svg?v=0.4.1" type="image/svg+xml">
+<link rel="stylesheet" href="./styles.css?v=0.4.1">
 <title>Pueblos de Gremios</title>
 </head>
 <body>
@@ -46,6 +46,8 @@
         <p>Herrero · Nv. <span id="borinProfessionLevel">1</span></p>
         <small>Herrería <span id="borinSmithingLevel">1</span> · <span id="borinSmithingXp">0</span>/<span id="borinNextXp">100</span> XP</small>
         <progress class="skill-progress" id="borinXpProgress" value="0" max="100"></progress>
+        <small class="stamina-label">Resistencia <span id="borinStaminaWorker">100</span>/100</small>
+        <progress class="stamina-progress" id="borinStaminaWorkerProgress" value="100" max="100"></progress>
       </div>
       <span class="state" id="borinState">Disponible</span>
     </article>
@@ -91,6 +93,8 @@
     </div>
     <small><span id="smithyBorinXp">0</span>/<span id="smithyBorinNextXp">100</span> XP</small>
     <progress class="skill-progress" id="smithyBorinProgress" value="0" max="100"></progress>
+    <small class="stamina-label">Resistencia <span id="smithyBorinStamina">100</span>/100</small>
+    <progress class="stamina-progress" id="smithyBorinStaminaProgress" value="100" max="100"></progress>
   </article>
 
   <article class="panel recipe-card">
@@ -104,6 +108,7 @@
     </div>
     <div class="kv"><span>Coste</span><strong>5 hierro</strong></div>
     <div class="kv"><span>Tiempo de prueba</span><strong>20 s</strong></div>
+    <div class="kv"><span>Coste de Resistencia</span><strong>15</strong></div>
     <div class="kv"><span>Experiencia</span><strong>+40 XP Herrería</strong></div>
     <div class="craft-status">
       <div class="kv"><span>Estado</span><strong id="craftStatus">Lista para fabricar</strong></div>
@@ -163,8 +168,29 @@
       <div class="kv"><span>Descansando en Posada</span><strong>+5 cada 10 s</strong></div>
     </div>
 
-    <button class="primary" id="toggleInnRest">Descansar en Posada</button>
-    <p class="feedback" id="innFeedback" aria-live="polite"></p>
+    <button class="primary" id="toggleMaraInnRest">Descansar en Posada</button>
+    <p class="feedback" id="maraInnFeedback" aria-live="polite"></p>
+  </article>
+
+  <article class="panel inn-worker-card">
+    <div class="smithy-worker-head">
+      <div class="avatar">B</div>
+      <div>
+        <p class="eyebrow">Trabajador</p>
+        <h3>Borin · Herrero Nv. <span id="innBorinLevel">1</span></h3>
+      </div>
+      <span class="state" id="innBorinState">Disponible</span>
+    </div>
+
+    <div class="stamina-block">
+      <div class="kv"><span>Resistencia</span><strong><span id="innBorinStamina">100</span>/100</strong></div>
+      <progress class="stamina-progress" id="innBorinStaminaProgress" value="100" max="100"></progress>
+      <div class="kv"><span>Recuperación normal</span><strong>+1 cada 10 s</strong></div>
+      <div class="kv"><span>Descansando en Posada</span><strong>+5 cada 10 s</strong></div>
+    </div>
+
+    <button class="primary" id="toggleBorinInnRest">Descansar en Posada</button>
+    <p class="feedback" id="borinInnFeedback" aria-live="polite"></p>
   </article>
 
   <article class="panel">
@@ -237,8 +263,8 @@
     <button id="installBtn">📲<span id="installLabel">Instalar PWA</span></button>
   </div>
   <div class="panel">
-    <p><strong>Versión:</strong> v0.4.0 — Resistencia y Posada</p>
-    <p class="muted">Mara gasta Resistencia en expediciones, se recupera con tiempo real y puede descansar más rápido en la Posada.</p>
+    <p><strong>Versión:</strong> v0.4.1 — Resistencia de trabajadores</p>
+    <p class="muted">Mara y Borin gastan Resistencia al trabajar, recuperan al quedar libres y pueden descansar más rápido en la Posada.</p>
   </div>
 </section>
 
@@ -264,6 +290,6 @@
   </form>
 </dialog>
 </main>
-<script src="./app.js?v=0.4.0" defer></script>
+<script src="./app.js?v=0.4.1" defer></script>
 </body>
 </html>
