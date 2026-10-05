@@ -25,11 +25,11 @@ jobs:
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest OK')"
       - name: Check version wiring
         run: |
-          grep -q "v0.8.0" index.html
-          grep -q "pueblos-gremios-v0.8.0" sw.js
-          grep -q "game-data.js?v=0.8.0" index.html
-          grep -q "app.js?v=0.8.0" index.html
-          grep -q "styles.css?v=0.8.0" index.html
+          grep -q "v0.8.1" index.html
+          grep -q "pueblos-gremios-v0.8.1" sw.js
+          grep -q "game-data.js?v=0.8.1" index.html
+          grep -q "app.js?v=0.8.1" index.html
+          grep -q "styles.css?v=0.8.1" index.html
           grep -q "SAVE_KEY='pueblos-gremios-save-v0.8.0'" app.js
       - name: Check foundation cycle
         run: |
@@ -52,3 +52,18 @@ jobs:
           grep -q "ironPickaxe" game-data.js
           grep -q "ironSword" game-data.js
           grep -q "simpleWorkbench" game-data.js
+
+      - name: Check smithy business system
+        run: |
+          grep -q "smithyStorage" app.js
+          grep -q "carpenterStorage" app.js
+          grep -q "storageCapacity:20" app.js
+          grep -q "exhibitionCapacity:3" app.js
+          grep -q "data-smithy-tab=\"craft\"" index.html
+          grep -q "data-smithy-tab=\"storage\"" index.html
+          grep -q "data-smithy-tab=\"sale\"" index.html
+          grep -q "data-smithy-tab=\"book\"" index.html
+          grep -q "data-smithy-tab=\"upgrade\"" index.html
+          grep -q 'id="smithyStorageUsed"' index.html
+          grep -q 'id="swordInventoryList"' index.html
+          ! grep -q 'id="inventoryIronSwords"' index.html
