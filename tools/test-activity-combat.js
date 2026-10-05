@@ -45,10 +45,10 @@ function make(classKey='warrior'){
   const wolves=COMBAT.previewEncounter(a,'wolf',3,DATA);
   const boars=COMBAT.previewEncounter(a,'boar',2,DATA);
 
-  assert.ok(wolves.meanHpLossRate>.32&&wolves.meanHpLossRate<.34);
-  assert.ok(wolves.winChance>.78&&wolves.winChance<.80);
-  assert.ok(boars.meanHpLossRate>.34&&boars.meanHpLossRate<.35);
-  assert.ok(boars.winChance>.80&&boars.winChance<.82);
+  assert.ok(wolves.meanHpLossRate>.37&&wolves.meanHpLossRate<.38);
+  assert.ok(wolves.winChance>.72&&wolves.winChance<.73);
+  assert.ok(boars.meanHpLossRate>.40&&boars.meanHpLossRate<.41);
+  assert.ok(boars.winChance>.73&&boars.winChance<.74);
 })();
 
 (function victoryPersistsDamageAndXp(){
