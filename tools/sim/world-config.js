@@ -36,12 +36,33 @@ const RECIPES={
   bow:{wood:4,tendon:2},
   staff:{wood:3},
   shield:{wood:4,iron:1},
-  leather:{skin:3,tendon:1},
-  gloves:{skin:2},
-  boots:{skin:2}
+  leather:{hide:3,tendon:1},
+  gloves:{hide:2},
+  boots:{hide:2}
 };
+
+const FOOD={
+  plate:{price:2,meat:.75,firewood:.15,hpRestore:.08,manaRestore:.10},
+  ration:{price:3,meat:.75,firewood:.10,hpProtection:.08,manaProtection:.05}
+};
+
+const MATERIAL={
+  meat:{price:2,target:[8,12,16]},
+  tendon:{price:4,target:[4,7,10]},
+  wolfSkin:{price:5,target:[3,7,10]},
+  boarSkin:{price:6,target:[3,7,10]},
+  wolfFang:{price:7,target:[1,3,4]},
+  boarTusk:{price:8,target:[1,3,4]},
+  alphaWolfSkin:{price:16,target:[0,2,3],rare:true},
+  alphaFang:{price:18,target:[0,1,2],rare:true},
+  greatBoarSkin:{price:25,target:[0,0,2],boss:true},
+  greatBoarTendon:{price:14,target:[0,0,2],boss:true},
+  greatBoarTusk:{price:20,target:[0,0,2],boss:true}
+};
+
+const CITY_LOOT_MIN_TREASURY=55;
 
 const ALPHA_CHANCE=[.02,.04,.07,.10,.14];
 const BOSS_CHANCE=[.005,.01,.02,.04,.07];
 
-module.exports={TICK_MINUTES,MAX_MINUTES,PROFILES,CLASS,ITEM,RECIPES,ALPHA_CHANCE,BOSS_CHANCE,REPAIR_RATE,REPAIR_THRESHOLD};
+module.exports={TICK_MINUTES,MAX_MINUTES,PROFILES,CLASS,ITEM,RECIPES,FOOD,MATERIAL,CITY_LOOT_MIN_TREASURY,ALPHA_CHANCE,BOSS_CHANCE,REPAIR_RATE,REPAIR_THRESHOLD};
