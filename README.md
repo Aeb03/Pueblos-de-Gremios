@@ -6,7 +6,56 @@ PWA de gestión fantástica desarrollada paso a paso.
 
 **v0.8.0 — Fundación de ciudad — 📌 ESTABLE EN ANDROID**
 
-Esta versión reinicia deliberadamente el ciclo local de prueba para validar desde cero el nacimiento de una ciudad y la población inicial de aventureros.
+Checkpoint estable previo. Fundación y reinicio validados en dispositivo real.
+
+## En prueba
+
+**v0.8.1 — Herrería compacta y stock por negocio**
+
+La nueva línea reorganiza Herrería para que funcione como negocio real sin perder la base estable de v0.8.0.
+
+### Herrería v0.8.1
+
+La pantalla ahora se divide en cinco secciones:
+
+- **Fabricar**;
+- **Almacén**;
+- **Venta**;
+- **Libro**;
+- **Mejoras**.
+
+Las recetas se muestran en una lista compacta. Cada fila conserva coste, tiempo, Resistencia y XP, mientras la descripción y detalles secundarios quedan desplegables.
+
+El objetivo es poder ver varias recetas por pantalla sin convertir cada objeto en una tarjeta enorme.
+
+### Almacén propio
+
+Los productos de Herrería ya no se guardan en el Inventario general.
+
+La estructura pasa a:
+
+- Cabezas de pico → Almacén de Herrería;
+- Picos de hierro terminados → Almacén de Herrería;
+- Espadas de hierro individuales → Almacén de Herrería;
+- Mangos → Almacén de Carpintería.
+
+El inventario general queda para monedas, materiales compartidos y equipamiento ya asignado.
+
+Almacén de Herrería tiene por ahora una capacidad de prueba de **20 unidades** y Exhibición una capacidad de **3 piezas**.
+
+Las Espadas fabricadas entran primero al Almacén. Desde ahí se revisan calidad/precio y se decide si pasan a Exhibición.
+
+### Compatibilidad
+
+La clave de guardado sigue siendo `pueblos-gremios-save-v0.8.0`.
+
+Al cargar un save de v0.8.0, el juego migra los productos antiguos del inventario general a los almacenes de negocio.
+
+---
+
+### Fundación v0.8.0
+
+Esta versión reinició deliberadamente el ciclo local de prueba para validar desde cero el nacimiento de una ciudad y la población inicial de aventureros.
 
 ✅ Validación real en Android completada: fundación, persistencia general y **Reiniciar Reino de prueba** funcionan correctamente.
 
@@ -111,14 +160,12 @@ Menú incluye **Reiniciar Reino de prueba** para volver a ejecutar el proceso de
 
 ## Próximos pasos
 
-La intención es avanzar en bloques pequeños:
-
-1. validar fundación y generador en Android;
-2. reorganizar Herrería por pestañas;
-3. separar stock por negocio y estado pendiente/venta;
-4. definir primera región, mobs y drops;
-5. crear primer motor mínimo de misión/combat no visual;
-6. conectar salud, XP y recuperación de los aventureros.
+1. validar v0.8.1 en Android;
+2. pulir capacidad/estado pendiente de mercancías si hace falta;
+3. usar la estructura de Herrería como patrón para los demás negocios;
+4. definir primera región: 2 mobs comunes, 1 raro y 1 boss;
+5. conectar drops con recetas/planos;
+6. crear primer motor mínimo de misión/combate no visual.
 
 ## Desarrollo
 
