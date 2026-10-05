@@ -51,22 +51,22 @@ const HEROES = {
   warrior: {
     id: 'warrior', name: 'Guerrero', role: 'warrior',
     hp: 120, attack: 10, defense: 7, initiative: 4, mana: 18,
-    evasion: 0.02, weapon: 4
+    evasion: 0.02, weapon: 4, unlockedStates: []
   },
   explorer: {
     id: 'explorer', name: 'Explorador', role: 'explorer',
     hp: 90, attack: 14, defense: 3, initiative: 8, mana: 32,
-    evasion: 0.14, weapon: 4
+    evasion: 0.14, weapon: 4, unlockedStates: []
   },
   healer: {
     id: 'healer', name: 'Sanador', role: 'healer',
     hp: 80, attack: 9, defense: 5, initiative: 5, mana: 58,
-    evasion: 0.03, weapon: 3
+    evasion: 0.03, weapon: 3, unlockedStates: []
   },
   mage: {
     id: 'mage', name: 'Mago', role: 'mage',
     hp: 72, attack: 16, defense: 3, initiative: 6, mana: 64,
-    evasion: 0.03, weapon: 3
+    evasion: 0.03, weapon: 3, unlockedStates: []
   }
 };
 
@@ -154,11 +154,11 @@ function heroAction(rng, actor, party, foes) {
       if (roll < 0.38) {
         actor.manaCurrent -= 10;
         applyDamage(target, damageRoll(rng, actor, target, 1.15));
-        if (rng() < 0.25) target.burn = Math.max(target.burn, 2);
+        if (actor.unlockedStates?.includes('burn') && rng() < 0.25) target.burn = Math.max(target.burn, 2);
       } else if (roll < 0.68) {
         actor.manaCurrent -= 10;
         applyDamage(target, damageRoll(rng, actor, target, 1.05));
-        if (rng() < 0.18) target.paralyzed = Math.max(target.paralyzed, 1);
+        if (actor.unlockedStates?.includes('paralysis') && rng() < 0.18) target.paralyzed = Math.max(target.paralyzed, 1);
       } else {
         actor.manaCurrent -= 8;
         applyDamage(target, damageRoll(rng, actor, target, 1.25));
@@ -183,7 +183,7 @@ function heroAction(rng, actor, party, foes) {
     if (actor.manaCurrent >= 3 && rng() < 0.35) {
       actor.manaCurrent -= 3;
       multiplier = 1.15;
-      if (rng() < 0.15) target.stunned = Math.max(target.stunned, 1);
+      if (actor.unlockedStates?.includes('stun') && rng() < 0.15) target.stunned = Math.max(target.stunned, 1);
     }
     applyDamage(target, damageRoll(rng, actor, target, multiplier));
   }
@@ -353,6 +353,7 @@ function main() {
   console.log(`semilla base: ${SEED}`);
   console.log(`corridas por escenario: ${DEFAULT_RUNS}`);
   console.log('NOTA: herramienta de balance; no es el motor persistente del juego.');
+  console.log('Nv.1: ningún Estado ofensivo de clase se considera desbloqueado todavía.');
 
   const trio = [HEROES.warrior, HEROES.explorer, HEROES.healer];
   const quartet = [...trio, HEROES.mage];
