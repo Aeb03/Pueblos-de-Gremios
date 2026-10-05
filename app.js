@@ -1,4 +1,4 @@
-const APP_VERSION='0.9.0c';
+const APP_VERSION='0.9.0c1';
 const SAVE_KEY='pueblos-gremios-save-v0.8.0';
 const DATA=globalThis.PG_DATA;
 const ADV=globalThis.PG_ADVENTURER_CORE;
@@ -2575,7 +2575,7 @@ if('serviceWorker' in navigator){
 
     window.addEventListener('load',async()=>{
       try{
-        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0c',{updateViaCache:'none'});
+        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0c1',{updateViaCache:'none'});
         await reg.update();
       }catch{}
     });
