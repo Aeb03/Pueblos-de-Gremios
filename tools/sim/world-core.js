@@ -429,7 +429,7 @@ function plateStep(state,a,rng){
   const hp=a.hp/a.hpMax,mana=a.manaMax?a.mana/a.manaMax:1;
   if(hp<state.profile.restHp||mana<state.profile.restMana)return false;
   if(hp>=.88&&mana>=.80)return false;
-  if(rng()>.28)return false;
+  if(rng()>.22)return false;
   return serveFood(state,a,'plate');
 }
 function rationStep(state,a,rng,important=false){
