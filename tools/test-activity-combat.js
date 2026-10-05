@@ -40,6 +40,17 @@ function make(classKey='warrior'){
   assert.ok(p.meanHpLossRate>.09&&p.meanHpLossRate<.12);
 })();
 
+(function multiEnemyPressure(){
+  const a=make('warrior');
+  const wolves=COMBAT.previewEncounter(a,'wolf',3,DATA);
+  const boars=COMBAT.previewEncounter(a,'boar',2,DATA);
+
+  assert.ok(wolves.meanHpLossRate>.32&&wolves.meanHpLossRate<.34);
+  assert.ok(wolves.winChance>.78&&wolves.winChance<.80);
+  assert.ok(boars.meanHpLossRate>.34&&boars.meanHpLossRate<.35);
+  assert.ok(boars.winChance>.80&&boars.winChance<.82);
+})();
+
 (function victoryPersistsDamageAndXp(){
   const a=make('explorer');
   const result=COMBAT.resolveEncounter(a,'wolf',1,DATA,rngSequence([.5,.5,.1]));
