@@ -1,4 +1,4 @@
-const APP_VERSION='0.4.0';
+const APP_VERSION='0.4.1';
 const SAVE_KEY='pueblos-gremios-save-v0.2.0';
 
 const EXPEDITION_DURATION_MS=30_000;
@@ -7,6 +7,7 @@ const MINING_XP_STEP=100;
 const SMITHING_XP_STEP=100;
 const CRAFT_IRON_COST=5;
 const CRAFT_SMITHING_XP=40;
+const CRAFT_STAMINA_COST=15;
 const SMITHY_UPGRADE_COIN_COST=100;
 const SMITHY_UPGRADE_STONE_COST=10;
 const SMITHY_UPGRADE_CRAFTED_REQUIRED=3;
@@ -45,7 +46,12 @@ const defaultState=()=>({
       staminaUpdatedAt:Date.now(),
       restingAtInn:false
     },
-    borin:{smithingXp:0}
+    borin:{
+      smithingXp:0,
+      stamina:STAMINA_MAX,
+      staminaUpdatedAt:Date.now(),
+      restingAtInn:false
+    }
   },
   buildings:{
     smithy:{level:1,craftedCount:0}
@@ -198,6 +204,8 @@ const els={
   borinSmithingXp:document.getElementById('borinSmithingXp'),
   borinNextXp:document.getElementById('borinNextXp'),
   borinXpProgress:document.getElementById('borinXpProgress'),
+  borinStaminaWorker:document.getElementById('borinStaminaWorker'),
+  borinStaminaWorkerProgress:document.getElementById('borinStaminaWorkerProgress'),
   borinState:document.getElementById('borinState'),
 
   maraProfessionLevel:document.getElementById('maraProfessionLevel'),
@@ -216,6 +224,8 @@ const els={
   smithyBorinXp:document.getElementById('smithyBorinXp'),
   smithyBorinNextXp:document.getElementById('smithyBorinNextXp'),
   smithyBorinProgress:document.getElementById('smithyBorinProgress'),
+  smithyBorinStamina:document.getElementById('smithyBorinStamina'),
+  smithyBorinStaminaProgress:document.getElementById('smithyBorinStaminaProgress'),
   smithyBorinState:document.getElementById('smithyBorinState'),
   craftStatus:document.getElementById('craftStatus'),
   craftProgress:document.getElementById('craftProgress'),
@@ -237,8 +247,15 @@ const els={
   innMaraState:document.getElementById('innMaraState'),
   innMaraStamina:document.getElementById('innMaraStamina'),
   innMaraStaminaProgress:document.getElementById('innMaraStaminaProgress'),
-  toggleInnRest:document.getElementById('toggleInnRest'),
-  innFeedback:document.getElementById('innFeedback'),
+  toggleMaraInnRest:document.getElementById('toggleMaraInnRest'),
+  maraInnFeedback:document.getElementById('maraInnFeedback'),
+
+  innBorinLevel:document.getElementById('innBorinLevel'),
+  innBorinState:document.getElementById('innBorinState'),
+  innBorinStamina:document.getElementById('innBorinStamina'),
+  innBorinStaminaProgress:document.getElementById('innBorinStaminaProgress'),
+  toggleBorinInnRest:document.getElementById('toggleBorinInnRest'),
+  borinInnFeedback:document.getElementById('borinInnFeedback'),
 
   expeditionStamina:document.getElementById('expeditionStamina'),
   expeditionStaminaProgress:document.getElementById('expeditionStaminaProgress'),
@@ -281,33 +298,34 @@ function rollReward(){
   };
 }
 
-function syncMaraStamina(){
-  const mara=state.workers.mara;
+function isWorkerBusy(workerKey){
+  return (workerKey==='mara'&&Boolean(state.activeExpedition))
+    ||(workerKey==='borin'&&Boolean(state.activeCraft));
+}
 
-  if(state.activeExpedition)return false;
+function syncWorkerStamina(workerKey){
+  const worker=state.workers[workerKey];
+  if(!worker||isWorkerBusy(workerKey))return false;
 
   const now=Date.now();
-  const updatedAt=Number(mara.staminaUpdatedAt)||now;
+  const updatedAt=Number(worker.staminaUpdatedAt)||now;
 
-  if(mara.stamina>=STAMINA_MAX){
-    if(mara.staminaUpdatedAt!==now){
-      mara.stamina=STAMINA_MAX;
-      mara.staminaUpdatedAt=now;
-    }
+  if(worker.stamina>=STAMINA_MAX){
+    worker.stamina=STAMINA_MAX;
     return false;
   }
 
   const ticks=Math.floor(Math.max(0,now-updatedAt)/STAMINA_TICK_MS);
   if(ticks<=0)return false;
 
-  const gainPerTick=mara.restingAtInn?INN_STAMINA_PER_TICK:PASSIVE_STAMINA_PER_TICK;
-  const previous=mara.stamina;
-  mara.stamina=Math.min(STAMINA_MAX,mara.stamina+(ticks*gainPerTick));
-  mara.staminaUpdatedAt=mara.stamina>=STAMINA_MAX
+  const gainPerTick=worker.restingAtInn?INN_STAMINA_PER_TICK:PASSIVE_STAMINA_PER_TICK;
+  const previous=worker.stamina;
+  worker.stamina=Math.min(STAMINA_MAX,worker.stamina+(ticks*gainPerTick));
+  worker.staminaUpdatedAt=worker.stamina>=STAMINA_MAX
     ?now
     :updatedAt+(ticks*STAMINA_TICK_MS);
 
-  if(mara.stamina!==previous){
+  if(worker.stamina!==previous){
     saveState();
     return true;
   }
@@ -315,32 +333,39 @@ function syncMaraStamina(){
   return false;
 }
 
-function toggleInnRest(){
+function syncAllWorkerStamina(){
+  syncWorkerStamina('mara');
+  syncWorkerStamina('borin');
+}
+
+function toggleInnRest(workerKey){
   resolveExpiredExpedition();
-  syncMaraStamina();
+  resolveExpiredCraft();
+  syncWorkerStamina(workerKey);
 
-  const mara=state.workers.mara;
+  const worker=state.workers[workerKey];
+  const name=workerKey==='mara'?'Mara':'Borin';
 
-  if(state.activeExpedition){
-    state.lastInnMessage='Mara está en expedición y no puede descansar todavía.';
+  if(isWorkerBusy(workerKey)){
+    state.lastInnMessage=`${name} está trabajando y no puede descansar todavía.`;
     render();
     return;
   }
 
-  if(mara.restingAtInn){
-    mara.restingAtInn=false;
-    mara.staminaUpdatedAt=Date.now();
-    state.lastInnMessage='Mara dejó la Posada. Seguirá recuperando Resistencia lentamente mientras esté libre.';
+  if(worker.restingAtInn){
+    worker.restingAtInn=false;
+    worker.staminaUpdatedAt=Date.now();
+    state.lastInnMessage=`${name} dejó la Posada. Seguirá recuperando Resistencia lentamente mientras esté libre.`;
   }else{
-    if(mara.stamina>=STAMINA_MAX){
-      state.lastInnMessage='Mara ya tiene la Resistencia completa.';
+    if(worker.stamina>=STAMINA_MAX){
+      state.lastInnMessage=`${name} ya tiene la Resistencia completa.`;
       render();
       return;
     }
 
-    mara.restingAtInn=true;
-    mara.staminaUpdatedAt=Date.now();
-    state.lastInnMessage='Mara está descansando en la Posada. Su recuperación está acelerada.';
+    worker.restingAtInn=true;
+    worker.staminaUpdatedAt=Date.now();
+    state.lastInnMessage=`${name} está descansando en la Posada. Su recuperación está acelerada.`;
   }
 
   saveState();
@@ -349,7 +374,7 @@ function toggleInnRest(){
 
 function startExpedition(){
   resolveExpiredExpedition();
-  syncMaraStamina();
+  syncWorkerStamina('mara');
   if(state.activeExpedition)return;
 
   const mara=state.workers.mara;
@@ -403,8 +428,23 @@ function resolveExpiredExpedition(){
 
 function startCraft(){
   resolveExpiredCraft();
+  syncWorkerStamina('borin');
 
   if(state.activeCraft)return;
+
+  const borin=state.workers.borin;
+
+  if(borin.restingAtInn){
+    state.lastSmithyMessage='Borin está descansando en la Posada. Terminá su descanso antes de ponerlo a trabajar.';
+    render();
+    return;
+  }
+
+  if(borin.stamina<CRAFT_STAMINA_COST){
+    state.lastSmithyMessage=`Borin necesita ${CRAFT_STAMINA_COST} de Resistencia para fabricar esta pieza.`;
+    render();
+    return;
+  }
 
   if(state.resources.iron<CRAFT_IRON_COST){
     state.lastSmithyMessage=`Faltan ${CRAFT_IRON_COST-state.resources.iron} de hierro para iniciar la fabricación.`;
@@ -413,7 +453,9 @@ function startCraft(){
   }
 
   state.resources.iron-=CRAFT_IRON_COST;
+  borin.stamina-=CRAFT_STAMINA_COST;
   const now=Date.now();
+  borin.staminaUpdatedAt=now;
 
   state.activeCraft={
     id:createActionId(),
@@ -434,6 +476,7 @@ function completeCraft(craft){
   state.workers.borin.smithingXp+=craft.result.smithingXp;
   state.buildings.smithy.craftedCount+=craft.result.pickaxeHeads;
   state.activeCraft=null;
+  state.workers.borin.staminaUpdatedAt=craft.endsAt;
   state.lastSmithyMessage=`Fabricación completada: +1 cabeza de pico y +${craft.result.smithingXp} XP de Herrería.`;
   saveState();
 }
@@ -513,7 +556,7 @@ function setRequirementState(key,met){
 function render(){
   resolveExpiredExpedition();
   resolveExpiredCraft();
-  syncMaraStamina();
+  syncAllWorkerStamina();
 
   els.coins.textContent=formatNumber(state.resources.coins);
 
@@ -547,6 +590,14 @@ function render(){
   els.innMaraStamina.textContent=Math.floor(state.workers.mara.stamina);
   els.innMaraStaminaProgress.value=state.workers.mara.stamina;
   els.innMaraLevel.textContent=miningLevel();
+
+  els.borinStaminaWorker.textContent=Math.floor(state.workers.borin.stamina);
+  els.borinStaminaWorkerProgress.value=state.workers.borin.stamina;
+  els.smithyBorinStamina.textContent=Math.floor(state.workers.borin.stamina);
+  els.smithyBorinStaminaProgress.value=state.workers.borin.stamina;
+  els.innBorinStamina.textContent=Math.floor(state.workers.borin.stamina);
+  els.innBorinStaminaProgress.value=state.workers.borin.stamina;
+  els.innBorinLevel.textContent=smithingLevel();
 
   renderSkillProgress(
     state.workers.borin.smithingXp,
@@ -598,26 +649,44 @@ function render(){
   if(state.activeExpedition){
     els.innMaraState.textContent='En expedición';
     els.innMaraState.classList.add('is-busy');
-    els.toggleInnRest.disabled=true;
-    els.toggleInnRest.textContent='Mara está en expedición';
+    els.toggleMaraInnRest.disabled=true;
+    els.toggleMaraInnRest.textContent='Mara está en expedición';
   }else if(state.workers.mara.restingAtInn){
     els.innMaraState.textContent='Descansando';
     els.innMaraState.classList.add('is-busy');
-    els.toggleInnRest.disabled=false;
-    els.toggleInnRest.textContent='Terminar descanso';
+    els.toggleMaraInnRest.disabled=false;
+    els.toggleMaraInnRest.textContent='Terminar descanso';
   }else{
     els.innMaraState.textContent='Disponible';
     els.innMaraState.classList.remove('is-busy');
-    els.toggleInnRest.disabled=state.workers.mara.stamina>=STAMINA_MAX;
-    els.toggleInnRest.textContent=state.workers.mara.stamina>=STAMINA_MAX
+    els.toggleMaraInnRest.disabled=state.workers.mara.stamina>=STAMINA_MAX;
+    els.toggleMaraInnRest.textContent=state.workers.mara.stamina>=STAMINA_MAX
       ?'Resistencia completa'
       :'Descansar en Posada';
   }
 
-  els.innFeedback.textContent=state.lastInnMessage||
-    (state.workers.mara.restingAtInn
-      ?'La Posada recupera +5 de Resistencia cada 10 segundos en esta prueba.'
-      :'Libre en la ciudad, Mara recupera +1 de Resistencia cada 10 segundos.');
+  if(state.activeCraft){
+    els.innBorinState.textContent='Trabajando';
+    els.innBorinState.classList.add('is-busy');
+    els.toggleBorinInnRest.disabled=true;
+    els.toggleBorinInnRest.textContent='Borin está trabajando';
+  }else if(state.workers.borin.restingAtInn){
+    els.innBorinState.textContent='Descansando';
+    els.innBorinState.classList.add('is-busy');
+    els.toggleBorinInnRest.disabled=false;
+    els.toggleBorinInnRest.textContent='Terminar descanso';
+  }else{
+    els.innBorinState.textContent='Disponible';
+    els.innBorinState.classList.remove('is-busy');
+    els.toggleBorinInnRest.disabled=state.workers.borin.stamina>=STAMINA_MAX;
+    els.toggleBorinInnRest.textContent=state.workers.borin.stamina>=STAMINA_MAX
+      ?'Resistencia completa'
+      :'Descansar en Posada';
+  }
+
+  const innDefault='Libre: +1 cada 10 s. En Posada: +5 cada 10 s.';
+  els.maraInnFeedback.textContent=state.lastInnMessage||innDefault;
+  els.borinInnFeedback.textContent=state.lastInnMessage||innDefault;
 
   els.expeditionFeedback.textContent=state.lastMessage||
     `Esta salida cuesta ${EXPEDITION_STAMINA_COST} de Resistencia.`;
@@ -644,19 +713,31 @@ function render(){
     els.startCraft.disabled=true;
     els.startCraft.textContent='Borin está forjando';
   }else{
-    els.borinState.textContent='Disponible';
-    els.borinState.classList.remove('is-busy');
-    els.smithyBorinState.textContent='Disponible';
-    els.smithyBorinState.classList.remove('is-busy');
-    els.craftStatus.textContent='Lista para fabricar';
+    const borinResting=state.workers.borin.restingAtInn;
+    const enoughIron=state.resources.iron>=CRAFT_IRON_COST;
+    const enoughStamina=state.workers.borin.stamina>=CRAFT_STAMINA_COST;
+
+    els.borinState.textContent=borinResting?'Descansando':'Disponible';
+    els.borinState.classList.toggle('is-busy',borinResting);
+    els.smithyBorinState.textContent=borinResting?'En la Posada':'Disponible';
+    els.smithyBorinState.classList.toggle('is-busy',borinResting);
+    els.craftStatus.textContent=borinResting?'Borin descansando':'Lista para fabricar';
     els.craftProgress.value=0;
     els.craftCountdown.textContent='';
 
-    const enoughIron=state.resources.iron>=CRAFT_IRON_COST;
-    els.startCraft.disabled=!enoughIron;
-    els.startCraft.textContent=enoughIron
-      ?'Fabricar cabeza de pico'
-      :`Faltan ${CRAFT_IRON_COST-state.resources.iron} hierro`;
+    if(borinResting){
+      els.startCraft.disabled=true;
+      els.startCraft.textContent='Borin está descansando';
+    }else if(!enoughStamina){
+      els.startCraft.disabled=true;
+      els.startCraft.textContent='Falta Resistencia';
+    }else if(!enoughIron){
+      els.startCraft.disabled=true;
+      els.startCraft.textContent=`Faltan ${CRAFT_IRON_COST-state.resources.iron} hierro`;
+    }else{
+      els.startCraft.disabled=false;
+      els.startCraft.textContent='Fabricar cabeza de pico';
+    }
   }
 
   const requirements=smithyUpgradeRequirements();
@@ -690,11 +771,12 @@ function render(){
     els.upgradeFeedback.textContent=state.lastSmithyMessage||'Completá los requisitos para habilitar la mejora.';
   }
 
-  els.smithyFeedback.textContent=state.lastSmithyMessage||'El hierro se descuenta al iniciar el trabajo y el resultado queda guardado aunque cierres la app.';
+  els.smithyFeedback.textContent=state.lastSmithyMessage||`Cada pieza cuesta ${CRAFT_STAMINA_COST} de Resistencia. El trabajo y la recuperación usan tiempo real.`;
 }
 
 els.startExpedition.addEventListener('click',startExpedition);
-els.toggleInnRest.addEventListener('click',toggleInnRest);
+els.toggleMaraInnRest.addEventListener('click',()=>toggleInnRest('mara'));
+els.toggleBorinInnRest.addEventListener('click',()=>toggleInnRest('borin'));
 els.startCraft.addEventListener('click',startCraft);
 els.upgradeSmithy.addEventListener('click',upgradeSmithy);
 
@@ -739,7 +821,7 @@ if('serviceWorker' in navigator){
 
   window.addEventListener('load',async()=>{
     try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=0.4.0',{updateViaCache:'none'});
+      const reg=await navigator.serviceWorker.register('./sw.js?v=0.4.1',{updateViaCache:'none'});
       await reg.update();
     }catch{}
   });

@@ -1,4 +1,4 @@
-const CACHE='pueblos-gremios-v0.4.0';
+const CACHE='pueblos-gremios-v0.4.1';
 const ASSETS=['./index.html?v=0.4.0','./styles.css?v=0.4.0','./app.js?v=0.4.0','./manifest.webmanifest?v=0.4.0','./icons/icon.svg?v=0.4.0'];
 
 self.addEventListener('install',e=>e.waitUntil(
