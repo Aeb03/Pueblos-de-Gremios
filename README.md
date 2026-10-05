@@ -4,33 +4,32 @@ PWA de gestión fantástica desarrollada paso a paso.
 
 ## Estado actual
 
-**v0.4.0 — Resistencia y Posada**
+**v0.4.1 — Resistencia de trabajadores**
 
-- Se conserva todo el progreso de v0.3.0: Herrería, Borin, Mara, recursos, productos y Prestigio.
-- Mara tiene 100 de Resistencia.
-- La Cantera del Este consume 20 de Resistencia al iniciar.
-- Una expedición no puede comenzar si Mara no tiene Resistencia suficiente.
-- Mientras Mara está libre en la ciudad recupera Resistencia automáticamente.
-- La recuperación sigue usando tiempo real aunque la PWA esté cerrada.
-- Ritmo de playtest: recuperación normal +1 cada 10 segundos.
-- La Posada pasa a ser una pantalla funcional.
-- Si Mara descansa en la Posada, recupera +5 cada 10 segundos durante la prueba.
-- Mientras descansa no puede salir de expedición hasta terminar el descanso.
-- Resistencia y heridas se consideran sistemas separados.
-- Los tiempos actuales están acelerados para validar la mecánica y no representan el balance final.
-- Se mantiene el mismo guardado local para no perder el progreso previo.
+- Se conserva el progreso previo: niveles, Herrería, recursos, productos y Prestigio.
+- La Resistencia pasa a ser una característica general de los trabajadores activos.
+- Mara mantiene 100 de Resistencia y la Cantera del Este consume 20 por expedición.
+- Borin ahora tiene 100 de Resistencia y fabricar una Cabeza de pico consume 15.
+- Un trabajador sin Resistencia suficiente no puede iniciar su tarea.
+- Mientras trabaja no recupera Resistencia.
+- Al terminar una tarea, comienza la recuperación normal.
+- Recuperación de playtest: +1 cada 10 segundos estando libre.
+- Posada: +5 cada 10 segundos mientras el trabajador descansa.
+- Mara y Borin pueden usar la Posada y no pueden trabajar mientras están descansando.
+- La recuperación usa timestamps y continúa con la PWA cerrada.
+- Los ritmos actuales son de prueba y se balancearán más adelante.
 
 ## Sistemas ya jugables
 
-- Expediciones de Mara con recompensas persistentes y XP de Minería.
-- Herrería de Borin con fabricación persistente.
+- Expediciones persistentes de Mara con XP de Minería y coste de Resistencia.
+- Herrería persistente de Borin con XP, coste de hierro y coste de Resistencia.
 - Mejora de Herrería a Nv. 2 con aporte de Prestigio.
-- Inventario único de la ciudad con recursos mostrados por oficio.
+- Inventario único de la ciudad.
 - Recuperación pasiva y descanso acelerado en Posada.
 
 ## Próxima conexión prevista
 
-Carpintería fabricará el mango del pico. Herrería ensamblará la herramienta completa y Mara podrá equiparla. El pico no dará un bono plano: activará una probabilidad baja de encontrar una veta dura durante expediciones, que normalmente no existe sin la herramienta.
+Carpintería fabricará el mango del pico. Herrería ensamblará la herramienta completa y Mara podrá equiparla. El pico activará una probabilidad baja de encontrar una veta dura durante expediciones.
 
 ## Desarrollo
 
