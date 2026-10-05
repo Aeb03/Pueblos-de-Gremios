@@ -367,7 +367,7 @@ dialog form{padding:18px}
 @media (max-width:390px){
   .resource-strip span{padding-inline:4px}
   .resource-strip{font-size:.64rem}
-  .worker-mara small{font-size:.72rem}
+  .worker-mara small,.worker-borin small{font-size:.72rem}
 }
 
 
