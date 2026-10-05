@@ -66,6 +66,24 @@
     };
   }
 
+  function statsForLevel(classKey,level,data){
+    const stats=baseStatsFor(classKey,data);
+    const growth=data.adventurerProgression?.statGrowth?.[classKey]||{};
+    const safeLevel=Math.max(1,Math.floor(Number(level)||1));
+
+    for(let reached=2;reached<=safeLevel;reached++){
+      stats.hp+=Number(growth.hp)||0;
+      stats.defense+=Number(growth.defense)||0;
+      stats.initiative+=Number(growth.initiative)||0;
+      stats.mana+=Number(growth.mana)||0;
+
+      const attackEvery=Math.max(0,Math.floor(Number(growth.attackEvery)||0));
+      if(!attackEvery||reached%attackEvery===0)stats.attack+=Number(growth.attack)||0;
+    }
+
+    return stats;
+  }
+
   function equipmentWeaponDamage(equipment,fallback=0){
     const damage=Number(equipment?.weapon?.damage);
     return Number.isFinite(damage)?damage:fallback;
@@ -109,7 +127,8 @@
   function normalizeAdventurer(npc,data){
     const classKey=classKeyOf(npc,data);
     const role=data.adventurerRoles[classKey];
-    const stats=baseStatsFor(classKey,data);
+    const level=Math.max(1,Number(npc?.level)||1);
+    const stats=statsForLevel(classKey,level,data);
     const combatStyle=combatStyleFor(classKey,npc?.combatStyle);
 
     const oldMax=Math.max(1,Number(npc?.hpMax)||Number(npc?.stats?.hp)||stats.hp);
@@ -135,7 +154,7 @@
       roleKey:classKey,
       role:role.label,
       combatStyle,
-      level:Math.max(1,Number(npc?.level)||1),
+      level,
       xp:Math.max(0,Number(npc?.xp)||0),
       stats,
       hpMax:stats.hp,
@@ -255,6 +274,7 @@
     combatStyleFor,
     starterEquipmentFor,
     baseStatsFor,
+    statsForLevel,
     normalizeAdventurer,
     createAdventurer,
     validateAdventurer
