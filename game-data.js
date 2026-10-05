@@ -14,6 +14,15 @@ globalThis.PG_DATA={
     resources:{coins:900,wood:50,iron:24,stone:8}
   },
 
+  cityProgression:{
+    schemaVersion:1,
+    maxLevel:3,
+    thresholds:{1:0,2:9.5,3:25.5},
+    populationSlots:{1:3,2:4,3:5},
+    meson:{startingLevel:1,capacityByLevel:{1:5}},
+    developmentRewards:{workerOuting:1,craft:.45,businessUpgrade:2.5}
+  },
+
   adventurerProgression:{
     schemaVersion:1,
     xpToNext:{1:45,2:90,3:150},
@@ -23,10 +32,9 @@ globalThis.PG_DATA={
 
   shops:{
     townHall:{id:'townHall',name:'Ayuntamiento',type:'administration',startingLevel:1},
-    tavern:{id:'tavern',name:'Taberna',type:'service',startingLevel:1},
+    meson:{id:'meson',name:'Mesón',type:'service',startingLevel:1,capacity:5},
     smithy:{id:'smithy',name:'Herrería',type:'production',startingLevel:1},
     carpenter:{id:'carpenter',name:'Carpintería',type:'production',startingLevel:1},
-    inn:{id:'inn',name:'Posada',type:'service',startingLevel:1},
     guildHall:{id:'guildHall',name:'Sede del Gremio',type:'adventurer-market',startingLevel:1,implemented:false}
   },
 
