@@ -118,14 +118,18 @@ Antes de ampliar el mundo necesitamos un **pack inicial pequeño y cerrado**.
 Debe contener:
 
 - 1 región inicial;
-- 2 o 3 mobs normales;
-- 1 boss inicial;
+- **2 mobs comunes**;
+- **1 mob raro**;
+- **1 boss inicial**;
 - tablas de drops;
 - dificultad;
 - XP;
 - relaciones con recetas;
 - al menos un material que sólo provenga de criaturas;
-- al menos un material raro de boss.
+- al menos un material especial del mob raro;
+- al menos un material raro de boss;
+- al menos una receta/plano asociada al mob raro;
+- al menos una receta/plano asociada al boss.
 
 Este pack será el banco de pruebas del motor lógico.
 
@@ -147,18 +151,28 @@ Necesitamos como mínimo:
 - otro tipo de drop;
 - obliga a que composición/equipo tengan algún efecto.
 
-### Mob común C opcional
+### Mob raro
 
-- algo más peligroso;
-- sirve como transición hacia el boss.
+- aparición bastante menos frecuente que los comunes;
+- dificultad superior a un mob común;
+- puede exigir mejor grupo/equipo;
+- posee tabla de drop propia;
+- entrega materiales especiales;
+- debe estar conectado a **al menos una receta/plano**;
+- puede entregar además otros objetos, materiales o recursos útiles;
+- no reemplaza al boss: es una capa intermedia de rareza y oportunidad.
+
+La receta/plano no tiene por qué caer en cada derrota. La criatura puede tener tanto un drop especial frecuente como una recompensa realmente rara.
 
 ### Boss inicial
 
 - requiere grupo;
 - tiene una dificultad claramente superior;
 - posee al menos un drop raro;
+- está conectado a **una o más recetas/planos propios**;
+- puede entregar además materiales, objetos y otras recompensas;
 - su drop raro puede convertirse en objetivo de Encargo;
-- derrotarlo y obtener su drop son eventos separados.
+- derrotarlo, obtener su material raro y obtener una receta/plano son eventos separados.
 
 ## 8. Primeras cadenas económicas
 
@@ -186,14 +200,16 @@ Para evitar diseñar cientos de elementos antes de validar el motor:
 1. cerrar la estructura de tiendas y almacenes;
 2. fijar esquema de clases y habilidades;
 3. crear la primera región;
-4. crear 2 mobs normales;
-5. crear 1 boss;
-6. definir sus drops;
-7. conectar esos drops con 2–3 recetas;
-8. crear primera misión no visual;
-9. simular combate;
-10. aplicar XP, salud, botín y recuperación;
-11. recién después ampliar contenido.
+4. crear 2 mobs comunes;
+5. crear 1 mob raro;
+6. crear 1 boss;
+7. definir sus tablas de drops;
+8. definir las primeras recetas/planos del raro y del boss;
+9. conectar materiales y recetas con tiendas reales;
+10. crear primera misión no visual;
+11. simular combate;
+12. aplicar XP, salud, botín y recuperación;
+13. recién después ampliar contenido.
 
 ## 10. Regla central
 
