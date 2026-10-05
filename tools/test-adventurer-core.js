@@ -54,6 +54,30 @@ function testLegacyMigration(){
   assert.deepEqual(second,npc,'la migración debe ser idempotente');
 }
 
+
+function testLegacyStarterMigration(){
+  const legacy={
+    id:'old-starter',
+    firstName:'Neris',
+    lastName:'Varen',
+    fullName:'Neris Varen',
+    roleKey:'explorer',
+    level:1,
+    xp:0,
+    stats:{hp:92,attack:7,defense:5,speed:8,support:3},
+    hpMax:92,
+    hpCurrent:92,
+    coins:180,
+    weaponDamage:7,
+    personalityKey:'frugal',
+    equipment:{weapon:{id:'starter-weapon',name:'Equipo inicial',damage:7,quality:52}}
+  };
+  const npc=CORE.normalizeAdventurer(legacy,DATA);
+  assert.equal(npc.equipment.weapon.founder,true);
+  assert.ok(['founder-explorer-bow','founder-explorer-daggers'].includes(npc.equipment.weapon.id));
+  assert.equal(npc.weaponDamage,4);
+}
+
 function testFreshClasses(){
   const explorer=CORE.createAdventurer(DATA,{
     id:'e1',firstName:'Lysa',lastName:'Wren',fullName:'Lysa Wren',
@@ -98,7 +122,8 @@ function testProgressionData(){
 }
 
 testLegacyMigration();
+testLegacyStarterMigration();
 testFreshClasses();
 testProgressionData();
 
-console.log('v0.9.0a adventurer-core: 3 suites OK');
+console.log('v0.9.0a adventurer-core: 4 suites OK');
