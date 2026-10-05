@@ -450,7 +450,10 @@ La **Comida abundante** queda para niveles posteriores.
 
 - No habrá una barra de Hambre obligatoria que genere micromanejo.
 - Comer debe ser una ventaja/preparación, no una obligación tediosa.
-- Los efectos exactos de Plato, Ración, Descanso y Alojamiento se definirán al detallar objetos/servicios.
+- **Plato sencillo — BALANCE EN PRUEBA:** recuperación ligera de Vida/Maná cuando el aventurero todavía no necesita un Descanso completo.
+- **Ración de viaje — BALANCE EN PRUEBA:** preparación consumible para una salida; reduce ligeramente desgaste de Vida y consumo de Maná.
+- Los números exactos siguen sujetos al simulador y al playtest.
+- Descanso y Alojamiento continúan como servicios separados.
 
 ### 10.1. Función social
 
@@ -543,7 +546,25 @@ Ejemplo:
 
 > Aventurero X ofrece 4 Pieles de Lobo por Y monedas.
 
-El jugador decide si compra.
+El botín sigue siendo propiedad del aventurero hasta que exista una transacción.
+
+La ciudad **no compra todo automáticamente**. La decisión debe considerar:
+
+- necesidad real del material;
+- stock deseado;
+- tesorería disponible;
+- precio;
+- rareza/origen;
+- prioridades del jugador.
+
+La versión final puede permitir:
+
+- aceptar/rechazar manualmente;
+- órdenes de compra;
+- límites de stock;
+- políticas automáticas configurables.
+
+En el simulador de balance se usa una política automática con límite de demanda y reserva de tesorería para representar esta decisión sin intervención humana.
 
 ---
 
