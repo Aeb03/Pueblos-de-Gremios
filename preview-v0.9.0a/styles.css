@@ -1,0 +1,1407 @@
+:root{
+  color-scheme:dark;
+  --bg:#100d0a;
+  --panel:#1a1713;
+  --line:#4b3a27;
+  --gold:#d4a64f;
+  --gold2:#f1cf7a;
+  --text:#f8f0df;
+  --muted:#b9ad98;
+}
+*{box-sizing:border-box}
+html,body{
+  margin:0;
+  min-height:100%;
+  background:radial-gradient(circle at top,#30251a 0,#17120e 42%,#0d0b09 100%);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,sans-serif;
+}
+button{font:inherit}
+.app-shell{
+  width:min(100%,560px);
+  min-height:100vh;
+  margin:auto;
+  background:#12100d;
+  position:relative;
+  padding-bottom:96px;
+  border-inline:1px solid #241d16;
+}
+.topbar{
+  position:sticky;
+  top:0;
+  z-index:10;
+  background:rgba(18,16,13,.96);
+  backdrop-filter:blur(12px);
+  padding:11px 14px 9px;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:center;
+}
+.topbar>div:first-child{min-width:0;flex:1}
+.eyebrow{
+  margin:0;
+  color:var(--gold);
+  font-size:.66rem;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  white-space:nowrap;
+}
+.topbar h1{
+  margin:1px 0 0;
+  font-family:Georgia,serif;
+  font-size:1.16rem;
+  line-height:1.08;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.resource-strip{
+  flex:none;
+  display:flex;
+  gap:4px;
+  font-size:.73rem;
+  white-space:nowrap;
+}
+.resource-strip span{
+  background:#211b15;
+  padding:5px 7px;
+  border:1px solid #443522;
+  border-radius:999px;
+}
+.screen{display:none;padding:12px 14px 24px}
+.screen.is-active{display:block}
+.city-stage{
+  height:455px;
+  position:relative;
+  overflow:hidden;
+  border-radius:18px;
+  border:1px solid #4e3a24;
+  background:linear-gradient(#74a6bc 0 25%,#98aa65 25% 38%,#52663c 38% 100%);
+  box-shadow:inset 0 0 60px rgba(0,0,0,.35);
+}
+.city-stage:before{
+  content:"";
+  position:absolute;
+  inset:26% 0 0;
+  background:
+    radial-gradient(ellipse at 51% 100%,#a18a58 0 20%,transparent 21%),
+    linear-gradient(145deg,transparent 20%,rgba(255,255,255,.05) 21% 25%,transparent 26%),
+    linear-gradient(35deg,#49613c,#6d7549);
+}
+.city-sky{
+  position:absolute;
+  inset:0 0 68%;
+  background:
+    radial-gradient(circle at 18% 30%,#fff7c8 0 2%,transparent 3%),
+    linear-gradient(180deg,rgba(255,255,255,.1),transparent);
+}
+.road{
+  position:absolute;
+  width:132px;
+  height:330px;
+  background:#9e8057;
+  left:47%;
+  top:145px;
+  transform:rotate(8deg);
+  border-radius:50%;
+  opacity:.76;
+}
+.building{
+  position:absolute;
+  z-index:2;
+  min-width:100px;
+  min-height:92px;
+  border:1px solid #8e6d3c;
+  background:linear-gradient(#2b231a,#17120e);
+  color:var(--text);
+  border-radius:15px;
+  padding:8px 9px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:1px;
+  box-shadow:0 5px 12px #0007;
+}
+.building span{font-size:1.65rem}
+.building b{font-family:Georgia,serif;line-height:1.05}
+.building small{color:var(--gold2)}
+.building:active{transform:scale(.97)}
+.hall{left:50%;top:72px;transform:translateX(-50%)}
+.hall:active{transform:translateX(-50%) scale(.97)}
+.tavern{left:7%;top:177px}
+.smithy{right:7%;top:191px}
+.carpenter{left:9%;top:319px}
+.store{right:9%;top:326px}
+.status-card,.panel,.hero-card{
+  margin-top:12px;
+  padding:14px;
+  border:1px solid var(--line);
+  background:linear-gradient(180deg,#231d16,#17130f);
+  border-radius:16px;
+}
+.status-card>div{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+}
+.status-card p,.hero-card p,.muted{color:var(--muted);font-size:.88rem}
+.badge{
+  display:inline-block;
+  background:#3a2f1f;
+  border:1px solid #7a6032;
+  color:var(--gold2);
+  border-radius:999px;
+  padding:4px 8px;
+  font-size:.72rem;
+}
+.badge.danger{background:#3c1e19;border-color:#79382d;color:#ffad9c}
+progress{width:100%;accent-color:var(--gold);margin-top:10px}
+.section-head{display:flex;align-items:center;justify-content:space-between}
+.section-head h2{margin:.35rem 0 1rem}
+.worker-list{display:grid;gap:10px}
+.worker{
+  display:grid;
+  grid-template-columns:52px 1fr auto;
+  gap:10px;
+  align-items:center;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:10px;
+}
+.worker h3,.worker p{margin:0}
+.worker p,.worker small{color:var(--muted)}
+.avatar{
+  width:52px;
+  height:52px;
+  border-radius:12px;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(145deg,#7b5832,#2c2117);
+  font:700 1.35rem Georgia,serif;
+  border:1px solid #8f6a3a;
+}
+.state{
+  font-size:.72rem;
+  color:#b9e19b;
+  background:#27341e;
+  padding:5px 7px;
+  border-radius:999px;
+}
+.hero-card{
+  min-height:205px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  position:relative;
+  overflow:hidden;
+}
+.hero-card:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg,transparent 15%,rgba(10,8,6,.9) 88%);
+}
+.hero-card>*{position:relative}
+.expedition-art{background:linear-gradient(135deg,#3e5e68,#779171 45%,#3f4738)}
+.kingdom-art{background:linear-gradient(150deg,#527a88,#80a46a 50%,#876d49)}
+.hero-card h2{font-family:Georgia,serif;margin:7px 0 0;font-size:1.58rem}
+.kv{display:flex;justify-content:space-between;border-bottom:1px solid #33291f;padding:10px 0}
+.primary{
+  width:100%;
+  min-height:48px;
+  border:1px solid #efc36d;
+  border-radius:12px;
+  background:linear-gradient(#e1b65c,#ad7d2d);
+  color:#1a1208;
+  font-weight:800;
+  margin-top:14px;
+}
+.feedback{min-height:1.4em;color:#bdd99c}
+.kingdom-list>div{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:11px 0;
+  border-bottom:1px solid #33291f;
+}
+.kingdom-list span{color:var(--muted)}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.menu-grid button{
+  min-height:104px;
+  border-radius:16px;
+  border:1px solid var(--line);
+  background:var(--panel);
+  color:var(--text);
+  font-size:1.5rem;
+  display:grid;
+  place-items:center;
+}
+.menu-grid span{font-size:.84rem}
+.bottom-nav{
+  position:fixed;
+  z-index:20;
+  bottom:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(100%,560px);
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  padding:6px max(7px,env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom));
+  background:#16120f;
+  border-top:1px solid var(--line);
+}
+.nav-btn{
+  border:0;
+  background:transparent;
+  color:#9e927f;
+  min-height:52px;
+  border-radius:12px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:1px;
+}
+.nav-btn span{font-size:.65rem}
+.nav-btn.is-active{background:#2c241a;color:var(--gold2)}
+dialog{
+  width:min(92%,440px);
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#17130f;
+  color:var(--text);
+  padding:0;
+}
+dialog::backdrop{background:#000a}
+.dialog-head{display:flex;justify-content:space-between;gap:12px;align-items:start}
+.dialog-head h2{margin:.1rem 0;font-family:Georgia,serif}
+.icon-btn{
+  background:#2c241a;
+  border:1px solid var(--line);
+  color:var(--text);
+  border-radius:10px;
+  min-width:44px;
+  min-height:44px;
+}
+.coming-soon{
+  background:#211b15;
+  border:1px dashed #5a4630;
+  border-radius:12px;
+  padding:14px;
+  color:var(--muted);
+}
+dialog form{padding:18px}
+@media (max-width:390px){
+  .topbar{padding-inline:11px}
+  .eyebrow{font-size:.61rem}
+  .topbar h1{font-size:1.08rem}
+  .resource-strip{font-size:.68rem;gap:3px}
+  .resource-strip span{padding:4px 5px}
+  .screen{padding-inline:11px}
+  .city-stage{height:430px}
+  .building{min-width:91px;min-height:84px;font-size:.79rem;padding:7px}
+  .building span{font-size:1.5rem}
+  .hall{top:66px}
+  .tavern{left:5%;top:165px}
+  .smithy{right:5%;top:179px}
+  .carpenter{left:7%;top:303px}
+  .store{right:7%;top:309px}
+  .worker{grid-template-columns:48px 1fr}
+  .state{display:none}
+  .avatar{width:48px;height:48px}
+  .hero-card{min-height:190px}
+}
+@media (max-width:340px){
+  .resource-strip span{padding-inline:4px}
+  .resource-strip{font-size:.64rem}
+  .topbar h1{font-size:1rem}
+}
+
+/* v0.2.0 — primer bucle jugable */
+.skill-progress{
+  display:block;
+  width:100%;
+  height:7px;
+  margin-top:6px;
+  accent-color:#7aa85b;
+}
+.state.is-busy{
+  color:#f5cf7b;
+  background:#49351d;
+}
+.expedition-status{
+  margin-top:10px;
+  padding:0 10px 8px;
+  border:1px solid #3f3428;
+  border-radius:12px;
+  background:#15120f;
+}
+.expedition-status .kv{
+  padding-inline:0;
+}
+.expedition-status progress{
+  margin-top:10px;
+  height:10px;
+  accent-color:var(--gold);
+}
+.countdown{
+  min-height:1.25em;
+  margin:.45rem 0 0;
+  text-align:right;
+  color:var(--gold2);
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+.primary:disabled{
+  opacity:.62;
+  filter:saturate(.65);
+}
+.menu-grid button:disabled{
+  opacity:.8;
+}
+@media (max-width:390px){
+  .resource-strip span{padding-inline:4px}
+  .resource-strip{font-size:.64rem}
+  .worker-mara small,.worker-borin small,.worker-eldon small{font-size:.72rem}
+}
+
+
+/* v0.2.1 — recursos por oficio */
+.city-resource-strip{
+  min-width:auto;
+}
+.inventory-groups{
+  display:grid;
+  gap:10px;
+}
+.inventory-group{
+  margin-top:0;
+}
+.inventory-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:11px 0;
+  border-bottom:1px solid #33291f;
+}
+.inventory-row:last-child{
+  border-bottom:0;
+}
+.inventory-note{
+  margin:4px 2px 0;
+}
+.building-resource-panel{
+  margin:14px 0;
+  padding:12px;
+  border:1px solid #3f3428;
+  border-radius:12px;
+  background:#15120f;
+}
+.building-resource-panel .eyebrow{
+  margin-bottom:9px;
+}
+.building-resource-chips{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.building-resource-chip{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 11px;
+  border:1px solid #4a3b2b;
+  border-radius:10px;
+  background:#211b15;
+}
+.building-resource-chip span{
+  color:var(--muted);
+  font-size:.86rem;
+}
+.building-resource-chip strong{
+  color:var(--gold2);
+  font-variant-numeric:tabular-nums;
+}
+.building-resource-empty{
+  margin:0;
+}
+@media (max-width:390px){
+  .building-resource-chips{
+    grid-template-columns:1fr;
+  }
+}
+
+
+/* v0.3.0 — Herrería */
+.smithy-art{
+  min-height:190px;
+  background:
+    radial-gradient(circle at 78% 34%,rgba(255,154,61,.32),transparent 18%),
+    linear-gradient(145deg,#35251b,#5a3520 48%,#1d1713);
+}
+.back-link{
+  border:0;
+  background:transparent;
+  color:var(--gold2);
+  padding:4px 0 2px;
+  font-weight:700;
+}
+.trade-resource-strip{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:12px;
+}
+.trade-resource-strip>div{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:11px 12px;
+  border:1px solid #4d3c2a;
+  border-radius:12px;
+  background:#1c1712;
+}
+.trade-resource-strip span{
+  color:var(--muted);
+  font-size:.84rem;
+}
+.trade-resource-strip strong{
+  color:var(--gold2);
+  font-variant-numeric:tabular-nums;
+}
+.smithy-worker-head{
+  display:grid;
+  grid-template-columns:52px 1fr auto;
+  align-items:center;
+  gap:10px;
+}
+.smithy-worker h3{
+  margin:.15rem 0 0;
+}
+.smithy-worker>small{
+  display:block;
+  margin-top:10px;
+  color:var(--muted);
+}
+.recipe-title{
+  display:grid;
+  grid-template-columns:58px 1fr;
+  gap:12px;
+  align-items:center;
+  margin:7px 0 8px;
+}
+.recipe-title h3{
+  margin:0 0 3px;
+  font-family:Georgia,serif;
+}
+.recipe-title p{
+  margin:0;
+  color:var(--muted);
+  font-size:.84rem;
+}
+.recipe-icon{
+  width:58px;
+  height:58px;
+  border-radius:14px;
+  display:grid;
+  place-items:center;
+  font-size:1.8rem;
+  border:1px solid #765334;
+  background:linear-gradient(145deg,#443021,#1c1712);
+}
+.craft-status{
+  margin-top:10px;
+  padding:0 10px 8px;
+  border:1px solid #3f3428;
+  border-radius:12px;
+  background:#15120f;
+}
+.craft-status .kv{
+  padding-inline:0;
+}
+.craft-status progress{
+  height:10px;
+}
+.section-head.compact h3{
+  margin:.1rem 0 .35rem;
+}
+.product-stock .inventory-row{
+  padding-top:8px;
+}
+.requirement-list{
+  display:grid;
+  gap:7px;
+  margin-top:12px;
+}
+.requirement-list>div{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:9px 10px;
+  border:1px solid #493a2a;
+  border-radius:10px;
+  background:#191510;
+}
+.requirement-list>div span{
+  color:var(--muted);
+  font-size:.85rem;
+}
+.requirement-list>div strong{
+  font-variant-numeric:tabular-nums;
+}
+.requirement-list>div.is-met{
+  border-color:#4d673a;
+  background:#1d2818;
+}
+.requirement-list>div.is-met span,
+.requirement-list>div.is-met strong{
+  color:#c5e0ac;
+}
+.upgrade-reward{
+  margin-top:10px;
+  padding:10px 11px;
+  border:1px dashed #705930;
+  border-radius:10px;
+  color:var(--gold2);
+  background:#201a12;
+}
+@media (max-width:390px){
+  .smithy-worker-head{
+    grid-template-columns:48px 1fr;
+  }
+  .smithy-worker-head .state{
+    grid-column:2;
+    justify-self:start;
+    display:inline-block;
+  }
+  .trade-resource-strip{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+
+/* v0.4.0 — Resistencia y Posada */
+.stamina-label{
+  display:block;
+  margin-top:7px;
+  color:#d8c49a !important;
+}
+.stamina-progress{
+  display:block;
+  width:100%;
+  height:9px;
+  margin-top:5px;
+  accent-color:#d4a64f;
+}
+.inn-art{
+  min-height:190px;
+  background:
+    radial-gradient(circle at 72% 26%,rgba(255,221,146,.2),transparent 18%),
+    linear-gradient(145deg,#473424,#6d5334 45%,#211912);
+}
+.inn-worker-card{
+  overflow:hidden;
+}
+.stamina-block{
+  margin-top:12px;
+  padding:0 10px 8px;
+  border:1px solid #3f3428;
+  border-radius:12px;
+  background:#15120f;
+}
+.stamina-block .kv{
+  padding-inline:0;
+}
+.stamina-block .stamina-progress{
+  margin:10px 0 3px;
+  height:11px;
+}
+#expeditionStaminaProgress{
+  margin:8px 0 5px;
+  height:10px;
+}
+@media (max-width:390px){
+  .worker-mara .stamina-label{
+    font-size:.7rem;
+  }
+}
+
+
+/* v0.5.0 — Cadena del Pico */
+.carpenter-art{
+  min-height:190px;
+  background:
+    radial-gradient(circle at 74% 30%,rgba(222,177,102,.22),transparent 20%),
+    linear-gradient(145deg,#4c3724,#6a4a28 48%,#21170f);
+}
+.assembly-card{
+  border-color:#6e5732;
+  background:linear-gradient(180deg,#2a2117,#18130f);
+}
+.equipment-box{
+  margin-top:12px;
+  padding:0 10px 10px;
+  border:1px solid #4c3b28;
+  border-radius:12px;
+  background:#17130f;
+}
+.equipment-box .kv{
+  padding-inline:0;
+}
+.equipment-box .primary{
+  margin-top:10px;
+}
+.equipment-box .muted{
+  margin:.7rem 0 0;
+  line-height:1.35;
+}
+
+
+/* v0.6.0 — Calidad de objetos */
+.quality-recipe-card{
+  border-color:#7d6337;
+}
+.quality-preview{
+  margin-top:12px;
+  padding:0 10px 10px;
+  border:1px solid #4c3b28;
+  border-radius:12px;
+  background:#17130f;
+}
+.quality-preview .kv{
+  padding-inline:0;
+}
+.quality-distribution{
+  margin-top:9px;
+  padding:9px 10px;
+  border-radius:10px;
+  background:#211b15;
+  color:var(--gold2);
+  font-size:.8rem;
+  line-height:1.35;
+}
+.sword-inventory-list{
+  display:grid;
+  gap:9px;
+  margin-top:10px;
+}
+.sword-item{
+  padding:11px;
+  border:1px solid #4c3b28;
+  border-radius:12px;
+  background:#17130f;
+}
+.sword-item-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.sword-item-head span{
+  color:var(--gold2);
+  font-size:.8rem;
+}
+.sword-stats{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+  margin-top:9px;
+}
+.sword-stats span{
+  padding:7px 6px;
+  border-radius:8px;
+  background:#211b15;
+  color:var(--muted);
+  font-size:.72rem;
+  text-align:center;
+}
+.sword-stats b{
+  display:block;
+  margin-top:2px;
+  color:var(--text);
+}
+.sword-price{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:10px;
+  align-items:center;
+  margin-top:10px;
+  color:var(--muted);
+  font-size:.8rem;
+}
+.sword-price input{
+  width:100%;
+  min-height:40px;
+  border:1px solid #6d5430;
+  border-radius:9px;
+  background:#100d0a;
+  color:var(--gold2);
+  padding:6px 9px;
+  font:700 .9rem system-ui,-apple-system,Segoe UI,sans-serif;
+}
+.quality-mediocre{border-color:#51483f}
+.quality-normal{border-color:#6a604d}
+.quality-good{border-color:#60774c}
+.quality-excellent{
+  border-color:#a77b31;
+  box-shadow:inset 0 0 0 1px rgba(241,207,122,.08);
+}
+@media (max-width:390px){
+  .sword-stats{
+    grid-template-columns:1fr 1fr;
+  }
+  .sword-stats span:last-child{
+    grid-column:1/-1;
+  }
+}
+
+
+/* v0.7.0 — Aventureros, Exhibición y Libro */
+.building-notice{
+  position:absolute;
+  top:5px;
+  right:5px;
+  max-width:88px;
+  padding:4px 6px;
+  border:1px solid #e2b75f;
+  border-radius:999px;
+  background:#241a0f;
+  color:#ffe0a0;
+  font-style:normal;
+  font-size:.58rem;
+  line-height:1;
+  box-shadow:0 2px 7px #0008;
+}
+.visitor-panel,.exhibition-panel,.smithy-book-panel{
+  border-color:#59462f;
+}
+.visitor-card{
+  margin-top:10px;
+  padding:11px;
+  border:1px solid #423527;
+  border-radius:12px;
+  background:#15120f;
+}
+.visitor-name{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.visitor-name span{
+  color:var(--gold2);
+  font-size:.78rem;
+}
+.visitor-thoughts{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+  margin-top:9px;
+}
+.visitor-thoughts span{
+  padding:7px 6px;
+  border-radius:8px;
+  background:#211b15;
+  color:var(--muted);
+  font-size:.7rem;
+  text-align:center;
+}
+.visitor-card p{
+  margin:.65rem 0 .35rem;
+  color:var(--muted);
+  font-size:.84rem;
+}
+.visitor-card small{
+  color:#d9c7a3;
+}
+.exhibition-list{
+  display:grid;
+  gap:7px;
+  margin-top:9px;
+}
+.exhibition-row{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:9px 10px;
+  border:1px solid #493a2a;
+  border-radius:10px;
+  background:#191510;
+  font-size:.8rem;
+}
+.exhibition-row span{color:var(--muted)}
+.exhibition-row strong{color:var(--gold2);white-space:nowrap}
+.small-action{
+  min-height:34px;
+  border:1px solid #6a5233;
+  border-radius:9px;
+  background:#241d16;
+  color:var(--gold2);
+  padding:6px 9px;
+  font-weight:700;
+  font-size:.72rem;
+}
+.exhibition-toggle{
+  width:100%;
+  margin-top:9px;
+}
+.book-summary{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  margin-top:10px;
+  padding:10px;
+  border:1px dashed #665033;
+  border-radius:10px;
+  background:#1b160f;
+  font-size:.78rem;
+}
+.book-summary span{color:var(--muted)}
+.book-list{
+  display:grid;
+  gap:8px;
+  margin-top:10px;
+}
+.book-entry{
+  padding:10px;
+  border:1px solid #403529;
+  border-radius:11px;
+  background:#15120f;
+}
+.book-entry.is-unread{
+  border-color:#9b7435;
+  box-shadow:inset 3px 0 0 #d4a64f;
+}
+.book-entry-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+}
+.book-entry-head time{
+  color:var(--gold2);
+  font-size:.72rem;
+  white-space:nowrap;
+}
+.book-entry small{
+  display:block;
+  margin-top:3px;
+  color:#c8b691;
+}
+.book-entry p{
+  margin:.45rem 0 0;
+  color:var(--muted);
+  font-size:.82rem;
+  line-height:1.4;
+}
+@media (max-width:390px){
+  .visitor-thoughts{
+    grid-template-columns:1fr 1fr;
+  }
+  .visitor-thoughts span:last-child{
+    grid-column:1/-1;
+  }
+  .visitor-name{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+}
+
+
+/* v0.8.0 — Fundación y generación inicial */
+.foundation-gate{
+  position:fixed;
+  z-index:100;
+  inset:0;
+  display:grid;
+  place-items:center;
+  padding:18px;
+  background:
+    radial-gradient(circle at 50% 10%,rgba(122,96,50,.22),transparent 32%),
+    rgba(9,7,5,.96);
+  overflow:auto;
+}
+.foundation-gate[hidden]{display:none}
+.foundation-card{
+  width:min(100%,500px);
+  padding:20px;
+  border:1px solid #6a5233;
+  border-radius:20px;
+  background:linear-gradient(180deg,#251d15,#15110d);
+  box-shadow:0 22px 70px #000b;
+}
+.foundation-card h1{
+  margin:.35rem 0 .65rem;
+  font-family:Georgia,serif;
+  color:var(--gold2);
+}
+.foundation-card>p:not(.eyebrow){
+  color:var(--muted);
+  line-height:1.45;
+}
+.foundation-field{
+  display:grid;
+  gap:7px;
+  margin-top:16px;
+  color:#d8c49a;
+  font-size:.82rem;
+}
+.foundation-field input{
+  width:100%;
+  min-height:46px;
+  border:1px solid #6c5437;
+  border-radius:11px;
+  background:#100d0a;
+  color:var(--text);
+  padding:9px 11px;
+  font:700 1rem Georgia,serif;
+  outline:none;
+}
+.foundation-field input:focus{
+  border-color:var(--gold);
+}
+.foundation-pack{
+  display:grid;
+  gap:8px;
+  margin-top:14px;
+  padding:12px;
+  border:1px solid #443522;
+  border-radius:12px;
+  background:#19140f;
+}
+.foundation-pack strong{color:var(--gold2)}
+.foundation-pack span{
+  color:var(--muted);
+  font-size:.82rem;
+}
+.founding-adventurer-list{
+  display:grid;
+  gap:9px;
+  margin-top:10px;
+}
+.founding-adventurer{
+  padding:11px;
+  border:1px solid #443626;
+  border-radius:12px;
+  background:#17130f;
+}
+.founding-adventurer-head{
+  display:grid;
+  grid-template-columns:44px 1fr;
+  gap:9px;
+  align-items:center;
+}
+.founding-adventurer-head .avatar{
+  width:44px;
+  height:44px;
+  font-size:1rem;
+}
+.founding-adventurer-head strong{
+  display:block;
+  font-family:Georgia,serif;
+}
+.founding-adventurer-head span{
+  display:block;
+  margin-top:2px;
+  color:var(--muted);
+  font-size:.75rem;
+}
+.founding-adventurer-stats{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:5px;
+  margin-top:9px;
+}
+.founding-adventurer-stats span{
+  padding:5px 3px;
+  border-radius:7px;
+  background:#211b15;
+  text-align:center;
+  color:#d8c49a;
+  font-size:.68rem;
+}
+.founding-adventurer small{
+  display:block;
+  margin-top:8px;
+  color:#b5a58b;
+  line-height:1.35;
+}
+@media (max-width:390px){
+  .foundation-card{padding:16px}
+  .founding-adventurer-stats{grid-template-columns:repeat(3,1fr)}
+  .founding-adventurer-stats span:nth-child(4),
+  .founding-adventurer-stats span:nth-child(5){grid-column:auto}
+}
+
+
+/* v0.8.1 — Herrería compacta, pestañas y almacén propio */
+.smithy-art-compact{
+  min-height:128px;
+}
+.smithy-art-compact p{
+  margin-bottom:0;
+}
+.smithy-worker-compact{
+  padding:11px;
+}
+.smithy-worker-compact .smithy-worker-head{
+  grid-template-columns:44px 1fr auto;
+}
+.smithy-worker-compact .avatar{
+  width:44px;
+  height:44px;
+  font-size:1.05rem;
+}
+.smithy-worker-compact h3{
+  font-size:1rem;
+}
+.smithy-worker-compact small{
+  margin-top:2px;
+  font-size:.72rem;
+}
+.smithy-worker-bars{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.smithy-worker-bars progress{
+  margin-top:7px;
+  height:7px;
+}
+.smithy-tabs{
+  position:sticky;
+  top:66px;
+  z-index:8;
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:4px;
+  margin-top:10px;
+  padding:5px;
+  border:1px solid #473724;
+  border-radius:13px;
+  background:rgba(18,16,13,.97);
+  backdrop-filter:blur(10px);
+}
+.smithy-tab{
+  min-width:0;
+  min-height:47px;
+  padding:5px 2px;
+  border:1px solid transparent;
+  border-radius:9px;
+  background:transparent;
+  color:#a99b85;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  font-size:.86rem;
+}
+.smithy-tab span{
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-size:.61rem;
+  white-space:nowrap;
+}
+.smithy-tab.is-active{
+  border-color:#765b31;
+  background:#2a2117;
+  color:var(--gold2);
+}
+.smithy-tab-panel{
+  margin-top:10px;
+}
+.smithy-tab-panel[hidden]{
+  display:none;
+}
+.smithy-current-job{
+  margin-top:0;
+  padding:10px 12px;
+}
+.smithy-current-job .section-head{
+  gap:8px;
+}
+.smithy-current-job h3{
+  margin:.1rem 0 0;
+  font-size:.95rem;
+}
+.smithy-current-job .countdown{
+  margin:0;
+  min-height:auto;
+  font-size:.76rem;
+}
+.smithy-current-job progress{
+  margin-top:7px;
+  height:8px;
+}
+.smithy-current-job .feedback{
+  margin:.45rem 0 0;
+  min-height:1em;
+  font-size:.76rem;
+}
+.smithy-list-heading{
+  margin:12px 2px 7px;
+}
+.smithy-list-heading h2{
+  margin:.05rem 0;
+  font:700 1.08rem Georgia,serif;
+}
+.smithy-list-heading .muted{
+  font-size:.7rem;
+}
+.smithy-recipe-list{
+  display:grid;
+  gap:8px;
+}
+.smithy-list-item{
+  padding:10px;
+  border:1px solid #4d3b28;
+  border-radius:13px;
+  background:linear-gradient(180deg,#211a13,#17130f);
+}
+.recipe-compact-main{
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr) auto;
+  gap:9px;
+  align-items:center;
+}
+.recipe-icon.compact{
+  width:42px;
+  height:42px;
+  border-radius:10px;
+  font-size:1.25rem;
+}
+.recipe-compact-copy{
+  min-width:0;
+}
+.recipe-compact-copy strong{
+  display:block;
+  overflow:hidden;
+  color:#f1eadf;
+  font-family:Georgia,serif;
+  font-size:.95rem;
+  line-height:1.08;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.recipe-compact-copy small{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+  font-size:.67rem;
+}
+.compact-action{
+  min-width:78px;
+  min-height:38px;
+  max-width:104px;
+  padding:6px 8px;
+  border:1px solid #e0b65e;
+  border-radius:9px;
+  background:linear-gradient(#dbae51,#a97729);
+  color:#171006;
+  font-weight:800;
+  font-size:.72rem;
+  line-height:1.05;
+}
+.compact-action:disabled{
+  opacity:.58;
+  filter:saturate(.65);
+}
+.recipe-facts{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:8px;
+}
+.recipe-facts span{
+  padding:4px 7px;
+  border:1px solid #3e3226;
+  border-radius:999px;
+  background:#15110e;
+  color:#ae9f88;
+  font-size:.65rem;
+}
+.recipe-facts b{
+  color:#e7dccb;
+}
+.recipe-details{
+  margin-top:6px;
+  border-top:1px solid #342a20;
+  padding-top:5px;
+}
+.recipe-details summary{
+  cursor:pointer;
+  color:var(--gold2);
+  font-size:.67rem;
+  font-weight:700;
+}
+.recipe-details p{
+  margin:.5rem 0 0;
+  color:var(--muted);
+  font-size:.75rem;
+  line-height:1.35;
+}
+.compact-quality{
+  margin-top:7px;
+  padding:0 8px 8px;
+}
+.compact-quality .kv{
+  padding:7px 0;
+  font-size:.73rem;
+}
+.compact-quality .quality-distribution{
+  margin-top:5px;
+  padding:7px;
+  font-size:.68rem;
+}
+.smithy-capacity-card{
+  margin-top:0;
+  padding:11px 12px;
+}
+.smithy-capacity-card h3{
+  margin:.1rem 0;
+}
+.smithy-stock-list{
+  display:grid;
+  gap:7px;
+  margin-top:8px;
+}
+.smithy-stock-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 11px;
+  border:1px solid #463725;
+  border-radius:10px;
+  background:#191510;
+  font-size:.8rem;
+}
+.smithy-stock-row strong{
+  color:var(--gold2);
+}
+.smithy-stock-row.external-stock{
+  border-style:dashed;
+}
+.smithy-sword-storage{
+  padding:11px;
+}
+.compact-sword-list{
+  gap:7px;
+}
+.smithy-sword-row{
+  padding:9px;
+  border:1px solid #4c3b28;
+  border-radius:10px;
+  background:#17130f;
+}
+.smithy-sword-top{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:center;
+}
+.smithy-sword-top strong{
+  font-size:.82rem;
+}
+.smithy-sword-top span{
+  color:var(--gold2);
+  font-size:.7rem;
+}
+.smithy-sword-facts{
+  display:flex;
+  gap:5px;
+  margin-top:6px;
+}
+.smithy-sword-facts span{
+  flex:1;
+  padding:5px 4px;
+  border-radius:7px;
+  background:#211b15;
+  color:var(--muted);
+  text-align:center;
+  font-size:.63rem;
+}
+.smithy-sword-facts b{
+  color:var(--text);
+}
+.smithy-sword-actions{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:7px;
+  align-items:end;
+  margin-top:7px;
+}
+.compact-price{
+  display:grid;
+  grid-template-columns:auto minmax(70px,110px);
+  gap:7px;
+  align-items:center;
+  color:var(--muted);
+  font-size:.67rem;
+}
+.compact-price input{
+  width:100%;
+  min-height:34px;
+  border:1px solid #624b2d;
+  border-radius:8px;
+  background:#100d0a;
+  color:var(--gold2);
+  padding:5px 7px;
+  font:700 .78rem system-ui,-apple-system,Segoe UI,sans-serif;
+}
+.smithy-tab-panel .visitor-panel,
+.smithy-tab-panel .exhibition-panel,
+.smithy-tab-panel .smithy-book-panel,
+.smithy-tab-panel .upgrade-card{
+  margin-top:0;
+}
+.smithy-tab-panel .visitor-panel{
+  margin-top:8px;
+}
+@media (max-width:390px){
+  .smithy-tabs{
+    top:61px;
+  }
+  .smithy-worker-compact .smithy-worker-head{
+    grid-template-columns:42px 1fr auto;
+  }
+  .smithy-worker-compact .state{
+    display:inline-block;
+    grid-column:auto;
+    font-size:.62rem;
+  }
+  .recipe-compact-main{
+    grid-template-columns:38px minmax(0,1fr) 76px;
+    gap:7px;
+  }
+  .recipe-icon.compact{
+    width:38px;
+    height:38px;
+    font-size:1.1rem;
+  }
+  .recipe-compact-copy strong{
+    font-size:.87rem;
+  }
+  .compact-action{
+    min-width:72px;
+    max-width:76px;
+    padding-inline:4px;
+    font-size:.66rem;
+  }
+  .recipe-facts{
+    gap:4px;
+  }
+  .recipe-facts span{
+    padding:4px 6px;
+    font-size:.61rem;
+  }
+}
