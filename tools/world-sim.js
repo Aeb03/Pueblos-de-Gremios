@@ -31,7 +31,7 @@ function main(){
     console.log(`  Nv.3: ${pct(r.level3Rate)} | media ${r.level3Mean.toFixed(1)} min | mediana ${r.level3Median.toFixed(1)}`);
     console.log(`  Textilería: ${pct(r.textileRate)} | media ${r.textileMean.toFixed(1)} min`);
     console.log(`  Fundadores al llegar a Nv.3: nivel medio ${r.foundersLevelAtCity3.toFixed(2)} | Nv.2+ ${pct(r.foundersAtLeast2AtCity3)} | al min 90 ${r.foundersLevelMean.toFixed(2)}`);
-    console.log(`  Incapacitaciones: ${r.downsMean.toFixed(2)} | XP perdida: ${r.xpLostMean.toFixed(1)}`);
+    console.log(`  Incapacitaciones: ${r.downsMean.toFixed(2)} | XP perdida: ${r.xpLostMean.toFixed(1)} | combates: ${r.fightsMean.toFixed(1)}`);
     console.log(`  Descansos: ${r.restsMean.toFixed(2)} | reparaciones: ${r.repairsMean.toFixed(2)}`);
     console.log(`  Gasto equipo/descanso/reparación: ${r.gearSpendMean.toFixed(1)} / ${r.restSpendMean.toFixed(1)} / ${r.repairSpendMean.toFixed(1)}`);
     console.log(`  Reinversión total: ${pct(r.reinvestRate)} | recurrente: ${pct(r.recurringReinvestRate)}`);
