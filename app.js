@@ -1891,7 +1891,7 @@ function renderFoundingAdventurers(){
         <div class="avatar">${npc.firstName.slice(0,1)}${npc.lastName.slice(0,1)}</div>
         <div>
           <strong>${npc.fullName}</strong>
-          <span>${npc.role} · Nv. ${npc.level} · ${npc.personality}</span>
+          <span>${npc.role} · Nv. ${npc.level} · ${npc.personality} · ${npc.status}</span>
         </div>
       </div>
       <div class="founding-adventurer-stats">
@@ -2114,6 +2114,7 @@ function render(){
   els.smithyLevelCity.textContent=state.buildings.smithy.level;
   if(currentScreen()==='city')title.textContent=state.city.founded?state.city.name:'Nueva ciudad';
   renderFoundingAdventurers();
+  renderAdventurerActivity();
 
   els.inventoryCoins.textContent=formatNumber(state.resources.coins);
   els.inventoryWood.textContent=formatNumber(state.resources.wood);
@@ -2460,6 +2461,11 @@ els.toggleBorinInnRest.addEventListener('click',()=>toggleInnRest('borin'));
 els.toggleEldonInnRest.addEventListener('click',()=>toggleInnRest('eldon'));
 els.upgradeSmithy.addEventListener('click',upgradeSmithy);
 if(els.testReachNextCityLevel)els.testReachNextCityLevel.addEventListener('click',reachNextCityLevelForLocalTest);
+if(els.testRecoverAdventurers)els.testRecoverAdventurers.addEventListener('click',recoverAdventurersForLocalTest);
+if(els.resolveAdventurerActivity)els.resolveAdventurerActivity.addEventListener('click',resolveAdventurerActivity);
+if(els.activityAdventurerSelect)els.activityAdventurerSelect.addEventListener('change',render);
+if(els.activityEnemySelect)els.activityEnemySelect.addEventListener('change',render);
+if(els.activityEnemyCount)els.activityEnemyCount.addEventListener('change',render);
 
 els.swordInventoryList.addEventListener('change',event=>{
   const input=event.target.closest('[data-sword-price]');
