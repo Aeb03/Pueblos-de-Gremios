@@ -82,8 +82,8 @@
         ...clone(previousWeapon),
         slot:'weapon',
         founder:Boolean(previousWeapon.founder),
-        durability:Number.isFinite(Number(previousWeapon.durability))?Number(previousWeapon.durability):null,
-        maxDurability:Number.isFinite(Number(previousWeapon.maxDurability))?Number(previousWeapon.maxDurability):null,
+        durability:previousWeapon.durability==null?null:(Number.isFinite(Number(previousWeapon.durability))?Number(previousWeapon.durability):null),
+        maxDurability:previousWeapon.maxDurability==null?null:(Number.isFinite(Number(previousWeapon.maxDurability))?Number(previousWeapon.maxDurability):null),
         damage:Number(previousWeapon.damage)||previousDamage||starterDamage
       };
     }else if(Number.isFinite(previousDamage)&&previousDamage>(LEGACY_STARTER_DAMAGE[classKey]??starterDamage)){
