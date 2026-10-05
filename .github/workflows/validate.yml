@@ -13,6 +13,17 @@ jobs:
         run: |
           node --check game-data.js
           node --check app.js
+          node --check tools/balance-sim.js
+          node --check tools/world-sim.js
+          node --check tools/sim/world-config.js
+          node --check tools/sim/world-core.js
+
+      - name: Check balance simulators
+        run: |
+          node tools/balance-sim.js 100 1989 > /tmp/balance-sim.log
+          node tools/world-sim.js 100 1989 > /tmp/world-sim.log
+          grep -q "RESUMEN JSON" /tmp/balance-sim.log
+          grep -q "RESUMEN_JSON" /tmp/world-sim.log
       - name: Check required PWA files
         run: |
           test -f index.html
