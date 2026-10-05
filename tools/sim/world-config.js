@@ -41,11 +41,11 @@ const ITEM={
 };
 
 const TEXTILE_ORIGIN={
-  neutral:{resource:'skin',label:'Común',priceMul:1,defense:0,initiative:0,evasion:0,damageReduction:0},
-  wolf:{resource:'wolfSkin',label:'Lobo',priceMul:1.10,defense:0,initiative:1,evasion:0,damageReduction:0},
-  boar:{resource:'boarSkin',label:'Jabalí',priceMul:1.12,defense:1,initiative:0,evasion:0,damageReduction:0},
-  alphaWolf:{resource:'alphaWolfSkin',label:'Lobo Alfa',priceMul:1.35,defense:0,initiative:2,evasion:0,damageReduction:0},
-  greatBoar:{resource:'greatBoarSkin',label:'Gran Jabalí',priceMul:1.55,defense:2,initiative:0,evasion:0,damageReduction:.05}
+  neutral:{rawResource:'skin',tannedResource:'tannedNeutral',label:'Común',priceMul:1,defense:0,initiative:0,evasion:0,damageReduction:0},
+  wolf:{rawResource:'wolfSkin',tannedResource:'tannedWolf',label:'Lobo',priceMul:1.10,defense:0,initiative:1,evasion:0,damageReduction:0},
+  boar:{rawResource:'boarSkin',tannedResource:'tannedBoar',label:'Jabalí',priceMul:1.12,defense:1,initiative:0,evasion:0,damageReduction:0},
+  alphaWolf:{rawResource:'alphaWolfSkin',tannedResource:'tannedAlphaWolf',label:'Lobo Alfa',priceMul:1.35,defense:0,initiative:2,evasion:0,damageReduction:0},
+  greatBoar:{rawResource:'greatBoarSkin',tannedResource:'tannedGreatBoar',label:'Gran Jabalí',priceMul:1.55,defense:2,initiative:0,evasion:0,damageReduction:.05}
 };
 
 const REPAIR_RATE=.22;
@@ -56,9 +56,9 @@ const RECIPES={
   bow:{wood:4,tendon:2},
   staff:{wood:3},
   shield:{wood:4,iron:1},
-  leather:{hide:3,tendon:1},
-  gloves:{hide:1},
-  boots:{hide:1}
+  leather:{tannedHide:3,tendon:1},
+  gloves:{tannedHide:1},
+  boots:{tannedHide:1}
 };
 
 const FOOD={
