@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17130f">
 <meta name="description" content="Pueblos de Gremios - gestión de un pueblo fantástico y su reino.">
-<link rel="manifest" href="./manifest.webmanifest?v=0.2.1">
-<link rel="icon" href="./icons/icon.svg?v=0.2.1" type="image/svg+xml">
-<link rel="stylesheet" href="./styles.css?v=0.2.1">
+<link rel="manifest" href="./manifest.webmanifest?v=0.3.0">
+<link rel="icon" href="./icons/icon.svg?v=0.3.0" type="image/svg+xml">
+<link rel="stylesheet" href="./styles.css?v=0.3.0">
 <title>Pueblos de Gremios</title>
 </head>
 <body>
@@ -24,22 +24,31 @@
     <div class="city-sky"></div>
     <button class="building hall" data-building="Ayuntamiento"><span>🏰</span><b>Ayuntamiento</b><small>Nv. 1</small></button>
     <button class="building tavern" data-building="Taberna"><span>🍺</span><b>Taberna</b><small>Nv. 1</small></button>
-    <button class="building smithy" data-building="Herrería"><span>⚒️</span><b>Herrería</b><small>Nv. 1</small></button>
+    <button class="building smithy" data-building="Herrería"><span>⚒️</span><b>Herrería</b><small>Nv. <span id="smithyLevelCity">1</span></small></button>
     <button class="building carpenter" data-building="Carpintería"><span>🪚</span><b>Carpintería</b><small>Nv. 1</small></button>
     <button class="building store" data-building="Posada"><span>🛏️</span><b>Posada</b><small>Nv. 1</small></button>
     <div class="road"></div>
   </div>
   <article class="status-card">
-    <div><span class="badge">Pueblo</span><strong>Prestigio 120 / 500</strong></div>
-    <progress value="120" max="500">120/500</progress>
-    <p>Objetivo: hacer crecer el asentamiento y desbloquear nuevos servicios.</p>
+    <div><span class="badge">Pueblo</span><strong>Prestigio <span id="cityPrestige">120</span> / 500</strong></div>
+    <progress id="cityPrestigeProgress" value="120" max="500">120/500</progress>
+    <p>Mejorar negocios y servicios aumenta el prestigio del asentamiento.</p>
   </article>
 </section>
 
 <section class="screen" data-screen="workers">
   <div class="section-head"><h2>Trabajadores</h2><span>4 / 4</span></div>
   <div class="worker-list">
-    <article class="worker"><div class="avatar">B</div><div><h3>Borin</h3><p>Herrero · Nv. 1</p><small>Herrería 1 · Fundición 1</small></div><span class="state">Disponible</span></article>
+    <article class="worker worker-borin">
+      <div class="avatar">B</div>
+      <div>
+        <h3>Borin</h3>
+        <p>Herrero · Nv. <span id="borinProfessionLevel">1</span></p>
+        <small>Herrería <span id="borinSmithingLevel">1</span> · <span id="borinSmithingXp">0</span>/<span id="borinNextXp">100</span> XP</small>
+        <progress class="skill-progress" id="borinXpProgress" value="0" max="100"></progress>
+      </div>
+      <span class="state" id="borinState">Disponible</span>
+    </article>
     <article class="worker worker-mara">
       <div class="avatar">M</div>
       <div>
@@ -53,6 +62,76 @@
     <article class="worker"><div class="avatar">E</div><div><h3>Eldon</h3><p>Carpintero · Nv. 1</p><small>Carpintería 1 · Tala 1</small></div><span class="state">Disponible</span></article>
     <article class="worker"><div class="avatar">N</div><div><h3>Nara</h3><p>Tabernera · Nv. 1</p><small>Cocina 1 · Hospitalidad 1</small></div><span class="state">Disponible</span></article>
   </div>
+</section>
+
+<section class="screen" data-screen="smithy">
+  <button class="back-link" data-go="city">← Volver a la ciudad</button>
+
+  <div class="hero-card smithy-art">
+    <span class="badge">Herrería · Nv. <span id="smithyLevelHero">1</span></span>
+    <h2>Forja de Borin</h2>
+    <p>Transformá el hierro recuperado por Mara en componentes útiles para el pueblo.</p>
+  </div>
+
+  <div class="trade-resource-strip" aria-label="Recursos de Herrería">
+    <div><span>⛏️ Hierro</span><strong id="smithyIron">42</strong></div>
+    <div><span>🪨 Piedra</span><strong id="smithyStone">0</strong></div>
+  </div>
+
+  <article class="panel smithy-worker">
+    <div class="smithy-worker-head">
+      <div class="avatar">B</div>
+      <div>
+        <p class="eyebrow">Herrero asignado</p>
+        <h3>Borin · Herrería Nv. <span id="smithyBorinLevel">1</span></h3>
+      </div>
+      <span class="state" id="smithyBorinState">Disponible</span>
+    </div>
+    <small><span id="smithyBorinXp">0</span>/<span id="smithyBorinNextXp">100</span> XP</small>
+    <progress class="skill-progress" id="smithyBorinProgress" value="0" max="100"></progress>
+  </article>
+
+  <article class="panel recipe-card">
+    <p class="eyebrow">Receta inicial</p>
+    <div class="recipe-title">
+      <div class="recipe-icon">⛏️</div>
+      <div>
+        <h3>Cabeza de pico de hierro</h3>
+        <p>Primer componente de una futura herramienta completa. Más adelante Carpintería fabricará el mango.</p>
+      </div>
+    </div>
+    <div class="kv"><span>Coste</span><strong>5 hierro</strong></div>
+    <div class="kv"><span>Tiempo de prueba</span><strong>20 s</strong></div>
+    <div class="kv"><span>Experiencia</span><strong>+20 XP Herrería</strong></div>
+    <div class="craft-status">
+      <div class="kv"><span>Estado</span><strong id="craftStatus">Lista para fabricar</strong></div>
+      <progress id="craftProgress" value="0" max="100"></progress>
+      <p class="countdown" id="craftCountdown"></p>
+    </div>
+    <button class="primary" id="startCraft">Fabricar cabeza de pico</button>
+    <p class="feedback" id="smithyFeedback" aria-live="polite"></p>
+  </article>
+
+  <article class="panel product-stock">
+    <div class="section-head compact"><h3>Producción</h3><span>Stock</span></div>
+    <div class="inventory-row"><span>⛏️ Cabezas de pico</span><strong id="smithyPickaxeHeads">0</strong></div>
+    <p class="muted">Las piezas producidas pertenecen al inventario general de la ciudad.</p>
+  </article>
+
+  <article class="panel upgrade-card">
+    <p class="eyebrow">Desarrollo del negocio</p>
+    <h3 id="smithyUpgradeTitle">Mejorar Herrería a Nv. 2</h3>
+    <p class="muted" id="smithyUpgradeCopy">La mejora representa el crecimiento real del negocio y aumenta el Prestigio de la ciudad.</p>
+    <div class="requirement-list">
+      <div data-smithy-requirement="skill"><span>Borin · Herrería Nv. 2</span><strong id="reqSmithing">0/1</strong></div>
+      <div data-smithy-requirement="crafted"><span>3 cabezas fabricadas</span><strong id="reqCrafted">0/3</strong></div>
+      <div data-smithy-requirement="stone"><span>10 piedra</span><strong id="reqStone">0/10</strong></div>
+      <div data-smithy-requirement="coins"><span>100 monedas</span><strong id="reqCoins">0/100</strong></div>
+    </div>
+    <div class="upgrade-reward">Recompensa: <strong>+20 Prestigio</strong></div>
+    <button class="primary" id="upgradeSmithy">Mejorar Herrería</button>
+    <p class="feedback" id="upgradeFeedback" aria-live="polite"></p>
+  </article>
 </section>
 
 <section class="screen" data-screen="expedition">
@@ -99,7 +178,11 @@
       <div class="inventory-row"><span>⛏️ Hierro</span><strong id="inventoryIron">42</strong></div>
       <div class="inventory-row"><span>🪨 Piedra</span><strong id="inventoryStone">0</strong></div>
     </article>
-    <p class="muted inventory-note">Esta pantalla sirve para consultar todo el stock. Durante el juego normal cada oficio mostrará sólo los recursos que utiliza.</p>
+    <article class="panel inventory-group">
+      <p class="eyebrow">Productos</p>
+      <div class="inventory-row"><span>⛏️ Cabeza de pico de hierro</span><strong id="inventoryPickaxeHeads">0</strong></div>
+    </article>
+    <p class="muted inventory-note">El stock es único para toda la ciudad. Cada negocio muestra sólo lo que necesita.</p>
   </div>
 </section>
 
@@ -112,8 +195,8 @@
     <button id="installBtn">📲<span id="installLabel">Instalar PWA</span></button>
   </div>
   <div class="panel">
-    <p><strong>Versión:</strong> v0.2.1 — Recursos por oficio</p>
-    <p class="muted">La barra principal muestra sólo recursos generales. Los materiales se consultan en sus oficios o en Inventario.</p>
+    <p><strong>Versión:</strong> v0.3.0 — Herrería</p>
+    <p class="muted">Producción persistente, progreso de Borin, productos e incremento de Prestigio mediante mejora del edificio.</p>
   </div>
 </section>
 
@@ -127,7 +210,7 @@
 
 <dialog id="buildingDialog">
   <form method="dialog">
-    <div class="dialog-head"><div><p class="eyebrow">Edificio</p><h2 id="buildingName">Herrería</h2></div><button class="icon-btn" value="cancel" aria-label="Cerrar">✕</button></div>
+    <div class="dialog-head"><div><p class="eyebrow">Edificio</p><h2 id="buildingName">Edificio</h2></div><button class="icon-btn" value="cancel" aria-label="Cerrar">✕</button></div>
     <p id="buildingCopy">Gestión del edificio.</p>
     <section class="building-resource-panel">
       <p class="eyebrow">Recursos del oficio</p>
@@ -139,6 +222,6 @@
   </form>
 </dialog>
 </main>
-<script src="./app.js?v=0.2.1" defer></script>
+<script src="./app.js?v=0.3.0" defer></script>
 </body>
 </html>
