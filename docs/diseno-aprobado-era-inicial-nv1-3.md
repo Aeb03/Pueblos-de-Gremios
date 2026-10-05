@@ -1901,6 +1901,114 @@ La Magia Sagrada tiene **efectividad superior contra enemigos de Tipo No Muerto*
 
 El Sanador es un rol de soporte puro en prioridad de comportamiento: si el grupo necesita curación o limpieza de estados, eso debe pesar más en su resolución que buscar daño adicional.
 
+### Futuro: escuelas de especialización y cooperación de Reino
+
+Las **habilidades básicas de clase** pueden aprenderse y desarrollarse mediante la **Sede del Gremio**.
+
+La **especialización avanzada** requiere una infraestructura distinta: una **Escuela de Especialización** correspondiente a la rama elegida.
+
+Ejemplos futuros:
+
+- Escuela de Druidas;
+- Academia Arcana;
+- Escuela de Arquería avanzada;
+- Orden de Guardianes;
+- otras ramas que se definan al ampliar las clases.
+
+#### Principio de especialización de ciudades
+
+Las Escuelas están pensadas para ser inversiones grandes de ciudad.
+
+Dirección de diseño:
+
+- construir **1 Escuela** debe ser alcanzable para una ciudad que decida especializarse;
+- mantener/desarrollar **2 Escuelas** debe exigir una inversión importante;
+- **3 Escuelas** debe ser muy difícil;
+- sostener **4 o más** debe ser poco probable y requerir una ciudad excepcionalmente desarrollada.
+
+Los costes exactos, mantenimiento, requisitos de nivel y capacidad se definirán más adelante.
+
+El objetivo no es prohibir explícitamente tener muchas Escuelas, sino conseguir mediante economía y progresión que las ciudades tiendan naturalmente a **especializarse en ramas distintas**.
+
+#### Aventureros viajeros
+
+Un aventurero puede aprender sus habilidades básicas en su ciudad, pero si desea una especialización que su ciudad no ofrece deberá:
+
+1. identificar una Escuela compatible dentro del Reino;
+2. viajar hasta la ciudad que la posee;
+3. cumplir los requisitos de la especialización;
+4. pagar/consumir los recursos o tiempo correspondientes;
+5. completar su especialización;
+6. continuar allí o regresar a otra ciudad según su comportamiento.
+
+Esto convierte a las Escuelas en servicios de Reino y crea flujo real de aventureros entre ciudades.
+
+Una ciudad especializada puede recibir:
+
+- visitantes;
+- consumo en Mesón;
+- reparaciones;
+- compras de equipamiento;
+- pagos por formación;
+- prestigio;
+- demanda adicional de materiales y servicios.
+
+Por tanto, una Escuela no beneficia únicamente a los aventureros originarios de la ciudad que la construyó.
+
+#### Estado de necesidades del Reino
+
+El Reino tendrá un sistema de **Necesidades / Cobertura de Especializaciones** calculado a partir del estado real de sus ciudades y aventureros.
+
+Ejemplo:
+
+> **Escuela de Druidas — cobertura nula**  
+> No existe ninguna Escuela de Druidas activa en el Reino.
+
+O:
+
+> **Escuela de Druidas — cobertura escasa**  
+> Existe una Escuela, pero su capacidad o ubicación no cubre la demanda actual.
+
+Una ciudad recién fundada podrá consultar este estado antes de decidir hacia dónde orientar su desarrollo.
+
+La interfaz puede resaltar oportunidades como:
+
+- Escuela inexistente;
+- cobertura escasa;
+- demanda alta;
+- capacidad suficiente;
+- oferta saturada.
+
+#### Principio cooperativo
+
+La necesidad no será un mensaje artificial prefijado.
+
+Se calcula usando datos reales como:
+
+- cantidad de Escuelas activas;
+- capacidad disponible;
+- ubicación/distancia;
+- cantidad de aventureros que podrían especializarse;
+- cantidad de aventureros esperando esa especialización;
+- nivel/calidad de las Escuelas.
+
+Así una ciudad nueva puede detectar una carencia real del Reino y decidir:
+
+> “No existe una Escuela de Druidas. Voy a orientar mi ciudad para cubrir esa necesidad.”
+
+Esto crea una capa cooperativa donde las ciudades compiten por crecer, pero al mismo tiempo **dependen de una red de especializaciones que ninguna ciudad debería cubrir fácilmente por sí sola**.
+
+#### Relación con la temporada
+
+Las Escuelas forman parte del progreso material de la Era y se reinician con la temporada.
+
+Los registros históricos sí pueden conservar:
+
+- primera Escuela de una rama;
+- mejor Escuela;
+- ciudad referente de una especialización;
+- aventureros destacados formados allí.
+
 ### Tipo de enemigo — nueva propiedad de combate
 
 Además de **Rareza** y **Nivel**, cada enemigo tiene una propiedad separada llamada **Tipo**.
