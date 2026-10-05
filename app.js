@@ -1195,7 +1195,7 @@ function syncWorkerStamina(workerKey){
 
     if(leftInn){
       worker.restingAtInn=false;
-      state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de la Mesón.`;
+      state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de el Mesón.`;
       saveState();
       return true;
     }
@@ -1217,7 +1217,7 @@ function syncWorkerStamina(workerKey){
 
   if(worker.stamina>=STAMINA_MAX&&wasResting){
     worker.restingAtInn=false;
-    state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de la Mesón.`;
+    state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de el Mesón.`;
   }
 
   if(worker.stamina!==previous||worker.restingAtInn!==wasResting){
@@ -1252,7 +1252,7 @@ function toggleInnRest(workerKey){
   if(worker.restingAtInn){
     worker.restingAtInn=false;
     worker.staminaUpdatedAt=Date.now();
-    state.lastInnMessage=`${name} dejó la Mesón. Seguirá recuperando Resistencia lentamente mientras esté libre.`;
+    state.lastInnMessage=`${name} dejó el Mesón. Seguirá recuperando Resistencia lentamente mientras esté libre.`;
   }else{
     if(worker.stamina>=STAMINA_MAX){
       state.lastInnMessage=`${name} ya tiene la Resistencia completa.`;
@@ -1262,7 +1262,7 @@ function toggleInnRest(workerKey){
 
     worker.restingAtInn=true;
     worker.staminaUpdatedAt=Date.now();
-    state.lastInnMessage=`${name} está descansando en la Mesón. Su recuperación está acelerada.`;
+    state.lastInnMessage=`${name} está descansando en el Mesón. Su recuperación está acelerada.`;
   }
 
   saveState();
@@ -1277,7 +1277,7 @@ function startExpedition(){
   const mara=state.workers.mara;
 
   if(mara.restingAtInn){
-    state.lastMessage='Mara está descansando en la Mesón. Terminá su descanso antes de enviarla.';
+    state.lastMessage='Mara está descansando en el Mesón. Terminá su descanso antes de enviarla.';
     render();
     return;
   }
@@ -1376,7 +1376,7 @@ function startHandleCraft(){
   const eldon=state.workers.eldon;
 
   if(eldon.restingAtInn){
-    state.lastCarpentryMessage='Eldon está descansando en la Mesón.';
+    state.lastCarpentryMessage='Eldon está descansando en el Mesón.';
     render();
     return;
   }
@@ -1448,7 +1448,7 @@ function startSmithyCraft(recipe){
   const borin=state.workers.borin;
 
   if(borin.restingAtInn){
-    state.lastSmithyMessage='Borin está descansando en la Mesón. Terminá su descanso antes de ponerlo a trabajar.';
+    state.lastSmithyMessage='Borin está descansando en el Mesón. Terminá su descanso antes de ponerlo a trabajar.';
     render();
     return;
   }
@@ -2206,7 +2206,7 @@ function render(){
 
     els.maraState.textContent=resting?'Descansando':'Disponible';
     els.maraState.classList.toggle('is-busy',resting);
-    els.expeditionStatus.textContent=resting?'En la Mesón':'Lista para partir';
+    els.expeditionStatus.textContent=resting?'En el Mesón':'Lista para partir';
     els.expeditionProgress.value=0;
     els.expeditionCountdown.textContent='';
 
@@ -2270,7 +2270,7 @@ function render(){
 
     els.eldonState.textContent=resting?'Descansando':'Disponible';
     els.eldonState.classList.toggle('is-busy',resting);
-    els.carpenterEldonState.textContent=resting?'En la Mesón':'Disponible';
+    els.carpenterEldonState.textContent=resting?'En el Mesón':'Disponible';
     els.carpenterEldonState.classList.toggle('is-busy',resting);
     els.carpentryStatus.textContent=resting?'Eldon descansando':'Lista para fabricar';
     els.carpentryProgress.value=0;
@@ -2344,7 +2344,7 @@ function render(){
 
     els.borinState.textContent=resting?'Descansando':'Disponible';
     els.borinState.classList.toggle('is-busy',resting);
-    els.smithyBorinState.textContent=resting?'En la Mesón':'Disponible';
+    els.smithyBorinState.textContent=resting?'En el Mesón':'Disponible';
     els.smithyBorinState.classList.toggle('is-busy',resting);
     els.craftStatus.textContent=resting?'Borin descansando':'Lista para trabajar';
     els.craftProgress.value=0;
