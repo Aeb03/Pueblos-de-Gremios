@@ -1,4 +1,4 @@
-const APP_VERSION='0.8.0';
+const APP_VERSION='0.8.1';
 const SAVE_KEY='pueblos-gremios-save-v0.8.0';
 const DATA=globalThis.PG_DATA;
 
@@ -82,11 +82,23 @@ const defaultState=()=>({
     foundingPackGenerated:false
   },
   resources:{...DATA.founding.resources},
-  inventory:{
-    pickaxeHeads:0,
-    woodenHandles:0,
-    ironPickaxes:0,
-    ironSwords:[]
+  inventory:{},
+  shops:{
+    smithy:{
+      storage:{
+        pickaxeHeads:0,
+        ironPickaxes:0,
+        ironSwords:[]
+      },
+      storageCapacity:20,
+      exhibitionCapacity:3
+    },
+    carpenter:{
+      storage:{
+        woodenHandles:0
+      },
+      storageCapacity:20
+    }
   },
   workers:{
     mara:{
@@ -151,6 +163,26 @@ function loadState(){
       city:{...base.city,...(saved.city||{})},
       resources:{...base.resources,...(saved.resources||{})},
       inventory:{...base.inventory,...(saved.inventory||{})},
+      shops:{
+        ...base.shops,
+        ...(saved.shops||{}),
+        smithy:{
+          ...base.shops.smithy,
+          ...(saved.shops?.smithy||{}),
+          storage:{
+            ...base.shops.smithy.storage,
+            ...(saved.shops?.smithy?.storage||{})
+          }
+        },
+        carpenter:{
+          ...base.shops.carpenter,
+          ...(saved.shops?.carpenter||{}),
+          storage:{
+            ...base.shops.carpenter.storage,
+            ...(saved.shops?.carpenter?.storage||{})
+          }
+        }
+      },
       workers:{
         ...base.workers,
         ...(saved.workers||{}),
@@ -172,9 +204,30 @@ function loadState(){
       }
     };
 
-    merged.inventory.ironSwords=Array.isArray(merged.inventory.ironSwords)
-      ?merged.inventory.ironSwords.map(sword=>({...sword,listed:Boolean(sword.listed)}))
+    const hasNewSmithyStorage=Boolean(saved.shops?.smithy?.storage);
+    const hasNewCarpenterStorage=Boolean(saved.shops?.carpenter?.storage);
+
+    if(!hasNewSmithyStorage){
+      merged.shops.smithy.storage.pickaxeHeads=Number(saved.inventory?.pickaxeHeads)||0;
+      merged.shops.smithy.storage.ironPickaxes=Number(saved.inventory?.ironPickaxes)||0;
+      merged.shops.smithy.storage.ironSwords=Array.isArray(saved.inventory?.ironSwords)
+        ?saved.inventory.ironSwords
+        :[];
+    }
+
+    if(!hasNewCarpenterStorage){
+      merged.shops.carpenter.storage.woodenHandles=Number(saved.inventory?.woodenHandles)||0;
+    }
+
+    merged.shops.smithy.storage.ironSwords=Array.isArray(merged.shops.smithy.storage.ironSwords)
+      ?merged.shops.smithy.storage.ironSwords.map(sword=>({...sword,listed:Boolean(sword.listed)}))
       :[];
+
+    delete merged.inventory.pickaxeHeads;
+    delete merged.inventory.ironPickaxes;
+    delete merged.inventory.ironSwords;
+    delete merged.inventory.woodenHandles;
+
     merged.smithyBook.entries=Array.isArray(merged.smithyBook.entries)?merged.smithyBook.entries:[];
     merged.smithyBook.unread=merged.smithyBook.entries.filter(entry=>entry.unread).length;
     return merged;
@@ -188,6 +241,32 @@ let state=loadState();
 function saveState(){
   state.version=APP_VERSION;
   localStorage.setItem(SAVE_KEY,JSON.stringify(state));
+}
+
+
+function smithyStorage(){
+  return state.shops.smithy.storage;
+}
+
+function carpenterStorage(){
+  return state.shops.carpenter.storage;
+}
+
+function smithyStorageUsed(){
+  const storage=smithyStorage();
+  return storage.pickaxeHeads+storage.ironPickaxes+storage.ironSwords.length;
+}
+
+function smithyStorageFree(){
+  return Math.max(0,state.shops.smithy.storageCapacity-smithyStorageUsed());
+}
+
+function smithyHasStorageSpace(units=1){
+  return smithyStorageFree()>=units;
+}
+
+function smithyListedSwords(){
+  return smithyListedSwords();
 }
 
 
@@ -474,10 +553,6 @@ const els={
   inventoryWood:document.getElementById('inventoryWood'),
   inventoryIron:document.getElementById('inventoryIron'),
   inventoryStone:document.getElementById('inventoryStone'),
-  inventoryPickaxeHeads:document.getElementById('inventoryPickaxeHeads'),
-  inventoryHandles:document.getElementById('inventoryHandles'),
-  inventoryIronPickaxes:document.getElementById('inventoryIronPickaxes'),
-  inventoryIronSwords:document.getElementById('inventoryIronSwords'),
   inventoryMaraTool:document.getElementById('inventoryMaraTool'),
   swordInventoryList:document.getElementById('swordInventoryList'),
 
@@ -543,6 +618,9 @@ const els={
   smithyHandles:document.getElementById('smithyHandles'),
   smithyIronPickaxes:document.getElementById('smithyIronPickaxes'),
   smithyIronSwords:document.getElementById('smithyIronSwords'),
+  smithyStorageUsed:document.getElementById('smithyStorageUsed'),
+  smithyStorageCapacity:document.getElementById('smithyStorageCapacity'),
+  smithyExhibitionCapacity:document.getElementById('smithyExhibitionCapacity'),
   swordExcellentChance:document.getElementById('swordExcellentChance'),
   swordQualityDistribution:document.getElementById('swordQualityDistribution'),
   startSwordCraft:document.getElementById('startSwordCraft'),
@@ -713,7 +791,7 @@ function createSmithyVisitor(startedAt=Date.now()){
     weaponDamage:npc.weaponDamage,
     startedAt,
     endsAt:startedAt+SMITHY_VISIT_DURATION_MS,
-    offers:state.inventory.ironSwords
+    offers:smithyStorage().ironSwords
       .filter(sword=>sword.listed)
       .map(sword=>({id:sword.id,price:sword.salePrice}))
   };
@@ -791,7 +869,7 @@ function resolveSmithyVisitor(visitor,nextBase=Date.now()){
   }
   const offers=visitor.offers
     .map(offer=>{
-      const sword=state.inventory.ironSwords.find(item=>item.id===offer.id);
+      const sword=smithyStorage().ironSwords.find(item=>item.id===offer.id);
       return sword?{sword,price:offer.price}:null;
     })
     .filter(Boolean);
@@ -821,7 +899,7 @@ function resolveSmithyVisitor(visitor,nextBase=Date.now()){
       npc.weaponDamage=best.sword.damage;
       npc.weaponQuality=best.sword.qualityScore;
       npc.purchases+=1;
-      state.inventory.ironSwords=state.inventory.ironSwords.filter(item=>item.id!==best.sword.id);
+      smithyStorage().ironSwords=smithyStorage().ironSwords.filter(item=>item.id!==best.sword.id);
       swordInventorySignature='';
       smithyExhibitionSignature='';
       text=`Compró ${best.sword.name} · ${best.sword.qualityLabel} (${best.sword.qualityScore}) por ${formatNumber(price)} 🪙. Motivo: la mejora, su necesidad actual y el precio formaron una compra suficientemente atractiva.`;
@@ -1144,13 +1222,13 @@ function equipIronPickaxe(){
     return;
   }
 
-  if(state.inventory.ironPickaxes<1){
-    state.lastMessage='Todavía no hay un Pico de hierro terminado en el inventario.';
+  if(smithyStorage().ironPickaxes<1){
+    state.lastMessage='Todavía no hay un Pico de hierro terminado en el Almacén de Herrería.';
     render();
     return;
   }
 
-  state.inventory.ironPickaxes-=1;
+  smithyStorage().ironPickaxes-=1;
   state.workers.mara.equippedPickaxe='ironPickaxe';
   state.lastMessage='Mara equipó el Pico de hierro. La Veta dura ahora tiene 15% de probabilidad en cada expedición.';
   saveState();
@@ -1207,7 +1285,7 @@ function completeCarpentry(job){
   const handles=Number(job.result?.woodenHandles)||0;
   const xp=Number(job.result?.carpentryXp)||0;
 
-  state.inventory.woodenHandles+=handles;
+  carpenterStorage().woodenHandles+=handles;
   state.workers.eldon.carpentryXp+=xp;
   state.activeCarpentry=null;
   state.workers.eldon.staminaUpdatedAt=job.endsAt||Date.now();
@@ -1243,6 +1321,12 @@ function startSmithyCraft(recipe){
   }
 
   if(recipe==='pickaxeHead'){
+    if(!smithyHasStorageSpace(1)){
+      state.lastSmithyMessage='El Almacén de Herrería está lleno. Liberá espacio antes de fabricar otra pieza.';
+      render();
+      return;
+    }
+
     if(borin.stamina<CRAFT_STAMINA_COST){
       state.lastSmithyMessage=`Borin necesita ${CRAFT_STAMINA_COST} de Resistencia para fabricar esta pieza.`;
       render();
@@ -1273,6 +1357,12 @@ function startSmithyCraft(recipe){
 
     state.lastSmithyMessage='Borin comenzó a forjar una cabeza de pico.';
   }else if(recipe==='ironSword'){
+    if(!smithyHasStorageSpace(1)){
+      state.lastSmithyMessage='El Almacén de Herrería está lleno. Liberá espacio antes de forjar otra espada.';
+      render();
+      return;
+    }
+
     if(smithingLevel()<SWORD_RECIPE_LEVEL){
       state.lastSmithyMessage=`Borin necesita Herrería Nv. ${SWORD_RECIPE_LEVEL} para intentar esta receta.`;
       render();
@@ -1316,14 +1406,14 @@ function startSmithyCraft(recipe){
       return;
     }
 
-    if(state.inventory.pickaxeHeads<1||state.inventory.woodenHandles<1){
+    if(smithyStorage().pickaxeHeads<1||carpenterStorage().woodenHandles<1){
       state.lastSmithyMessage='Para ensamblar el Pico de hierro hace falta 1 cabeza y 1 mango.';
       render();
       return;
     }
 
-    state.inventory.pickaxeHeads-=1;
-    state.inventory.woodenHandles-=1;
+    smithyStorage().pickaxeHeads-=1;
+    carpenterStorage().woodenHandles-=1;
     borin.stamina-=ASSEMBLY_STAMINA_COST;
 
     const now=Date.now();
@@ -1352,9 +1442,9 @@ function completeCraft(craft){
   const swords=Array.isArray(craft.result?.ironSwords)?craft.result.ironSwords:[];
   const xp=Number(craft.result?.smithingXp)||0;
 
-  state.inventory.pickaxeHeads+=heads;
-  state.inventory.ironPickaxes+=pickaxes;
-  state.inventory.ironSwords.push(...swords);
+  smithyStorage().pickaxeHeads+=heads;
+  smithyStorage().ironPickaxes+=pickaxes;
+  smithyStorage().ironSwords.push(...swords);
   state.workers.borin.smithingXp+=xp;
 
   if(heads>0){
@@ -1481,7 +1571,7 @@ let smithyExhibitionSignature='';
 let smithyBookSignature='';
 
 function renderSwordInventory(){
-  const swords=state.inventory.ironSwords;
+  const swords=smithyStorage().ironSwords;
   const signature=swords.map(s=>`${s.id}:${s.salePrice}:${s.listed?1:0}`).join('|');
 
   if(signature===swordInventorySignature)return;
@@ -1491,7 +1581,7 @@ function renderSwordInventory(){
   if(!swords.length){
     const empty=document.createElement('p');
     empty.className='muted';
-    empty.textContent='Todavía no fabricaste ninguna Espada de hierro.';
+    empty.textContent='Todavía no hay Espadas de hierro en el Almacén de Herrería.';
     els.swordInventoryList.append(empty);
     return;
   }
@@ -1523,7 +1613,7 @@ function renderSwordInventory(){
 }
 
 function renderSmithyExhibition(){
-  const listed=state.inventory.ironSwords.filter(sword=>sword.listed);
+  const listed=smithyListedSwords();
   const signature=listed.map(s=>`${s.id}:${s.salePrice}`).join('|');
 
   els.smithyExhibitionCount.textContent=`${listed.length} ${listed.length===1?'pieza':'piezas'}`;
@@ -1535,7 +1625,7 @@ function renderSmithyExhibition(){
   if(!listed.length){
     const empty=document.createElement('p');
     empty.className='muted';
-    empty.textContent='No hay objetos en Exhibición. Podés colocar una espada desde Inventario.';
+    empty.textContent='No hay objetos en Exhibición. Podés colocar una espada desde Almacén.';
     els.smithyExhibitionList.append(empty);
     return;
   }
@@ -1685,10 +1775,6 @@ function render(){
   els.inventoryWood.textContent=formatNumber(state.resources.wood);
   els.inventoryIron.textContent=formatNumber(state.resources.iron);
   els.inventoryStone.textContent=formatNumber(state.resources.stone);
-  els.inventoryPickaxeHeads.textContent=formatNumber(state.inventory.pickaxeHeads);
-  els.inventoryHandles.textContent=formatNumber(state.inventory.woodenHandles);
-  els.inventoryIronPickaxes.textContent=formatNumber(state.inventory.ironPickaxes);
-  els.inventoryIronSwords.textContent=formatNumber(state.inventory.ironSwords.length);
   els.inventoryMaraTool.textContent=hasIronPickaxeEquipped()?'Pico de hierro':'Sin equipar';
   renderSwordInventory();
   renderSmithyExhibition();
@@ -1794,7 +1880,7 @@ function render(){
   const pickaxeEquipped=hasIronPickaxeEquipped();
   els.expeditionTool.textContent=pickaxeEquipped?'Pico de hierro equipado':'Sin pico';
   els.hardVeinChance.textContent=pickaxeEquipped?'15%':'No disponible';
-  els.expeditionPickaxes.textContent=formatNumber(state.inventory.ironPickaxes);
+  els.expeditionPickaxes.textContent=formatNumber(smithyStorage().ironPickaxes);
 
   if(pickaxeEquipped){
     els.equipIronPickaxe.disabled=true;
@@ -1802,7 +1888,7 @@ function render(){
   }else if(exp||state.workers.mara.restingAtInn){
     els.equipIronPickaxe.disabled=true;
     els.equipIronPickaxe.textContent='Mara no está disponible';
-  }else if(state.inventory.ironPickaxes<1){
+  }else if(smithyStorage().ironPickaxes<1){
     els.equipIronPickaxe.disabled=true;
     els.equipIronPickaxe.textContent='No hay Pico de hierro';
   }else{
@@ -1815,7 +1901,7 @@ function render(){
 
   const carpenterJob=state.activeCarpentry;
   els.carpenterWood.textContent=formatNumber(state.resources.wood);
-  els.carpenterHandles.textContent=formatNumber(state.inventory.woodenHandles);
+  els.carpenterHandles.textContent=formatNumber(carpenterStorage().woodenHandles);
 
   if(carpenterJob){
     const now=Date.now();
@@ -1866,10 +1952,13 @@ function render(){
   els.smithyLevelHero.textContent=state.buildings.smithy.level;
   els.smithyIron.textContent=formatNumber(state.resources.iron);
   els.smithyStone.textContent=formatNumber(state.resources.stone);
-  els.smithyPickaxeHeads.textContent=formatNumber(state.inventory.pickaxeHeads);
-  els.smithyHandles.textContent=formatNumber(state.inventory.woodenHandles);
-  els.smithyIronPickaxes.textContent=formatNumber(state.inventory.ironPickaxes);
-  els.smithyIronSwords.textContent=formatNumber(state.inventory.ironSwords.length);
+  els.smithyPickaxeHeads.textContent=formatNumber(smithyStorage().pickaxeHeads);
+  els.smithyHandles.textContent=formatNumber(carpenterStorage().woodenHandles);
+  els.smithyIronPickaxes.textContent=formatNumber(smithyStorage().ironPickaxes);
+  els.smithyIronSwords.textContent=formatNumber(smithyStorage().ironSwords.length);
+  els.smithyStorageUsed.textContent=formatNumber(smithyStorageUsed());
+  els.smithyStorageCapacity.textContent=formatNumber(state.shops.smithy.storageCapacity);
+  els.smithyExhibitionCapacity.textContent=formatNumber(state.shops.smithy.exhibitionCapacity);
 
   const qualityChances=swordQualityChances();
   els.swordExcellentChance.textContent=`${qualityChances.excellent}%`;
@@ -1902,10 +1991,11 @@ function render(){
     const headStamina=state.workers.borin.stamina>=CRAFT_STAMINA_COST;
     const assemblyStamina=state.workers.borin.stamina>=ASSEMBLY_STAMINA_COST;
     const enoughIron=state.resources.iron>=CRAFT_IRON_COST;
-    const hasComponents=state.inventory.pickaxeHeads>=1&&state.inventory.woodenHandles>=1;
+    const hasComponents=smithyStorage().pickaxeHeads>=1&&carpenterStorage().woodenHandles>=1;
     const swordUnlocked=smithingLevel()>=SWORD_RECIPE_LEVEL;
     const swordStamina=state.workers.borin.stamina>=SWORD_STAMINA_COST;
     const swordIron=state.resources.iron>=SWORD_IRON_COST;
+    const storageSpace=smithyHasStorageSpace(1);
 
     els.borinState.textContent=resting?'Descansando':'Disponible';
     els.borinState.classList.toggle('is-busy',resting);
@@ -1923,28 +2013,32 @@ function render(){
       els.startSwordCraft.disabled=true;
       els.startSwordCraft.textContent='Borin está descansando';
     }else{
-      els.startHeadCraft.disabled=!headStamina||!enoughIron;
-      els.startHeadCraft.textContent=!headStamina
-        ?'Falta Resistencia'
-        :!enoughIron
-          ?`Faltan ${CRAFT_IRON_COST-state.resources.iron} hierro`
-          :'Fabricar cabeza de pico';
+      els.startHeadCraft.disabled=!headStamina||!enoughIron||!storageSpace;
+      els.startHeadCraft.textContent=!storageSpace
+        ?'Almacén lleno'
+        :!headStamina
+          ?'Falta Resistencia'
+          :!enoughIron
+            ?`Faltan ${CRAFT_IRON_COST-state.resources.iron} hierro`
+            :'Fabricar';
 
       els.startPickaxeAssembly.disabled=!assemblyStamina||!hasComponents;
       els.startPickaxeAssembly.textContent=!assemblyStamina
         ?'Falta Resistencia'
         :!hasComponents
           ?'Falta cabeza o mango'
-          :'Ensamblar Pico de hierro';
+          :'Ensamblar';
 
-      els.startSwordCraft.disabled=!swordUnlocked||!swordStamina||!swordIron;
-      els.startSwordCraft.textContent=!swordUnlocked
-        ?`Requiere Herrería Nv. ${SWORD_RECIPE_LEVEL}`
-        :!swordStamina
-          ?'Falta Resistencia'
-          :!swordIron
-            ?`Faltan ${SWORD_IRON_COST-state.resources.iron} hierro`
-            :'Forjar Espada de hierro';
+      els.startSwordCraft.disabled=!swordUnlocked||!swordStamina||!swordIron||!storageSpace;
+      els.startSwordCraft.textContent=!storageSpace
+        ?'Almacén lleno'
+        :!swordUnlocked
+          ?`Requiere Nv. ${SWORD_RECIPE_LEVEL}`
+          :!swordStamina
+            ?'Falta Resistencia'
+            :!swordIron
+              ?`Faltan ${SWORD_IRON_COST-state.resources.iron} hierro`
+              :'Forjar';
     }
   }
 
@@ -1987,6 +2081,25 @@ function render(){
   }
 }
 
+let activeSmithyTab='craft';
+
+function setSmithyTab(tab){
+  activeSmithyTab=tab;
+  document.querySelectorAll('[data-smithy-tab]').forEach(button=>{
+    button.classList.toggle('is-active',button.dataset.smithyTab===tab);
+  });
+  document.querySelectorAll('[data-smithy-panel]').forEach(panel=>{
+    const active=panel.dataset.smithyPanel===tab;
+    panel.classList.toggle('is-active',active);
+    panel.hidden=!active;
+  });
+}
+
+document.querySelectorAll('[data-smithy-tab]').forEach(button=>{
+  button.addEventListener('click',()=>setSmithyTab(button.dataset.smithyTab));
+});
+setSmithyTab(activeSmithyTab);
+
 els.startExpedition.addEventListener('click',startExpedition);
 els.equipIronPickaxe.addEventListener('click',equipIronPickaxe);
 els.startHandleCraft.addEventListener('click',startHandleCraft);
@@ -2002,7 +2115,7 @@ els.swordInventoryList.addEventListener('change',event=>{
   const input=event.target.closest('[data-sword-price]');
   if(!input)return;
 
-  const sword=state.inventory.ironSwords.find(item=>item.id===input.dataset.swordPrice);
+  const sword=smithyStorage().ironSwords.find(item=>item.id===input.dataset.swordPrice);
   if(!sword)return;
 
   const price=Math.max(5,Math.min(9999,Math.round(Number(input.value)||sword.estimatedValue)));
@@ -2017,8 +2130,14 @@ els.swordInventoryList.addEventListener('click',event=>{
   const button=event.target.closest('[data-sword-list]');
   if(!button)return;
 
-  const sword=state.inventory.ironSwords.find(item=>item.id===button.dataset.swordList);
+  const sword=smithyStorage().ironSwords.find(item=>item.id===button.dataset.swordList);
   if(!sword)return;
+
+  if(!sword.listed&&smithyListedSwords().length>=state.shops.smithy.exhibitionCapacity){
+    state.lastSmithyMessage=`La Exhibición está completa (${state.shops.smithy.exhibitionCapacity}/${state.shops.smithy.exhibitionCapacity}). Quitá una pieza antes de exponer otra.`;
+    render();
+    return;
+  }
 
   sword.listed=!sword.listed;
   swordInventorySignature='';
