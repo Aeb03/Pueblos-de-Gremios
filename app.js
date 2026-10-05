@@ -1,9 +1,11 @@
-const APP_VERSION='0.9.0a';
+const APP_VERSION='0.9.0b';
 const SAVE_KEY='pueblos-gremios-save-v0.8.0';
 const DATA=globalThis.PG_DATA;
 const ADV=globalThis.PG_ADVENTURER_CORE;
+const CITY=globalThis.PG_CITY_PROGRESSION;
 
 if(!ADV)throw new Error('PG_ADVENTURER_CORE no está disponible.');
+if(!CITY)throw new Error('PG_CITY_PROGRESSION no está disponible.');
 
 const EXPEDITION_DURATION_MS=30_000;
 const CRAFT_DURATION_MS=DATA.recipes.pickaxeHead.durationMs;
@@ -57,7 +59,7 @@ const titles={
   workers:'Trabajadores',
   carpenter:'Carpintería',
   smithy:'Herrería',
-  inn:'Posada',
+  inn:'Mesón',
   expedition:'Expedición',
   kingdom:'Reino de Ardel',
   inventory:'Inventario',
@@ -81,6 +83,11 @@ const defaultState=()=>({
     name:'',
     tier:DATA.founding.startingTier,
     prestige:DATA.founding.startingPrestige,
+    level:1,
+    development:0,
+    cityProgressionSchemaVersion:CITY.CITY_PROGRESSION_SCHEMA_VERSION,
+    populationMilestones:{level2Arrival:false,level3Arrival:false},
+    levelReachedAt:{},
     founded:false,
     foundedAt:null,
     foundingPackGenerated:false
@@ -126,7 +133,8 @@ const defaultState=()=>({
     }
   },
   buildings:{
-    smithy:{level:DATA.shops.smithy.startingLevel,craftedCount:0}
+    smithy:{level:DATA.shops.smithy.startingLevel,craftedCount:0},
+    meson:{level:DATA.shops.meson.startingLevel,capacity:CITY.mesonCapacity(DATA.shops.meson.startingLevel)}
   },
   adventurers:[],
   smithyTraffic:{
@@ -144,7 +152,8 @@ const defaultState=()=>({
   lastMessage:'',
   lastSmithyMessage:'',
   lastCarpentryMessage:'',
-  lastInnMessage:''
+  lastInnMessage:'',
+  lastCityMessage:''
 });
 
 function loadState(){
@@ -197,7 +206,8 @@ function loadState(){
       buildings:{
         ...base.buildings,
         ...(saved.buildings||{}),
-        smithy:{...base.buildings.smithy,...(saved.buildings?.smithy||{})}
+        smithy:{...base.buildings.smithy,...(saved.buildings?.smithy||{})},
+        meson:{...base.buildings.meson,...(saved.buildings?.meson||{})}
       },
       adventurers:Array.isArray(saved.adventurers)
         ?saved.adventurers.map(npc=>ADV.normalizeAdventurer(npc,DATA))
@@ -237,6 +247,9 @@ function loadState(){
     merged.smithyBook.entries=Array.isArray(merged.smithyBook.entries)?merged.smithyBook.entries:[];
     merged.smithyBook.unread=merged.smithyBook.entries.filter(entry=>entry.unread).length;
     merged.adventurerSchemaVersion=ADV.ADVENTURER_SCHEMA_VERSION;
+    merged.city=CITY.normalizeCityProgress(merged.city);
+    merged.buildings.meson.level=Math.max(1,Number(merged.buildings.meson.level)||1);
+    merged.buildings.meson.capacity=CITY.mesonCapacity(merged.buildings.meson.level);
     return merged;
   }catch{
     return defaultState();
@@ -251,7 +264,10 @@ function saveState(){
   localStorage.setItem(SAVE_KEY,JSON.stringify(state));
 }
 
-if(state.city.founded)saveState();
+if(state.city.founded){
+  reconcileCityPopulation();
+  saveState();
+}
 
 
 function smithyStorage(){
@@ -305,7 +321,7 @@ function uniqueAdventurerName(existingFullNames){
   return {firstName:'Viajero',lastName:fallback.split(' ')[1],fullName:fallback};
 }
 
-function generateAdventurer({city,roleKey,existingFullNames,combatStyle=null}){
+function generateAdventurer({city,roleKey,existingFullNames,combatStyle=null,populationMilestone=null}){
   const role=DATA.adventurerRoles[roleKey];
   const personality=randomChoice(Object.values(DATA.personalities));
   const name=uniqueAdventurerName(existingFullNames);
@@ -316,7 +332,7 @@ function generateAdventurer({city,roleKey,existingFullNames,combatStyle=null}){
     ?(combatStyle||randomChoice(['bow','daggers']))
     :combatStyle;
 
-  return ADV.createAdventurer(DATA,{
+  const npc=ADV.createAdventurer(DATA,{
     id:createActionId(),
     firstName:name.firstName,
     lastName:name.lastName,
@@ -328,6 +344,9 @@ function generateAdventurer({city,roleKey,existingFullNames,combatStyle=null}){
     coins:randomInt(coinMin,coinMax),
     createdAt:Date.now()
   });
+
+  if(populationMilestone)npc.populationMilestone=populationMilestone;
+  return npc;
 }
 
 function generateFoundingAdventurers(city,count=DATA.founding.adventurerCount){
@@ -342,6 +361,80 @@ function generateFoundingAdventurers(city,count=DATA.founding.adventurerCount){
 
   return result;
 }
+function activeAdventurerCount(){
+  return state.adventurers.filter(npc=>npc.active!==false).length;
+}
+
+function reconcileCityPopulation(){
+  if(!state.city.founded)return [];
+
+  state.city=CITY.normalizeCityProgress(state.city);
+  state.buildings.meson={
+    ...(state.buildings.meson||{}),
+    level:Math.max(1,Number(state.buildings.meson?.level)||1)
+  };
+  state.buildings.meson.capacity=CITY.mesonCapacity(state.buildings.meson.level);
+
+  const plan=CITY.arrivalPlan(state.city,state.adventurers,Math.random);
+  state.city=plan.city;
+
+  const arrivals=[];
+  const existingNames=new Set(state.adventurers.map(npc=>npc.fullName));
+  const levelSlots=CITY.slotsForLevel(state.city.level);
+  const capacity=Math.min(levelSlots,state.buildings.meson.capacity);
+
+  for(const arrival of plan.arrivals){
+    if(activeAdventurerCount()>=capacity)break;
+    if(CITY.hasMilestoneAdventurer(state.adventurers,arrival.level)){
+      state.city=CITY.markArrival(state.city,arrival.level);
+      continue;
+    }
+
+    const npc=generateAdventurer({
+      city:state.city,
+      roleKey:arrival.classKey,
+      existingFullNames:existingNames,
+      populationMilestone:arrival.marker
+    });
+    npc.arrivalLevel=arrival.level;
+    npc.arrivalReason=arrival.level===2
+      ?'Primer recién llegado por crecimiento de la ciudad'
+      :'Nuevo residente atraído por el desarrollo de la ciudad';
+
+    state.adventurers.push(npc);
+    state.city=CITY.markArrival(state.city,arrival.level);
+    arrivals.push(npc);
+  }
+
+  return arrivals;
+}
+
+function cityProgressNote(reached=[],arrivals=[]){
+  const parts=[];
+  if(reached.length){
+    for(const level of reached)parts.push(`🏘️ Ciudad Nv. ${level} alcanzada.`);
+  }
+  for(const npc of arrivals){
+    parts.push(`🧭 ${npc.fullName}, ${npc.role}, llegó como nuevo residente.`);
+  }
+  return parts.length?` ${parts.join(' ')}`:'';
+}
+
+function addCityDevelopment(amount,source='actividad'){
+  if(!state.city.founded)return {reached:[],arrivals:[],note:''};
+
+  const result=CITY.addDevelopment(state.city,amount,Date.now());
+  state.city=result.city;
+  state.city.lastDevelopmentSource=source;
+  const arrivals=reconcileCityPopulation();
+
+  return {
+    ...result,
+    arrivals,
+    note:cityProgressNote(result.reached,arrivals)
+  };
+}
+
 function getAdventurer(id){
   return state.adventurers.find(npc=>npc.id===id)||null;
 }
@@ -369,6 +462,11 @@ function foundCity(){
     name,
     tier:DATA.founding.startingTier,
     prestige:DATA.founding.startingPrestige,
+    level:1,
+    development:0,
+    cityProgressionSchemaVersion:CITY.CITY_PROGRESSION_SCHEMA_VERSION,
+    populationMilestones:{level2Arrival:false,level3Arrival:false},
+    levelReachedAt:{},
     founded:true,
     foundedAt:Date.now(),
     foundingPackGenerated:true
@@ -439,19 +537,19 @@ let currentBuilding='';
 
 const buildingInfo={
   Ayuntamiento:{
-    copy:'Centro administrativo del asentamiento. Aquí se gestionará el crecimiento y el prestigio.',
+    copy:'Centro administrativo del asentamiento. El desarrollo real de la ciudad determina su nivel y nuevos residentes.',
     resources:[],
-    empty:'No usa materiales productivos directos.'
+    empty:'Las actividades productivas y mejoras aportan Desarrollo.'
   },
-  Taberna:{
-    copy:'Atención de aventureros, cocina, comida, bebida y rumores.',
+  Mesón:{
+    copy:'Nara reúne comida, alojamiento, descanso y vida social en un solo negocio. Su capacidad sostiene la población aventurera.',
     resources:[],
-    empty:'Los alimentos, bebidas e ingredientes aparecerán aquí cuando incorporemos la producción de Taberna.'
+    empty:'Mesón Nv. 1: capacidad para 5 aventureros residentes.'
   },
-  Posada:{
-    copy:'Alojamiento para aventureros, descanso y servicios de hospedaje.',
+  'Sede del Gremio':{
+    copy:'Centro de encargos, registro de aventureros y futura coordinación de misiones.',
     resources:[],
-    empty:'Los trabajadores pueden descansar aquí para recuperar Resistencia más rápido.'
+    empty:'La gestión de misiones se incorporará en el bloque correspondiente.'
   }
 };
 
@@ -490,7 +588,7 @@ document.querySelectorAll('[data-building]').forEach(b=>b.addEventListener('clic
     return;
   }
 
-  if(n==='Posada'){
+  if(n==='Mesón'){
     showScreen('inn');
     return;
   }
@@ -505,9 +603,12 @@ document.querySelectorAll('[data-building]').forEach(b=>b.addEventListener('clic
 const els={
   coins:document.getElementById('coinsValue'),
 
-  cityPrestige:document.getElementById('cityPrestige'),
-  cityPrestigeProgress:document.getElementById('cityPrestigeProgress'),
-  cityTierBadge:document.getElementById('cityTierBadge'),
+  cityLevelBadge:document.getElementById('cityLevelBadge'),
+  cityDevelopment:document.getElementById('cityDevelopment'),
+  cityDevelopmentTarget:document.getElementById('cityDevelopmentTarget'),
+  cityDevelopmentProgress:document.getElementById('cityDevelopmentProgress'),
+  cityPopulationSummary:document.getElementById('cityPopulationSummary'),
+  cityProgressHint:document.getElementById('cityProgressHint'),
   kingdomCityName:document.getElementById('kingdomCityName'),
   kingdomFoundingMeta:document.getElementById('kingdomFoundingMeta'),
   kingdomAdventurerCount:document.getElementById('kingdomAdventurerCount'),
@@ -1040,7 +1141,7 @@ function syncWorkerStamina(workerKey){
 
     if(leftInn){
       worker.restingAtInn=false;
-      state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de la Posada.`;
+      state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de la Mesón.`;
       saveState();
       return true;
     }
@@ -1062,7 +1163,7 @@ function syncWorkerStamina(workerKey){
 
   if(worker.stamina>=STAMINA_MAX&&wasResting){
     worker.restingAtInn=false;
-    state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de la Posada.`;
+    state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de la Mesón.`;
   }
 
   if(worker.stamina!==previous||worker.restingAtInn!==wasResting){
@@ -1097,7 +1198,7 @@ function toggleInnRest(workerKey){
   if(worker.restingAtInn){
     worker.restingAtInn=false;
     worker.staminaUpdatedAt=Date.now();
-    state.lastInnMessage=`${name} dejó la Posada. Seguirá recuperando Resistencia lentamente mientras esté libre.`;
+    state.lastInnMessage=`${name} dejó la Mesón. Seguirá recuperando Resistencia lentamente mientras esté libre.`;
   }else{
     if(worker.stamina>=STAMINA_MAX){
       state.lastInnMessage=`${name} ya tiene la Resistencia completa.`;
@@ -1107,7 +1208,7 @@ function toggleInnRest(workerKey){
 
     worker.restingAtInn=true;
     worker.staminaUpdatedAt=Date.now();
-    state.lastInnMessage=`${name} está descansando en la Posada. Su recuperación está acelerada.`;
+    state.lastInnMessage=`${name} está descansando en la Mesón. Su recuperación está acelerada.`;
   }
 
   saveState();
@@ -1122,7 +1223,7 @@ function startExpedition(){
   const mara=state.workers.mara;
 
   if(mara.restingAtInn){
-    state.lastMessage='Mara está descansando en la Posada. Terminá su descanso antes de enviarla.';
+    state.lastMessage='Mara está descansando en la Mesón. Terminá su descanso antes de enviarla.';
     render();
     return;
   }
@@ -1170,7 +1271,8 @@ function completeExpedition(expedition){
     ?` ¡Veta dura encontrada! +${extraIron} hierro adicional.`
     :'';
 
-  state.lastMessage=`Expedición completada: +${baseIron} hierro, +${stone} piedra y +${miningXp} XP de Minería.${special}`;
+  const cityProgress=addCityDevelopment(CITY.DEVELOPMENT_REWARDS.workerOuting,'expedición de trabajador');
+  state.lastMessage=`Expedición completada: +${baseIron} hierro, +${stone} piedra y +${miningXp} XP de Minería.${special}${cityProgress.note}`;
   saveState();
 }
 
@@ -1220,7 +1322,7 @@ function startHandleCraft(){
   const eldon=state.workers.eldon;
 
   if(eldon.restingAtInn){
-    state.lastCarpentryMessage='Eldon está descansando en la Posada.';
+    state.lastCarpentryMessage='Eldon está descansando en la Mesón.';
     render();
     return;
   }
@@ -1265,7 +1367,8 @@ function completeCarpentry(job){
   state.workers.eldon.carpentryXp+=xp;
   state.activeCarpentry=null;
   state.workers.eldon.staminaUpdatedAt=job.endsAt||Date.now();
-  state.lastCarpentryMessage=`Carpintería completada: +${handles} mango de pico y +${xp} XP de Carpintería.`;
+  const cityProgress=addCityDevelopment(CITY.DEVELOPMENT_REWARDS.craft,'producción de Carpintería');
+  state.lastCarpentryMessage=`Carpintería completada: +${handles} mango de pico y +${xp} XP de Carpintería.${cityProgress.note}`;
   saveState();
 }
 
@@ -1291,7 +1394,7 @@ function startSmithyCraft(recipe){
   const borin=state.workers.borin;
 
   if(borin.restingAtInn){
-    state.lastSmithyMessage='Borin está descansando en la Posada. Terminá su descanso antes de ponerlo a trabajar.';
+    state.lastSmithyMessage='Borin está descansando en la Mesón. Terminá su descanso antes de ponerlo a trabajar.';
     render();
     return;
   }
@@ -1430,13 +1533,15 @@ function completeCraft(craft){
   state.activeCraft=null;
   state.workers.borin.staminaUpdatedAt=craft.endsAt||Date.now();
 
+  const cityProgress=addCityDevelopment(CITY.DEVELOPMENT_REWARDS.craft,'producción de Herrería');
+
   if(swords.length>0){
     const sword=swords[0];
-    state.lastSmithyMessage=`Espada terminada: calidad ${sword.qualityLabel} (${sword.qualityScore}), daño ${sword.damage}, durabilidad ${sword.durability}. +${xp} XP de Herrería.`;
+    state.lastSmithyMessage=`Espada terminada: calidad ${sword.qualityLabel} (${sword.qualityScore}), daño ${sword.damage}, durabilidad ${sword.durability}. +${xp} XP de Herrería.${cityProgress.note}`;
   }else if(pickaxes>0){
-    state.lastSmithyMessage=`Ensamblaje completado: +${pickaxes} Pico de hierro y +${xp} XP de Herrería.`;
+    state.lastSmithyMessage=`Ensamblaje completado: +${pickaxes} Pico de hierro y +${xp} XP de Herrería.${cityProgress.note}`;
   }else{
-    state.lastSmithyMessage=`Fabricación completada: +${heads} cabeza de pico y +${xp} XP de Herrería.`;
+    state.lastSmithyMessage=`Fabricación completada: +${heads} cabeza de pico y +${xp} XP de Herrería.${cityProgress.note}`;
   }
 
   saveState();
@@ -1491,7 +1596,8 @@ function upgradeSmithy(){
   state.resources.stone-=SMITHY_UPGRADE_STONE_COST;
   state.buildings.smithy.level=2;
   state.city.prestige+=SMITHY_UPGRADE_PRESTIGE_REWARD;
-  state.lastSmithyMessage=`Herrería mejorada a Nv. 2. La ciudad ganó +${SMITHY_UPGRADE_PRESTIGE_REWARD} Prestigio.`;
+  const cityProgress=addCityDevelopment(CITY.DEVELOPMENT_REWARDS.businessUpgrade,'mejora de negocio');
+  state.lastSmithyMessage=`Herrería mejorada a Nv. 2. +${CITY.DEVELOPMENT_REWARDS.businessUpgrade} Desarrollo de ciudad.${cityProgress.note}`;
   saveState();
   render();
 }
@@ -1536,10 +1642,10 @@ function renderInnWorker(workerKey,stateEl,buttonEl,feedbackEl){
     buttonEl.disabled=worker.stamina>=STAMINA_MAX;
     buttonEl.textContent=worker.stamina>=STAMINA_MAX
       ?'Resistencia completa'
-      :'Descansar en Posada';
+      :'Descansar en Mesón';
   }
 
-  feedbackEl.textContent=state.lastInnMessage||'Libre: +1 cada 10 s. En Posada: +5 cada 10 s.';
+  feedbackEl.textContent=state.lastInnMessage||'Libre: +1 cada 10 s. En Mesón: +5 cada 10 s.';
 }
 
 let swordInventorySignature='';
@@ -1699,13 +1805,19 @@ function renderSmithyBook(force=false){
 function renderFoundingAdventurers(){
   if(!els.kingdomAdventurerList)return;
 
+  const activeCount=activeAdventurerCount();
+  const levelSlots=CITY.slotsForLevel(state.city.level||1);
+  const mesonCapacity=state.buildings.meson?.capacity||CITY.mesonCapacity(1);
+  const residentLimit=Math.min(levelSlots,mesonCapacity);
+  const next=CITY.nextLevelInfo(state.city);
+
   els.kingdomCityName.textContent=state.city.founded
-    ?`${state.city.name} · ${state.city.tier}`
+    ?`${state.city.name} · Ciudad Nv. ${state.city.level}`
     :'Sin fundar';
   els.kingdomFoundingMeta.textContent=state.city.founded
-    ?`Fundada en ${state.world.kingdom.name}. Pack inicial generado: ${state.adventurers.length} aventureros.`
+    ?`Fundada en ${state.world.kingdom.name}. Desarrollo ${state.city.development.toFixed(2)}${next.maxed?' · nivel máximo de esta prueba':` / ${next.threshold}`}. Mesón Nv. ${state.buildings.meson.level}: ${activeCount}/${mesonCapacity} residentes.`
     :'El Pack inicial se genera al fundar la ciudad.';
-  els.kingdomAdventurerCount.textContent=`${state.adventurers.filter(n=>n.active).length} activos`;
+  els.kingdomAdventurerCount.textContent=`${activeCount}/${residentLimit} plazas activas`;
 
   els.kingdomAdventurerList.replaceChildren();
 
@@ -1737,6 +1849,7 @@ function renderFoundingAdventurers(){
       </div>
       <small>${DATA.adventurerRoles[npc.classKey]?.identity||npc.role} · Evasión ${Math.round((npc.evasion||0)*100)}%</small>
       <small>Originario de ${npc.originTier} ${npc.originCityName} · 🪙 ${formatNumber(npc.coins)} · XP ${npc.xp}/${DATA.adventurerProgression.xpToNext[npc.level]||'—'}</small>
+      ${npc.populationMilestone?'<small class="arrival-note">🧭 '+(npc.populationMilestone==='city-level-2'?'Llegó al alcanzar Ciudad Nv. 2':'Llegó al alcanzar Ciudad Nv. 3')+'</small>':''}
     `;
     els.kingdomAdventurerList.append(card);
   });
@@ -1752,9 +1865,23 @@ function render(){
 
   els.coins.textContent=formatNumber(state.resources.coins);
 
-  els.cityPrestige.textContent=formatNumber(state.city.prestige);
-  els.cityPrestigeProgress.value=state.city.prestige;
-  if(els.cityTierBadge)els.cityTierBadge.textContent=state.city.tier;
+  const cityNext=CITY.nextLevelInfo(state.city);
+  const activeResidents=activeAdventurerCount();
+  const citySlots=CITY.slotsForLevel(state.city.level);
+  const mesonCapacity=state.buildings.meson.capacity;
+  const residentLimit=Math.min(citySlots,mesonCapacity);
+
+  els.cityLevelBadge.textContent=`Ciudad Nv. ${state.city.level}`;
+  els.cityDevelopment.textContent=state.city.development.toFixed(2);
+  els.cityDevelopmentTarget.textContent=cityNext.maxed?'MAX':cityNext.threshold;
+  els.cityDevelopmentProgress.max=cityNext.maxed
+    ?CITY.thresholdForLevel(CITY.MAX_CITY_LEVEL)
+    :cityNext.threshold;
+  els.cityDevelopmentProgress.value=Math.min(state.city.development,els.cityDevelopmentProgress.max);
+  els.cityPopulationSummary.textContent=`Aventureros ${activeResidents}/${residentLimit} · Mesón ${activeResidents}/${mesonCapacity}`;
+  els.cityProgressHint.textContent=cityNext.maxed
+    ?'Nivel máximo disponible en v0.9.0b. La población queda limitada a 5 residentes.'
+    :`Faltan ${cityNext.remaining.toFixed(2)} de Desarrollo para Ciudad Nv. ${cityNext.level}. Expediciones, producción y mejoras hacen crecer la ciudad.`;
   els.smithyLevelCity.textContent=state.buildings.smithy.level;
   if(currentScreen()==='city')title.textContent=state.city.founded?state.city.name:'Nueva ciudad';
   renderFoundingAdventurers();
@@ -1849,7 +1976,7 @@ function render(){
 
     els.maraState.textContent=resting?'Descansando':'Disponible';
     els.maraState.classList.toggle('is-busy',resting);
-    els.expeditionStatus.textContent=resting?'En la Posada':'Lista para partir';
+    els.expeditionStatus.textContent=resting?'En la Mesón':'Lista para partir';
     els.expeditionProgress.value=0;
     els.expeditionCountdown.textContent='';
 
@@ -1913,7 +2040,7 @@ function render(){
 
     els.eldonState.textContent=resting?'Descansando':'Disponible';
     els.eldonState.classList.toggle('is-busy',resting);
-    els.carpenterEldonState.textContent=resting?'En la Posada':'Disponible';
+    els.carpenterEldonState.textContent=resting?'En la Mesón':'Disponible';
     els.carpenterEldonState.classList.toggle('is-busy',resting);
     els.carpentryStatus.textContent=resting?'Eldon descansando':'Lista para fabricar';
     els.carpentryProgress.value=0;
@@ -1987,7 +2114,7 @@ function render(){
 
     els.borinState.textContent=resting?'Descansando':'Disponible';
     els.borinState.classList.toggle('is-busy',resting);
-    els.smithyBorinState.textContent=resting?'En la Posada':'Disponible';
+    els.smithyBorinState.textContent=resting?'En la Mesón':'Disponible';
     els.smithyBorinState.classList.toggle('is-busy',resting);
     els.craftStatus.textContent=resting?'Borin descansando':'Lista para trabajar';
     els.craftProgress.value=0;
