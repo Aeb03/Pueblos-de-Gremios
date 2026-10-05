@@ -118,8 +118,9 @@ jobs:
           grep -q "CITY.DEVELOPMENT_REWARDS.workerOuting" app.js
           grep -q "CITY.DEVELOPMENT_REWARDS.craft" app.js
           grep -q "CITY.DEVELOPMENT_REWARDS.businessUpgrade" app.js
-          grep -q "city-level-2" city-progression.js
-          grep -q "city-level-3" city-progression.js
+          grep -q "markerForLevel" city-progression.js
+          grep -q "level2Arrival" city-progression.js
+          grep -q "level3Arrival" city-progression.js
           grep -q 'id="cityDevelopmentProgress"' index.html
           grep -q 'data-building="Mesón"' index.html
           grep -q 'data-building="Sede del Gremio"' index.html
