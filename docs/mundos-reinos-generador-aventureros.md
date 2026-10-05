@@ -225,26 +225,71 @@ Ejemplo conceptual:
 
 Luego la interfaz puede resumirlos con una etiqueta como **Ambicioso**.
 
-## 10. Aventureros del Pack inicial
+## 10. Aventureros del Pack inicial — garantía obligatoria
 
-Los aventureros del Pack inicial deben estar pensados para que una ciudad nueva pueda empezar a funcionar.
+**Una ciudad nueva nunca puede existir sin su grupo inicial de aventureros.**
+
+Estos NPC no son un premio opcional ni una generación que pueda cancelarse por falta de población. Son parte estructural del Pack de Fundación porque la ciudad necesita aventureros del rango correcto para:
+
+- aceptar las primeras misiones;
+- comprar los primeros productos;
+- vender drops básicos;
+- alimentar la economía inicial;
+- permitir que los trabajadores y negocios progresen;
+- iniciar el flujo natural de vida de la ciudad.
+
+La creación de la ciudad y la creación de su grupo inicial deben tratarse como **una única operación**.
+
+> Si el servidor no puede garantizar el Pack completo de aventureros, no debe permitir crear esa ciudad todavía.
+
+Nunca se crea primero la ciudad para después intentar encontrarle aventureros.
+
+### Composición del Pack
+
+Los aventureros del Pack inicial deben estar pensados para que una ciudad nueva pueda funcionar desde sus primeros pasos.
 
 Por eso no conviene que todos sus datos sean azar absoluto.
 
-El pack debería garantizar:
+El pack debe garantizar:
 
-- niveles compatibles con la ciudad inicial;
+- nivel/rango compatible con las misiones iniciales;
 - variedad mínima de roles;
-- poder suficiente para las primeras misiones;
+- poder suficiente para el contenido de inicio;
 - personalidades diferentes;
 - equipo inicial básico;
 - ningún aventurero extraordinariamente fuerte.
 
-La identidad individual sí será aleatoria.
+La identidad individual sí será aleatoria mediante el generador.
+
+La cantidad exacta del Pack queda para balance de playtest, pero será un **mínimo garantizado**, no una probabilidad.
+
+### Prioridad frente a otros tipos de generación
+
+Si el Mundo/Reino se acerca a un límite poblacional, el orden de prioridad será:
+
+1. **Pack inicial de una ciudad autorizada: siempre garantizado.**
+2. Generación asociada a hitos de crecimiento de ciudades.
+3. Generación ambiental/eventos futuros.
+
+Las generaciones opcionales pueden suspenderse si falta capacidad.
+
+El Pack inicial no.
+
+### Reserva de capacidad
+
+La arquitectura del Mundo debe reservar capacidad suficiente para que cada espacio de ciudad disponible pueda recibir también su Pack inicial.
+
+Por lo tanto, un “espacio libre de ciudad” sólo se considera realmente disponible si el servidor puede crear también sus aventureros iniciales.
+
+Esto evita el caso inválido:
+
+> Reino acepta una ciudad nueva → ciudad aparece → no quedan NPC adecuados → la ciudad no puede progresar.
+
+Ese estado no debe existir.
 
 ## 11. Crecimiento de población
 
-Crear una ciudad nueva agrega una cantidad limitada de aventureros nuevos al Mundo/Servidor.
+Crear una ciudad nueva agrega obligatoriamente su Pack inicial de aventureros al Mundo/Servidor.
 
 Después de creados, esos NPC pasan a formar parte de la población global persistente.
 
@@ -365,7 +410,7 @@ Después podremos ampliar listas y complejidad sin cambiar el motor.
 
 ## 18. Ley central de población
 
-**Cada nueva ciudad crea un pequeño grupo inicial de aventureros; después esos aventureros pertenecen al Mundo, no al jugador.**
+**Cada nueva ciudad nace junto con un grupo inicial garantizado de aventureros; después esos aventureros pertenecen al Mundo, no al jugador.**
 
 El jugador puede beneficiarse de ellos mientras decidan quedarse, pero no los posee.
 
@@ -378,3 +423,23 @@ Esta regla conecta:
 - migración;
 - progresión;
 - historia emergente.
+
+
+## 19. Regla atómica de fundación
+
+La operación de fundar una ciudad futura debe validar en servidor, en una sola transacción lógica:
+
+- espacio disponible en el Reino;
+- ciudad válida para el jugador;
+- recursos/estado inicial de la ciudad;
+- trabajadores iniciales;
+- capacidad reservada para el Pack de aventureros;
+- generación exitosa de todos los aventureros del Pack;
+- nombres completos únicos;
+- IDs persistentes.
+
+Sólo cuando todo está listo se confirma la fundación.
+
+Si cualquier parte falla, no se crea una ciudad incompleta.
+
+Esta regla es especialmente importante porque los aventureros iniciales son parte del **motor económico de arranque**, no contenido decorativo.
