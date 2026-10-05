@@ -1745,6 +1745,84 @@ Durante esa hora deberían ocurrir varias cosas en paralelo:
 
 ## 32. Aventureros — principio de necesidades
 
+### Estadísticas base — aprobado EN PRUEBA
+
+Se mantiene un conjunto compacto de estadísticas principales:
+
+- **Vida**
+- **Ataque**
+- **Defensa**
+- **Iniciativa**
+- **Maná**
+
+**Agilidad no será una estadística independiente** por ahora. Cuando un material/equipo represente rapidez, reflejos o movilidad, esa identidad se traduce inicialmente a Iniciativa o a una propiedad concreta.
+
+Principio: **no se crea una estadística nueva hasta que exista una mecánica propia que la justifique.**
+
+### Progresión de nivel y XP — marco de balance EN PRUEBA
+
+La experiencia de los aventureros debe avanzar en relación con el ritmo de crecimiento de la ciudad. No se balanceará como un sistema aislado.
+
+Objetivo temprano:
+
+- Ciudad Nv.1 → aventureros fundadores Nv.1.
+- Durante Ciudad Nv.2 → empiezan a aparecer los primeros Nv.2.
+- Al llegar a Ciudad Nv.3 → la mayoría de los fundadores debería rondar Nv.2; un aventurero especialmente activo puede acercarse o alcanzar Nv.3.
+- El Gran Jabalí debe poder derrotarse con un grupo bien equipado del rango disponible, sin exigir haber conseguido previamente materiales del propio Boss.
+
+Primera curva para simulación:
+
+- Nv.1 → 2: **60 XP**.
+- Nv.2 → 3: **100 XP**.
+- Nv.3 → 4: **160 XP**.
+
+Estos valores son de balance inicial y se ajustarán mediante simulación/playtest antes de extender la curva hasta el final de temporada.
+
+### Reparto de XP
+
+Los enemigos aportan una **bolsa de XP de encuentro**.
+
+- la XP se reparte entre los aventureros participantes;
+- no existe XP por “último golpe”;
+- formar grupo aumenta seguridad pero reparte la experiencia;
+- una misión de eliminación no debe duplicar automáticamente la XP de los enemigos: la recompensa principal de la misión es económica/material salvo que una actividad específica tenga XP propia.
+
+Esto permite una elección natural entre progresar más rápido con mayor riesgo o progresar de forma más segura en grupo.
+
+### Caer a 0 Vida — pérdida de XP
+
+Llegar a **0 Vida** implica incapacitación y pérdida de progreso de experiencia.
+
+Regla inicial:
+
+- pierde **20 % de la XP necesaria para alcanzar el siguiente nivel**;
+- la pérdida se limita a la XP acumulada dentro del nivel actual;
+- **nunca pierde un nivel ya conseguido**;
+- si tiene menos XP acumulada que la penalización, queda en 0 XP de progreso dentro de ese nivel.
+
+Ejemplo:
+
+Un aventurero Nv.2 necesita 100 XP para Nv.3. Si cae a 0 Vida, la penalización máxima inicial es 20 XP. Si sólo llevaba 12 XP acumulada, pierde 12 y permanece Nv.2 con 0/100.
+
+La incapacitación además puede generar tiempo de recuperación y nuevas necesidades de ciudad, pero no debe crear una espiral de castigo imposible de remontar.
+
+### Relación ciudad ↔ aventureros
+
+La progresión debe mantenerse en un corredor flexible, no mediante un bloqueo artificial.
+
+Si los aventureros avanzan demasiado rápido:
+
+- dejan de necesitar equipo básico;
+- reducen demanda del mercado inicial;
+- buscan contenido que la ciudad todavía no puede sostener.
+
+Si avanzan demasiado lento:
+
+- la ciudad desbloquea productos y servicios sin compradores adecuados;
+- el nuevo contenido pierde utilidad.
+
+Por eso Vida, Defensa, daño, equipo, recompensas, XP, recuperación y tiempos de actividad se balancearán como **un único sistema económico y temporal**.
+
 Cambio conceptual importante respecto del prototipo actual:
 
 Los aventureros **no deben visitar un negocio al azar buscando algo que la ciudad todavía no puede ofrecer**.
