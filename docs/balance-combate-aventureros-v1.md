@@ -189,12 +189,25 @@ Reglas de simulación:
 - un objeto con Durabilidad 0 deja de aportar su bonificación hasta repararse;
 - coste de reparación inicial: aproximadamente **22 % del valor del objeto**.
 
+El equipo fundador también tiene Durabilidad real:
+
+- arma/foco fundador: aproximadamente **8**;
+- ropa/protección fundadora: aproximadamente **10**;
+- es personal, no transferible y no vendible;
+- puede repararse;
+- puede ser reemplazado por equipo comercial;
+- si llega a 0, el aventurero pierde temporalmente la parte funcional de ese equipo hasta repararlo o sustituirlo.
+
+En el simulador, las estadísticas Nv.1 visibles ya representan al aventurero con su paquete fundador funcional. Por eso el equipo fundador intacto no “suma dos veces”; al romperse aplica una penalización equivalente a perder ese apoyo.
+
 Resultado perfil Normal tras 1.000 ciclos de 90 min:
 
-- **1,33 reparaciones por ciudad**;
-- gasto medio en reparaciones: **6,9 monedas**.
+- **3,16 reparaciones totales por ciudad**;
+- de ellas, **1,88** corresponden al equipo fundador;
+- roturas efectivas de equipo fundador: **0,056 por ciudad**;
+- gasto medio total en reparaciones: **10,5 monedas**.
 
-Se acepta como baseline EN PRUEBA.
+La mayoría de reparaciones ocurre antes de llegar a 0. Esto se acepta como baseline EN PRUEBA.
 
 ### 5.2. Compra guiada por necesidad
 
@@ -321,7 +334,79 @@ En 1.000 ciclos del perfil Normal:
 
 La gran cantidad retenida no se considera un error: prepara la futura circulación entre ciudades, mercados y necesidades de Reino.
 
-El simulador mantiene **Piel de Lobo, Piel de Jabalí y materiales Raro/Boss como recursos diferentes**. Cuando necesita simplificar consumo de Textilería, sólo agrega temporalmente “piel compatible” para decidir si una receta puede fabricarse. La versión jugable deberá conservar la identidad del material en el objeto final.
+### 5.5. Curtido y origen del material — BALANCE EN PRUEBA
+
+La simplificación de “piel compatible” queda reemplazada por una cadena explícita:
+
+**Piel de especie → Cuero curtido de esa especie → objeto terminado con ese origen.**
+
+El simulador mantiene por separado:
+
+- Piel común → Cuero curtido común;
+- Piel de Lobo → Cuero curtido de Lobo;
+- Piel de Jabalí → Cuero curtido de Jabalí;
+- Piel de Lobo Alfa → Cuero curtido de Lobo Alfa;
+- Piel de Gran Jabalí → Cuero curtido de Gran Jabalí.
+
+El curtido es **1:1** en la primera referencia y no elimina la identidad del material.
+
+Las piezas terminadas usan cuero curtido de un mismo origen para definir su rama.
+
+Modificadores iniciales:
+
+- **Común:** sin modificador.
+- **Lobo:** +1 Iniciativa.
+- **Jabalí:** +1 Defensa.
+- **Lobo Alfa:** +2 Iniciativa.
+- **Gran Jabalí:** +2 Defensa + aproximadamente 5 % de reducción adicional del daño esperado.
+
+Multiplicadores de valor de prueba:
+
+- Lobo: ×1,10;
+- Jabalí: ×1,12;
+- Lobo Alfa: ×1,35;
+- Gran Jabalí: ×1,55.
+
+Esto se aplica sobre la receta base; no crea recetas duplicadas.
+
+En el perfil Normal / 90 min se producen de media:
+
+**Cuero curtido**
+- común: ~2,7;
+- Lobo: ~11,6;
+- Jabalí: ~8,4;
+- Lobo Alfa: ~0,35;
+- Gran Jabalí: ~0,09.
+
+**Piezas textiles terminadas**
+- comunes: ~0,68;
+- Lobo: ~5,09;
+- Jabalí: ~4,36;
+- Lobo Alfa: ~0,20;
+- Gran Jabalí: ~0,05.
+
+La baja frecuencia de material Raro/Boss es intencional.
+
+### 5.6. Comparación controlada Lobo vs Jabalí
+
+Se ejecutaron **20.000 resoluciones por clase y origen** contra 2 Jabalíes para aislar el efecto del material.
+
+Ejemplo Explorador:
+
+- sin origen especial → ~90,7 % victoria / ~21,4 % desgaste Vida;
+- Lobo → ~91,6 % victoria / ~21,0 % desgaste / ~1,4 % menos consumo de Maná;
+- Jabalí → ~91,3 % victoria / ~20,0 % desgaste;
+- Lobo Alfa → ~92,1 % victoria / ~20,6 % desgaste / ~2,8 % menos Maná;
+- Gran Jabalí → ~91,4 % victoria / ~17,2 % desgaste.
+
+Lectura:
+
+- **Lobo** mejora ritmo/éxito y reduce ligeramente el coste de recursos;
+- **Jabalí** reduce mejor el desgaste físico;
+- la rama Raro mantiene la identidad de su especie;
+- el Boss es superior y añade robustez extra.
+
+No aparece una opción común universalmente mejor: la elección depende del rol y de lo que quiera optimizar el aventurero.
 
 ---
 
