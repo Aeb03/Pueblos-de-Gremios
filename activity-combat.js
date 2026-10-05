@@ -196,7 +196,8 @@
     const hpVariance=.65+clamp(Number(rng())||0,0,.999999)*.70;
     const manaVariance=.65+clamp(Number(rng())||0,0,.999999)*.70;
 
-    const hpLoss=Math.min(
+    const hpBefore=next.hpCurrent;
+    let hpLoss=Math.min(
       next.hpCurrent,
       Math.max(1,Math.ceil(next.hpMax*preview.meanHpLossRate*hpVariance))
     );
@@ -225,6 +226,7 @@
       levelsGained=applyLevelUps(next,data);
     }else{
       next.hpCurrent=0;
+      hpLoss=hpBefore;
       next.status='Incapacitado';
       next.history.defeats++;
       next.history.incapacitations++;
