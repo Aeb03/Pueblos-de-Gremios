@@ -1820,7 +1820,7 @@ Principio: **no se crea una estadística nueva hasta que exista una mecánica pr
 
 ### Clases fundadoras — identidad aprobada EN PRUEBA
 
-Las tres clases iniciales se diferencian por función, consumo de recursos y forma de aportar al cálculo probabilístico de combate.
+Las tres clases fundadoras se diferencian por función, consumo de recursos y forma de aportar al cálculo probabilístico de combate. Una cuarta clase, **Mago**, se incorpora como primera llegada garantizada al alcanzar Ciudad Nv.2 para ampliar el espectro de daño mágico y elemental.
 
 #### Guerrero — Protector
 
@@ -1900,6 +1900,111 @@ Sus habilidades ofensivas pertenecen principalmente a **Magia Sagrada**.
 La Magia Sagrada tiene **efectividad superior contra enemigos de Tipo No Muerto**. El modificador exacto se fijará junto con los números definitivos de combate.
 
 El Sanador es un rol de soporte puro en prioridad de comportamiento: si el grupo necesita curación o limpieza de estados, eso debe pesar más en su resolución que buscar daño adicional.
+
+#### Mago — Daño arcano / elemental
+
+El Mago es la cuarta clase básica de prueba y aparece por primera vez como llegada garantizada al alcanzar **Ciudad Nv.2**.
+
+Perfil:
+
+- **Vida: baja**.
+- **Ataque: alto**, de naturaleza mágica.
+- **Defensa: baja**.
+- **Iniciativa: media-alta**.
+- **Maná: alto**.
+
+Rol principal:
+
+- aportar daño mágico elevado;
+- cubrir daño **Arcano** y **Elemental**;
+- aplicar Estados ofensivos;
+- castigar enemigos cuya defensa física sea fuerte;
+- aportar control puntual mediante efectos elementales.
+
+La magia **Arcana** será la rama mágica neutral y fiable.
+
+La magia **Elemental** añade propiedades secundarias. En la primera versión:
+
+- Fuego → puede aplicar **Quemadura**.
+- Rayo → puede aplicar **Parálisis**.
+
+Otros elementos y resistencias se incorporarán sólo cuando exista contenido que los justifique.
+
+El Mago no debe reemplazar al Sanador: ambos usan Maná, pero el Mago lo convierte principalmente en daño/control y el Sanador en supervivencia/soporte.
+
+#### Habilidades básicas de clase — primera batería EN PRUEBA
+
+Estas habilidades sirven como datos para el motor probabilístico. No implican animar o ejecutar cada acción de manera persistente.
+
+**Guerrero**
+- **Guardia:** reduce daño/riesgo esperado del grupo.
+- **Interponerse:** prioriza proteger al aliado con mayor riesgo de incapacitación.
+- **Golpe de escudo:** daño físico moderado y pequeña posibilidad de Aturdimiento si lleva escudo compatible.
+
+**Explorador**
+- **Ataque certero:** aumenta daño esperado con arco o dagas.
+- **Paso evasivo:** aumenta temporalmente su Evasión derivada.
+- **Marcar presa:** aumenta la eficacia del Explorador contra un objetivo durante el encuentro.
+
+**Sanador**
+- **Curación:** recupera Vida esperada de un aliado.
+- **Purificar:** reduce o elimina Estados negativos compatibles.
+- **Luz sagrada:** daño mágico moderado; obtiene bonificación contra Tipo No Muerto.
+
+**Mago**
+- **Proyectil arcano:** daño mágico estable sin Estado adicional.
+- **Chispa ígnea:** daño mágico y posibilidad de Quemadura.
+- **Descarga:** daño mágico y posibilidad de Parálisis.
+
+Los costes exactos de Maná y probabilidades se fijan en la hoja de balance técnico y se ajustan por simulación.
+
+#### Estados iniciales — aprobados EN PRUEBA
+
+Los Estados son modificadores del cálculo probabilístico del encuentro. No requieren una ejecución turno por turno persistente.
+
+**Herida**
+- aumenta el daño/desgaste esperado;
+- eleva la probabilidad de terminar el encuentro con una lesión persistente;
+- puede requerir curación o recuperación posterior.
+
+**Quemadura**
+- añade daño esperado durante el encuentro;
+- representa daño elemental de Fuego;
+- puede ser mitigada/limpiada por habilidades o servicios futuros.
+
+**Veneno**
+- añade daño esperado progresivo;
+- reduce parcialmente la eficacia de curaciones mientras está activo;
+- abre futuro contenido de antídotos/herboristería.
+
+**Parálisis**
+- reduce temporalmente Iniciativa y contribución ofensiva;
+- aumenta el riesgo de no poder responder adecuadamente durante una parte del enfrentamiento.
+
+**Aturdido**
+- efecto corto y fuerte;
+- reduce de manera importante la contribución de una unidad durante una ventana breve;
+- no debe encadenarse indefinidamente.
+
+Los Estados tendrán resistencia/probabilidad de aplicación según objetivo, Tipo, equipo y futuras resistencias. Su severidad y duración se expresarán internamente como modificadores, no como una obligación de almacenar cada ronda.
+
+#### Daño y afinidades
+
+Tipos de daño iniciales:
+
+- **Físico**
+- **Mágico sagrado**
+- **Mágico arcano**
+- **Elemental de Fuego**
+- **Elemental de Rayo**
+
+No todos los enemigos necesitan una tabla compleja de resistencias desde el inicio.
+
+Primera excepción relevante:
+
+- Tipo **No Muerto** recibe una bonificación de daño de Magia Sagrada.
+
+Las demás afinidades/resistencias se incorporarán cuando aparezcan enemigos cuyo diseño las necesite.
 
 ### Futuro: escuelas de especialización y cooperación de Reino
 
