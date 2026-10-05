@@ -325,3 +325,213 @@ Antes de crear cientos de criaturas o regiones:
 11. recién después ampliar el catálogo.
 
 La prioridad es demostrar que el motor produce historias y consecuencias coherentes antes de cargar una base de datos grande.
+
+
+## 13. Derrota total del grupo
+
+Si **todos los integrantes del grupo quedan fuera de combate**, la misión termina inmediatamente en **retirada**.
+
+No hay muerte permanente.
+
+Consecuencias base:
+
+- el objetivo de la misión no se completa;
+- no se paga la recompensa del Encargo;
+- los aventureros regresan incapacitados o heridos;
+- todos quedan fuera de actividad hasta recuperarse;
+- cada uno puede sufrir pérdida de progreso de XP según gravedad;
+- pueden perder consumibles usados durante la misión;
+- el botín comprometido con el objetivo no se entrega a la ciudad;
+- cualquier botín adicional conservado dependerá de las reglas de retirada que se definan más adelante.
+
+La derrota total debe sentirse seria, pero su función principal es generar consecuencias y nuevas decisiones, no borrar personajes.
+
+## 14. La ciudad como ecosistema para aventureros
+
+Los aventureros no pertenecen permanentemente a una ciudad.
+
+Cada ciudad debe poder sostenerlos mediante su infraestructura y oportunidades.
+
+Un aventurero evalúa si le conviene permanecer según factores como:
+
+- posibilidad de recuperarse;
+- calidad de Posada y servicios de curación;
+- disponibilidad de comida y alojamiento;
+- acceso a equipo adecuado;
+- precios;
+- trabajos y Encargos disponibles;
+- dificultad de las misiones locales;
+- posibilidad real de progresar;
+- seguridad;
+- dinero disponible;
+- relación futura con la ciudad;
+- otros servicios que se agreguen.
+
+Una ciudad mal desarrollada puede dejar de ser atractiva incluso si tiene mucho Prestigio.
+
+## 15. Necesidades persistentes del aventurero
+
+Para producir un flujo natural, el aventurero debe tener necesidades y estados persistentes.
+
+Como mínimo podrán existir:
+
+- salud;
+- recuperación/heridas;
+- dinero;
+- equipo;
+- necesidad de mejorar equipo;
+- nivel;
+- experiencia;
+- disponibilidad;
+- necesidad de trabajo;
+- inventario;
+- ciudad actual;
+- destino de viaje;
+- satisfacción o conveniencia percibida de permanecer.
+
+No es necesario simular hambre o sueño de forma excesivamente detallada al inicio. La prioridad es que las necesidades relevantes para la economía y progresión produzcan decisiones visibles.
+
+## 16. Adecuación entre nivel del aventurero y ciudad
+
+Una ciudad debe tener un **rango de oportunidades**.
+
+Si la mayoría de sus misiones, enemigos y Encargos están muy por encima del poder de un aventurero de bajo nivel, ese NPC tendrá pocas posibilidades de progresar y aumentará su intención de marcharse.
+
+Ejemplo conceptual:
+
+> Aventurero Nv. 2  
+> Ciudad A: misiones predominantes Nv. 6–8 → baja adecuación  
+> Ciudad B: misiones predominantes Nv. 1–3 → alta adecuación
+
+El aventurero tenderá a viajar hacia Ciudad B.
+
+Del mismo modo, un aventurero avanzado puede abandonar una ciudad que sólo ofrece trabajos demasiado fáciles, poco rentables o equipo muy inferior a lo que necesita.
+
+Por lo tanto no existe una única “mejor ciudad” para todos los NPC.
+
+## 17. Migración automática entre ciudades
+
+Cuando un aventurero considera que su ciudad actual ya no satisface sus necesidades, puede decidir viajar a otra.
+
+La decisión puede comparar un **valor de conveniencia** entre ciudades conocidas.
+
+Factores posibles:
+
+- adecuación de dificultad;
+- posibilidades de recuperación;
+- calidad de servicios;
+- oferta de misiones;
+- oferta comercial;
+- capacidad para vender drops;
+- recompensa esperable;
+- coste de vida;
+- distancia/tiempo de viaje;
+- relación previa con la ciudad.
+
+La migración debe ser automática.
+
+El jugador no ordena directamente:
+
+> “Kael, andá a Ciudad B.”
+
+Kael decide según su estado y las oportunidades.
+
+Esto es fundamental para que el mundo parezca vivo.
+
+## 18. Recuperación y desplazamiento después de una derrota
+
+Después de una retirada, los aventureros intentan recuperarse en la ciudad a la que regresan.
+
+Si esa ciudad posee servicios suficientes:
+
+- entran en recuperación;
+- quedan temporalmente indisponibles;
+- después vuelven a buscar misiones.
+
+Si la ciudad **no puede satisfacer su recuperación** o el tiempo/coste resulta demasiado desfavorable, el NPC puede buscar otra ciudad con mejores servicios.
+
+Ejemplo:
+
+> Darek regresa herido de gravedad.  
+> La ciudad actual no tiene servicio capaz de tratarlo.  
+> Detecta una ciudad cercana con Posada y atención superior.  
+> Cuando su estado permite viajar, decide trasladarse allí para recuperarse.
+
+Así una derrota también puede modificar el flujo de población entre ciudades.
+
+## 19. Flujo natural de vida
+
+La combinación de todos los sistemas debe producir este ciclo emergente:
+
+1. aventureros llegan buscando oportunidades;
+2. toman misiones adecuadas a su nivel;
+3. consiguen XP, dinero y drops;
+4. compran mejores objetos;
+5. venden botín;
+6. pueden resultar heridos;
+7. usan los servicios de la ciudad;
+8. suben de nivel;
+9. las oportunidades locales pueden dejar de ser adecuadas;
+10. deciden permanecer o viajar a otra ciudad.
+
+La ciudad, por su parte:
+
+1. recibe aventureros;
+2. vende bienes y servicios;
+3. compra drops;
+4. publica Encargos;
+5. desarrolla negocios;
+6. atrae perfiles distintos;
+7. puede perder población aventurera si deja de satisfacer sus necesidades.
+
+El objetivo es que la ciudad parezca moverse aunque el jugador no esté observando cada acción.
+
+## 20. Consecuencia de diseño: especialización de ciudades
+
+Este sistema permite que las ciudades desarrollen identidades distintas de forma natural.
+
+Ejemplos conceptuales:
+
+- ciudad inicial: muchos aventureros Nv. 1–3, trabajos sencillos y servicios baratos;
+- ciudad minera: buena demanda de escoltas y compra de minerales/drops de cuevas;
+- ciudad fronteriza: misiones peligrosas y aventureros veteranos;
+- ciudad comercial: gran mercado para comprar/vender equipo;
+- ciudad con servicios médicos fuertes: atrae aventureros heridos o grupos de alto riesgo.
+
+No todas las ciudades deben competir únicamente por ser “más altas de nivel”.
+
+Pueden competir también por ser mejores para determinados perfiles de aventurero.
+
+## 21. Requisito técnico futuro para la capa online
+
+Cuando varias ciudades de jugadores formen parte del mismo Reino, este flujo tendrá impacto compartido.
+
+Los estados importantes del aventurero, sus viajes y transacciones deberán ser autoritativos en servidor para evitar que un mismo NPC exista simultáneamente en dos ciudades o duplique botín/dinero.
+
+La ciudad puede seguir siendo principalmente offline para su gestión local, pero:
+
+- ubicación compartida de aventureros;
+- inventario económico compartido;
+- viajes entre ciudades;
+- intercambios;
+- Encargos;
+
+deberán resolverse de forma consistente cuando entren en la capa online.
+
+## 22. Regla de diseño central
+
+**El jugador no administra directamente a los aventureros. Administra una ciudad que debe resultarles útil.**
+
+Los aventureros:
+
+- eligen;
+- compran;
+- venden;
+- aceptan riesgos;
+- progresan;
+- se recuperan;
+- migran.
+
+El jugador modifica su comportamiento **indirectamente** construyendo mejores servicios, ofreciendo mejores oportunidades, precios y recompensas.
+
+Esta regla debe conservarse al diseñar futuros sistemas.
