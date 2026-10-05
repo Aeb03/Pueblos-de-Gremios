@@ -224,6 +224,105 @@ En 1.000 ciclos Normal:
 
 Esto deja al stock/productor como principal cuello de botella, no a la pobreza permanente del aventurero.
 
+### 5.3. Plato sencillo y Ración de viaje — BALANCE EN PRUEBA
+
+No existe Hambre obligatoria.
+
+**Plato sencillo**
+- precio de prueba: **2 monedas**;
+- consume aproximadamente 0,75 Carne + 0,15 Leña en la abstracción del simulador;
+- se compra sólo cuando el aventurero tiene desgaste moderado, pero todavía no necesita un Descanso completo;
+- recupera aproximadamente **8 % de Vida máxima + 10 % de Maná máximo**;
+- funciona como servicio de recuperación ligera, no como obligación.
+
+**Ración de viaje**
+- precio de prueba: **3 monedas**;
+- consume aproximadamente 0,75 Carne + 0,10 Leña;
+- es una preparación para la siguiente actividad;
+- reduce aproximadamente **8 % del desgaste de Vida** y **5 % del consumo de Maná** en esa salida;
+- después de usarse desaparece.
+
+En el perfil Normal / 90 min:
+
+- ~**9,0 Platos** consumidos por ciudad;
+- ~**5,8 Raciones**;
+- gasto alimentario: ~**35,4 monedas**;
+- gasto recurrente total (Descanso + Reparación + comida): **~30,0 % de los ingresos generados**.
+
+Esto queda dentro del corredor objetivo inicial y se acepta como baseline EN PRUEBA.
+
+### 5.4. Drops reales y mercado de materiales — BALANCE EN PRUEBA
+
+Los enemigos ya no generan un simple “valor de botín” en el simulador. Generan materiales concretos.
+
+**Lobo**
+- Carne ~70 % ×1;
+- Piel de Lobo ~55 % ×1;
+- Colmillo de Lobo ~15 % ×1.
+
+**Jabalí**
+- Carne ~90 % ×1–2;
+- Piel de Jabalí ~65 % ×1;
+- Tendón ~40 % ×1;
+- Colmillo de Jabalí ~12 % ×1.
+
+**Lobo Alfa**
+- Carne 100 % ×1–2;
+- Piel de Lobo Alfa 100 % ×1;
+- Colmillo Alfa ~30 % ×1;
+- además se resuelve el botín de los Lobos comunes acompañantes.
+
+**Gran Jabalí**
+- Carne 100 % ×3–5;
+- Piel de Gran Jabalí 100 % ×1;
+- Tendón de Gran Jabalí ~50 % ×1;
+- Colmillo de Gran Jabalí ~40 % ×1.
+
+Valores de referencia usados sólo para simulación temprana:
+
+- Carne 2;
+- Tendón 4;
+- Piel de Lobo 5;
+- Piel de Jabalí 6;
+- Colmillo de Lobo 7;
+- Colmillo de Jabalí 8;
+- Piel de Lobo Alfa 16;
+- Colmillo Alfa 18;
+- Piel de Gran Jabalí 25;
+- Tendón de Gran Jabalí 14;
+- Colmillo de Gran Jabalí 20.
+
+#### Decisión de compra de la ciudad
+
+La ciudad no compra automáticamente todo lo que un aventurero ofrece.
+
+El simulador usa una política automática equivalente a una gestión racional:
+
+1. comprueba si existe **demanda real** del material;
+2. mantiene un objetivo de stock según nivel de Ciudad;
+3. conserva una **reserva mínima de tesorería de 55 monedas**;
+4. acepta sólo la cantidad que necesita y puede pagar;
+5. rechaza o posterga el excedente;
+6. el aventurero conserva lo no vendido.
+
+Esto no sustituye la decisión del jugador en la versión final. Puede traducirse a:
+
+- aceptación manual;
+- órdenes de compra;
+- límites de stock;
+- políticas automáticas configurables.
+
+En 1.000 ciclos del perfil Normal:
+
+- botín generado: ~**92,4 unidades** por ciudad;
+- vendido a la ciudad: **32,1 %** del botín generado;
+- retenido por aventureros al final: ~**62,7 unidades**;
+- valor pagado por la ciudad en compra de botín: ~**175,9 monedas**.
+
+La gran cantidad retenida no se considera un error: prepara la futura circulación entre ciudades, mercados y necesidades de Reino.
+
+El simulador mantiene **Piel de Lobo, Piel de Jabalí y materiales Raro/Boss como recursos diferentes**. Cuando necesita simplificar consumo de Textilería, sólo agrega temporalmente “piel compatible” para decidir si una receta puede fabricarse. La versión jugable deberá conservar la identidad del material en el objeto final.
+
 ---
 
 ## 6. Habilidades básicas y Maná
