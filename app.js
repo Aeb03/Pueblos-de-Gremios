@@ -625,7 +625,7 @@ function addSmithyBookEntry(entry){
   }
 }
 
-function resolveSmithyVisitor(visitor){
+function resolveSmithyVisitor(visitor,nextBase=Date.now()){
   const npc=state.adventurers[visitor.npcId];
   const offers=visitor.offers
     .map(offer=>{
@@ -684,11 +684,12 @@ function resolveSmithyVisitor(visitor){
     personality:visitor.personality,
     context:visitor.context,
     text,
-    price
+    price,
+    timestamp:visitor.endsAt||Date.now()
   });
 
   state.smithyTraffic.activeVisitor=null;
-  state.smithyTraffic.nextVisitAt=Date.now()+randomVisitDelay();
+  state.smithyTraffic.nextVisitAt=nextBase+randomVisitDelay();
   saveState();
 }
 
@@ -703,7 +704,7 @@ function startLiveSmithyVisit(){
 function simulateOfflineSmithyVisit(at){
   const visitor=createSmithyVisitor(at);
   visitor.endsAt=at;
-  resolveSmithyVisitor(visitor);
+  resolveSmithyVisitor(visitor,at);
 }
 
 function catchUpSmithyTraffic(){
