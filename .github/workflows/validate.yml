@@ -12,11 +12,16 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check game-data.js
+          node --check adventurer-core.js
           node --check app.js
+          node --check tools/test-adventurer-core.js
           node --check tools/balance-sim.js
           node --check tools/world-sim.js
           node --check tools/sim/world-config.js
           node --check tools/sim/world-core.js
+
+      - name: Check adventurer core
+        run: node tools/test-adventurer-core.js
 
       - name: Check balance simulators
         run: |
@@ -29,6 +34,7 @@ jobs:
           test -f index.html
           test -f styles.css
           test -f game-data.js
+          test -f adventurer-core.js
           test -f manifest.webmanifest
           test -f sw.js
           test -f icons/icon.svg
@@ -36,11 +42,12 @@ jobs:
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest OK')"
       - name: Check version wiring
         run: |
-          grep -q "v0.8.1" index.html
-          grep -q "pueblos-gremios-v0.8.1" sw.js
-          grep -q "game-data.js?v=0.8.1" index.html
-          grep -q "app.js?v=0.8.1" index.html
-          grep -q "styles.css?v=0.8.1" index.html
+          grep -q "v0.9.0a" index.html
+          grep -q "pueblos-gremios-v0.9.0a" sw.js
+          grep -q "game-data.js?v=0.9.0a" index.html
+          grep -q "adventurer-core.js?v=0.9.0a" index.html
+          grep -q "app.js?v=0.9.0a" index.html
+          grep -q "styles.css?v=0.9.0a" index.html
           grep -q "SAVE_KEY='pueblos-gremios-save-v0.8.0'" app.js
       - name: Check foundation cycle
         run: |
@@ -50,7 +57,13 @@ jobs:
           grep -q "originCityName" app.js
           grep -q "purchaseProfile" app.js
           grep -q "adventurerCount:3" game-data.js
+          grep -q "founderClassKeys" game-data.js
+          grep -q "adventurerCoinRange" game-data.js
+          grep -q "adventurerProgression" game-data.js
           grep -q "adventurerRoles" game-data.js
+          grep -q "mage" game-data.js
+          grep -q "normalizeAdventurer" adventurer-core.js
+          grep -q "ADVENTURER_SCHEMA_VERSION" adventurer-core.js
           grep -q "personalities" game-data.js
           grep -q "guildHall" game-data.js
           grep -q 'id="foundationGate"' index.html
