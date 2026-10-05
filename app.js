@@ -2348,20 +2348,35 @@ if(isStandalone){
 }
 
 if('serviceWorker' in navigator){
-  let refreshing=false;
+  if(isLocalTestHost()){
+    // En localhost priorizamos siempre los archivos reales del branch de prueba.
+    // Evita que un Service Worker de una versión anterior oculte cambios de desarrollo.
+    window.addEventListener('load',async()=>{
+      try{
+        const regs=await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(reg=>reg.unregister()));
+        if('caches' in globalThis){
+          const keys=await caches.keys();
+          await Promise.all(keys.map(key=>caches.delete(key)));
+        }
+      }catch{}
+    });
+  }else{
+    let refreshing=false;
 
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{
-    if(refreshing)return;
-    refreshing=true;
-    window.location.reload();
-  });
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      if(refreshing)return;
+      refreshing=true;
+      window.location.reload();
+    });
 
-  window.addEventListener('load',async()=>{
-    try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0b',{updateViaCache:'none'});
-      await reg.update();
-    }catch{}
-  });
+    window.addEventListener('load',async()=>{
+      try{
+        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0b',{updateViaCache:'none'});
+        await reg.update();
+      }catch{}
+    });
+  }
 }
 
 render();
