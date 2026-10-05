@@ -80,7 +80,8 @@ function initialState(rng,profile){
       resources:{
         iron:8,stone:6,wood:10,firewood:6,meat:4,skin:1,tendon:1,
         wolfSkin:0,boarSkin:0,wolfFang:0,boarTusk:0,
-        alphaWolfSkin:0,alphaFang:0,greatBoarSkin:0,greatBoarTendon:0,greatBoarTusk:0
+        alphaWolfSkin:0,alphaFang:0,greatBoarSkin:0,greatBoarTendon:0,greatBoarTusk:0,
+        tannedNeutral:0,tannedWolf:0,tannedBoar:0,tannedAlphaWolf:0,tannedGreatBoar:0
       },
       stock:{dagger:0,bow:0,staff:0,shield:0,leather:0,gloves:0,boots:0},
       variantStock:{
@@ -89,6 +90,7 @@ function initialState(rng,profile){
         boots:{neutral:0,wolf:0,boar:0,alphaWolf:0,greatBoar:0}
       },
       produced:{dagger:0,bow:0,staff:0,shield:0,leather:0,gloves:0,boots:0},
+      tannedProduced:{neutral:0,wolf:0,boar:0,alphaWolf:0,greatBoar:0},
       textileProduced:{neutral:0,wolf:0,boar:0,alphaWolf:0,greatBoar:0},
       textileSold:{neutral:0,wolf:0,boar:0,alphaWolf:0,greatBoar:0},
       textile:false,textileAt:null,presence:{wolf:25,boar:20},
@@ -161,20 +163,26 @@ function workerStep(state,rng){
   }
 }
 
-function hideOriginsWithQty(city,qty){
+function tannedOriginsWithQty(city,qty){
   return Object.entries(TEXTILE_ORIGIN)
-    .filter(([,cfg])=>(city.resources[cfg.resource]||0)>=qty)
+    .filter(([,cfg])=>(city.resources[cfg.tannedResource]||0)>=qty)
+    .map(([origin])=>origin);
+}
+
+function rawOriginsAvailable(city){
+  return Object.entries(TEXTILE_ORIGIN)
+    .filter(([,cfg])=>(city.resources[cfg.rawResource]||0)>0)
     .map(([origin])=>origin);
 }
 
 function hasInput(city,key,qty){
-  if(key==='hide')return hideOriginsWithQty(city,qty).length>0;
+  if(key==='tannedHide')return tannedOriginsWithQty(city,qty).length>0;
   return (city.resources[key]||0)>=qty;
 }
 
 function consumeInput(city,key,qty,origin='neutral'){
-  if(key==='hide'){
-    const resource=TEXTILE_ORIGIN[origin].resource;
+  if(key==='tannedHide'){
+    const resource=TEXTILE_ORIGIN[origin].tannedResource;
     city.resources[resource]-=qty;
     return;
   }
@@ -183,12 +191,44 @@ function consumeInput(city,key,qty,origin='neutral'){
 
 const canCraft=(city,item)=>Object.entries(RECIPES[item]).every(([k,v])=>hasInput(city,k,v));
 
+function chooseRawOriginToTan(city){
+  const options=rawOriginsAvailable(city);
+  if(!options.length)return null;
+
+  // Curtir conserva identidad y no compromete todavía el material a un producto.
+  // Se prioriza material especial, luego el origen con mayor stock.
+  for(const special of ['greatBoar','alphaWolf']){
+    if(options.includes(special))return special;
+  }
+  options.sort((a,b)=>{
+    const ar=TEXTILE_ORIGIN[a].rawResource,br=TEXTILE_ORIGIN[b].rawResource;
+    return (city.resources[br]||0)-(city.resources[ar]||0);
+  });
+  return options[0];
+}
+
+function tanStep(state,rng){
+  const {city,profile}=state;
+  if(!city.textile)return;
+
+  const attempts=2;
+  for(let i=0;i<attempts;i++){
+    if(rng()>profile.worker)continue;
+    const origin=chooseRawOriginToTan(city);
+    if(!origin)break;
+    const cfg=TEXTILE_ORIGIN[origin];
+    city.resources[cfg.rawResource]-=1;
+    city.resources[cfg.tannedResource]=(city.resources[cfg.tannedResource]||0)+1;
+    city.tannedProduced[origin]++;
+    city.dev+=.10;
+  }
+}
+
 function chooseTextileOrigin(city,item,qty,rng){
-  const available=hideOriginsWithQty(city,qty);
+  const available=tannedOriginsWithQty(city,qty);
   if(!available.length)return null;
 
-  // Materiales Raro/Boss sólo se consumen deliberadamente y en piezas pequeñas,
-  // evitando que la producción automática queme la primera piel especial sin control.
+  // Materiales Raro/Boss sólo se comprometen deliberadamente en piezas pequeñas.
   if(item!=='leather'){
     if(available.includes('greatBoar')&&city.level>=3&&city.variantStock[item].greatBoar===0&&rng()<.55)return 'greatBoar';
     if(available.includes('alphaWolf')&&city.level>=2&&city.variantStock[item].alphaWolf===0&&rng()<.50)return 'alphaWolf';
@@ -209,6 +249,8 @@ function chooseTextileOrigin(city,item,qty,rng){
 
 function craftStep(state,rng){
   const {city,profile}=state;
+  if(city.textile)tanStep(state,rng);
+
   const available=['dagger','bow','staff','shield'];
   if(city.textile)available.push('leather','gloves','boots');
 
@@ -221,7 +263,7 @@ function craftStep(state,rng){
 
     const item=candidates[0];
     let origin='neutral';
-    const hideQty=RECIPES[item].hide||0;
+    const hideQty=RECIPES[item].tannedHide||0;
 
     if(ITEM[item].textile){
       origin=chooseTextileOrigin(city,item,hideQty,rng);
