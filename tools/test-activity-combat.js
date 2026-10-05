@@ -81,6 +81,10 @@ function make(classKey='warrior'){
   assert.strictEqual(result.adventurer.xp,11);
   assert.strictEqual(result.adventurer.level,1);
   assert.strictEqual(result.adventurer.history.incapacitations,1);
+
+  const reloaded=ADV.normalizeAdventurer(result.adventurer,DATA);
+  assert.strictEqual(reloaded.hpCurrent,0);
+  assert.strictEqual(reloaded.status,'Incapacitado');
 })();
 
 (function xpLossCannotGoBelowZero(){
