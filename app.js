@@ -1,11 +1,13 @@
-const APP_VERSION='0.9.0b';
+const APP_VERSION='0.9.0c';
 const SAVE_KEY='pueblos-gremios-save-v0.8.0';
 const DATA=globalThis.PG_DATA;
 const ADV=globalThis.PG_ADVENTURER_CORE;
 const CITY=globalThis.PG_CITY_PROGRESSION;
+const COMBAT=globalThis.PG_ACTIVITY_COMBAT;
 
 if(!ADV)throw new Error('PG_ADVENTURER_CORE no está disponible.');
 if(!CITY)throw new Error('PG_CITY_PROGRESSION no está disponible.');
+if(!COMBAT)throw new Error('PG_ACTIVITY_COMBAT no está disponible.');
 
 const EXPEDITION_DURATION_MS=30_000;
 const CRAFT_DURATION_MS=DATA.recipes.pickaxeHead.durationMs;
@@ -149,11 +151,13 @@ const defaultState=()=>({
   activeExpedition:null,
   activeCraft:null,
   activeCarpentry:null,
+  activityLog:[],
   lastMessage:'',
   lastSmithyMessage:'',
   lastCarpentryMessage:'',
   lastInnMessage:'',
-  lastCityMessage:''
+  lastCityMessage:'',
+  lastActivityMessage:''
 });
 
 function loadState(){
@@ -246,6 +250,7 @@ function loadState(){
 
     merged.smithyBook.entries=Array.isArray(merged.smithyBook.entries)?merged.smithyBook.entries:[];
     merged.smithyBook.unread=merged.smithyBook.entries.filter(entry=>entry.unread).length;
+    merged.activityLog=Array.isArray(merged.activityLog)?merged.activityLog.slice(0,12):[];
     merged.adventurerSchemaVersion=ADV.ADVENTURER_SCHEMA_VERSION;
     merged.city=CITY.normalizeCityProgress(merged.city);
     merged.buildings.meson.level=Math.max(1,Number(merged.buildings.meson.level)||1);
@@ -1912,7 +1917,7 @@ function render(){
   els.cityDevelopmentProgress.value=Math.min(state.city.development,els.cityDevelopmentProgress.max);
   els.cityPopulationSummary.textContent=`Aventureros ${activeResidents}/${residentLimit} · Mesón ${activeResidents}/${mesonCapacity}`;
   els.cityProgressHint.textContent=cityNext.maxed
-    ?'Nivel máximo disponible en v0.9.0b. La población queda limitada a 5 residentes.'
+    ?'Nivel máximo disponible en v0.9.0c. La población queda limitada a 5 residentes.'
     :`Faltan ${cityNext.remaining.toFixed(2)} de Desarrollo para Ciudad Nv. ${cityNext.level}. Expediciones, producción y mejoras hacen crecer la ciudad.`;
   els.smithyLevelCity.textContent=state.buildings.smithy.level;
   if(currentScreen()==='city')title.textContent=state.city.founded?state.city.name:'Nueva ciudad';
@@ -2372,7 +2377,7 @@ if('serviceWorker' in navigator){
 
     window.addEventListener('load',async()=>{
       try{
-        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0b',{updateViaCache:'none'});
+        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0c',{updateViaCache:'none'});
         await reg.update();
       }catch{}
     });
