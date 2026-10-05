@@ -1611,7 +1611,101 @@ Valores recomendados aproximados:
 
 ---
 
-## 30. Ritmo objetivo del primer tramo
+## 30. Límites de precios y recompensas — antiabuso
+
+Objetivo: impedir que un jugador funda una ciudad, transfiera de forma artificial recursos/equipo barato a aventureros persistentes, abandone o borre la ciudad y repita el proceso para mejorar su inicio.
+
+### 30.1. Precios editables
+
+Cuando el jugador modifica manualmente un precio de venta o una recompensa en monedas:
+
+- el juego calcula un **Valor de referencia**;
+- el jugador puede editar únicamente dentro de un rango de **-30 % / +30 %**;
+- no puede poner precio 0 ni regalar directamente un objeto.
+
+Ejemplo:
+
+- Valor estimado de una Daga: 100 monedas.
+- Precio manual permitido: **70–130**.
+
+La Venta automática continúa usando exactamente el **Valor estimado**, sin modificación manual.
+
+### 30.2. Recompensas con objetos — Presupuesto de recompensa
+
+Los objetos añadidos a una misión no funcionan como regalos libres.
+
+Cada misión tiene un **Valor recomendado total de recompensa** calculado por:
+
+- dificultad;
+- riesgo;
+- duración;
+- objetivo;
+- nivel;
+- tamaño esperado del grupo.
+
+El jugador puede distribuir ese valor entre:
+
+- monedas;
+- objetos;
+- combinación de ambos.
+
+El **valor total efectivo del paquete** debe permanecer dentro de aproximadamente **70–130 %** del valor recomendado.
+
+Ejemplo:
+
+> Misión recomendada: 100 monedas por aventurero.
+
+Opciones válidas:
+
+- 100 monedas.
+- 70 monedas + objeto valorado en 30.
+- objeto valorado en 100.
+- 30 monedas + objeto valorado en 70.
+
+No sería válido entregar gratuitamente una espada de 300 monedas en una misión cuyo presupuesto máximo es 130.
+
+### 30.3. Valor de los objetos en recompensas
+
+Para calcular el presupuesto se utiliza:
+
+- valor estimado real del objeto;
+- calidad;
+- materiales especiales;
+- propiedades de Raro/Boss;
+- estado/durabilidad;
+- nivel del objeto.
+
+Por tanto, una pieza Excelente o fabricada con material Boss consume más presupuesto que una pieza Normal.
+
+### 30.4. Límites adicionales
+
+La Sede del Gremio podrá limitar por nivel:
+
+- cantidad de objetos añadidos a una recompensa;
+- rareza/calidad máxima admitida;
+- nivel de equipo apropiado para la misión.
+
+Esto evita usar una misión de Nv.1 como vehículo para transferir equipo de final de juego.
+
+### 30.5. Protección de fundación
+
+El límite de precios/recompensas ayuda, pero por sí solo no evita reciclar infinitamente el Pack fundador.
+
+En una temporada competitiva debe existir además una regla de cuenta/servidor:
+
+- **un Pack fundador completo por jugador por temporada**;
+- abandonar/reiniciar una ciudad no vuelve a generar indefinidamente recursos fundacionales transferibles;
+- cualquier mecanismo legítimo de refundación deberá reutilizar o descontar el valor ya otorgado.
+
+La herramienta actual **Reiniciar Reino de prueba** es sólo de desarrollo y no representa esta regla del juego final.
+
+Principio general:
+
+**el jugador puede negociar y administrar precios, pero no puede usar ciudades descartables como mecanismo de transferencia gratuita hacia aventureros persistentes.**
+
+---
+
+## 31. Ritmo objetivo del primer tramo
 
 Objetivo:
 
@@ -1649,7 +1743,7 @@ Durante esa hora deberían ocurrir varias cosas en paralelo:
 
 ---
 
-## 31. Aventureros — principio de necesidades
+## 32. Aventureros — principio de necesidades
 
 Cambio conceptual importante respecto del prototipo actual:
 
@@ -1681,7 +1775,7 @@ Los aventureros deben recordar:
 
 ---
 
-## 32. Personalidad, ánimo y memoria
+## 33. Personalidad, ánimo y memoria
 
 Diseño aprobado como dirección:
 
@@ -1728,7 +1822,7 @@ El Mesón usa esa información para generar comentarios contextuales.
 
 ---
 
-## 33. Combate — orientación mínima actual
+## 34. Combate — orientación mínima actual
 
 Todavía no está cerrado el motor final.
 
@@ -1752,12 +1846,11 @@ Debe diseñarse junto con las estadísticas definitivas de los aventureros.
 
 ---
 
-## 34. Lo que queda pendiente antes de programar el bloque completo
+## 35. Lo que queda pendiente antes de programar el bloque completo
 
 ### Enemigos
-- Lobo Alfa.
-- Primer Boss.
-- Después Bandidos/Goblins.
+- Bloque Nv.1–3 cerrado EN PRUEBA: Lobo, Jabalí, Lobo Alfa y Gran Jabalí.
+- Pendiente posterior: Bandidos/Goblins del tramo Nv.3–6.
 
 ### Aventureros
 - estadísticas iniciales definitivas;
@@ -1794,7 +1887,7 @@ Debe diseñarse junto con las estadísticas definitivas de los aventureros.
 
 ---
 
-## 35. Regla de implementación
+## 36. Regla de implementación
 
 Mientras este documento esté marcado como **DISEÑO APROBADO EN PRUEBA**:
 
