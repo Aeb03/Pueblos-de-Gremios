@@ -1039,3 +1039,369 @@ dialog form{padding:18px}
   .founding-adventurer-stats span:nth-child(4),
   .founding-adventurer-stats span:nth-child(5){grid-column:auto}
 }
+
+
+/* v0.8.1 — Herrería compacta, pestañas y almacén propio */
+.smithy-art-compact{
+  min-height:128px;
+}
+.smithy-art-compact p{
+  margin-bottom:0;
+}
+.smithy-worker-compact{
+  padding:11px;
+}
+.smithy-worker-compact .smithy-worker-head{
+  grid-template-columns:44px 1fr auto;
+}
+.smithy-worker-compact .avatar{
+  width:44px;
+  height:44px;
+  font-size:1.05rem;
+}
+.smithy-worker-compact h3{
+  font-size:1rem;
+}
+.smithy-worker-compact small{
+  margin-top:2px;
+  font-size:.72rem;
+}
+.smithy-worker-bars{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.smithy-worker-bars progress{
+  margin-top:7px;
+  height:7px;
+}
+.smithy-tabs{
+  position:sticky;
+  top:66px;
+  z-index:8;
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:4px;
+  margin-top:10px;
+  padding:5px;
+  border:1px solid #473724;
+  border-radius:13px;
+  background:rgba(18,16,13,.97);
+  backdrop-filter:blur(10px);
+}
+.smithy-tab{
+  min-width:0;
+  min-height:47px;
+  padding:5px 2px;
+  border:1px solid transparent;
+  border-radius:9px;
+  background:transparent;
+  color:#a99b85;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  font-size:.86rem;
+}
+.smithy-tab span{
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-size:.61rem;
+  white-space:nowrap;
+}
+.smithy-tab.is-active{
+  border-color:#765b31;
+  background:#2a2117;
+  color:var(--gold2);
+}
+.smithy-tab-panel{
+  margin-top:10px;
+}
+.smithy-tab-panel[hidden]{
+  display:none;
+}
+.smithy-current-job{
+  margin-top:0;
+  padding:10px 12px;
+}
+.smithy-current-job .section-head{
+  gap:8px;
+}
+.smithy-current-job h3{
+  margin:.1rem 0 0;
+  font-size:.95rem;
+}
+.smithy-current-job .countdown{
+  margin:0;
+  min-height:auto;
+  font-size:.76rem;
+}
+.smithy-current-job progress{
+  margin-top:7px;
+  height:8px;
+}
+.smithy-current-job .feedback{
+  margin:.45rem 0 0;
+  min-height:1em;
+  font-size:.76rem;
+}
+.smithy-list-heading{
+  margin:12px 2px 7px;
+}
+.smithy-list-heading h2{
+  margin:.05rem 0;
+  font:700 1.08rem Georgia,serif;
+}
+.smithy-list-heading .muted{
+  font-size:.7rem;
+}
+.smithy-recipe-list{
+  display:grid;
+  gap:8px;
+}
+.smithy-list-item{
+  padding:10px;
+  border:1px solid #4d3b28;
+  border-radius:13px;
+  background:linear-gradient(180deg,#211a13,#17130f);
+}
+.recipe-compact-main{
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr) auto;
+  gap:9px;
+  align-items:center;
+}
+.recipe-icon.compact{
+  width:42px;
+  height:42px;
+  border-radius:10px;
+  font-size:1.25rem;
+}
+.recipe-compact-copy{
+  min-width:0;
+}
+.recipe-compact-copy strong{
+  display:block;
+  overflow:hidden;
+  color:#f1eadf;
+  font-family:Georgia,serif;
+  font-size:.95rem;
+  line-height:1.08;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.recipe-compact-copy small{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+  font-size:.67rem;
+}
+.compact-action{
+  min-width:78px;
+  min-height:38px;
+  max-width:104px;
+  padding:6px 8px;
+  border:1px solid #e0b65e;
+  border-radius:9px;
+  background:linear-gradient(#dbae51,#a97729);
+  color:#171006;
+  font-weight:800;
+  font-size:.72rem;
+  line-height:1.05;
+}
+.compact-action:disabled{
+  opacity:.58;
+  filter:saturate(.65);
+}
+.recipe-facts{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:8px;
+}
+.recipe-facts span{
+  padding:4px 7px;
+  border:1px solid #3e3226;
+  border-radius:999px;
+  background:#15110e;
+  color:#ae9f88;
+  font-size:.65rem;
+}
+.recipe-facts b{
+  color:#e7dccb;
+}
+.recipe-details{
+  margin-top:6px;
+  border-top:1px solid #342a20;
+  padding-top:5px;
+}
+.recipe-details summary{
+  cursor:pointer;
+  color:var(--gold2);
+  font-size:.67rem;
+  font-weight:700;
+}
+.recipe-details p{
+  margin:.5rem 0 0;
+  color:var(--muted);
+  font-size:.75rem;
+  line-height:1.35;
+}
+.compact-quality{
+  margin-top:7px;
+  padding:0 8px 8px;
+}
+.compact-quality .kv{
+  padding:7px 0;
+  font-size:.73rem;
+}
+.compact-quality .quality-distribution{
+  margin-top:5px;
+  padding:7px;
+  font-size:.68rem;
+}
+.smithy-capacity-card{
+  margin-top:0;
+  padding:11px 12px;
+}
+.smithy-capacity-card h3{
+  margin:.1rem 0;
+}
+.smithy-stock-list{
+  display:grid;
+  gap:7px;
+  margin-top:8px;
+}
+.smithy-stock-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 11px;
+  border:1px solid #463725;
+  border-radius:10px;
+  background:#191510;
+  font-size:.8rem;
+}
+.smithy-stock-row strong{
+  color:var(--gold2);
+}
+.smithy-stock-row.external-stock{
+  border-style:dashed;
+}
+.smithy-sword-storage{
+  padding:11px;
+}
+.compact-sword-list{
+  gap:7px;
+}
+.smithy-sword-row{
+  padding:9px;
+  border:1px solid #4c3b28;
+  border-radius:10px;
+  background:#17130f;
+}
+.smithy-sword-top{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:center;
+}
+.smithy-sword-top strong{
+  font-size:.82rem;
+}
+.smithy-sword-top span{
+  color:var(--gold2);
+  font-size:.7rem;
+}
+.smithy-sword-facts{
+  display:flex;
+  gap:5px;
+  margin-top:6px;
+}
+.smithy-sword-facts span{
+  flex:1;
+  padding:5px 4px;
+  border-radius:7px;
+  background:#211b15;
+  color:var(--muted);
+  text-align:center;
+  font-size:.63rem;
+}
+.smithy-sword-facts b{
+  color:var(--text);
+}
+.smithy-sword-actions{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:7px;
+  align-items:end;
+  margin-top:7px;
+}
+.compact-price{
+  display:grid;
+  grid-template-columns:auto minmax(70px,110px);
+  gap:7px;
+  align-items:center;
+  color:var(--muted);
+  font-size:.67rem;
+}
+.compact-price input{
+  width:100%;
+  min-height:34px;
+  border:1px solid #624b2d;
+  border-radius:8px;
+  background:#100d0a;
+  color:var(--gold2);
+  padding:5px 7px;
+  font:700 .78rem system-ui,-apple-system,Segoe UI,sans-serif;
+}
+.smithy-tab-panel .visitor-panel,
+.smithy-tab-panel .exhibition-panel,
+.smithy-tab-panel .smithy-book-panel,
+.smithy-tab-panel .upgrade-card{
+  margin-top:0;
+}
+.smithy-tab-panel .visitor-panel{
+  margin-top:8px;
+}
+@media (max-width:390px){
+  .smithy-tabs{
+    top:61px;
+  }
+  .smithy-worker-compact .smithy-worker-head{
+    grid-template-columns:42px 1fr auto;
+  }
+  .smithy-worker-compact .state{
+    display:inline-block;
+    grid-column:auto;
+    font-size:.62rem;
+  }
+  .recipe-compact-main{
+    grid-template-columns:38px minmax(0,1fr) 76px;
+    gap:7px;
+  }
+  .recipe-icon.compact{
+    width:38px;
+    height:38px;
+    font-size:1.1rem;
+  }
+  .recipe-compact-copy strong{
+    font-size:.87rem;
+  }
+  .compact-action{
+    min-width:72px;
+    max-width:76px;
+    padding-inline:4px;
+    font-size:.66rem;
+  }
+  .recipe-facts{
+    gap:4px;
+  }
+  .recipe-facts span{
+    padding:4px 6px;
+    font-size:.61rem;
+  }
+}
