@@ -339,9 +339,9 @@ Se mantienen todas las habilidades, pasivas, drops y reglas territoriales docume
 
 Primera curva:
 
-- Nv.1 → 2: 60 XP.
-- Nv.2 → 3: 100 XP.
-- Nv.3 → 4: 160 XP.
+- Nv.1 → 2: **45 XP**.
+- Nv.2 → 3: **90 XP**.
+- Nv.3 → 4: **150 XP**.
 
 XP base de enemigos:
 
@@ -351,6 +351,19 @@ XP base de enemigos:
 - Gran Jabalí: 90 total.
 
 La XP de un encuentro se reparte entre participantes.
+
+### Ajuste de XP tras simulación de ciclo v1
+
+La primera curva 60 / 100 / 160 dejó a los aventureros demasiado retrasados respecto del crecimiento de la ciudad.
+
+Con la curva **45 / 90 / 150** y el perfil Normal:
+
+- Ciudad Nv.2: ~16 min.
+- Ciudad Nv.3: ~35 min.
+- al alcanzar Ciudad Nv.3, aproximadamente **54 % de los fundadores ya está en Nv.2 o superior**;
+- nivel medio de los fundadores en ese punto: ~1,54.
+
+Este valor se acepta como **baseline EN PRUEBA**, porque mantiene diferencias naturales entre aventureros sin permitir que todos superen demasiado pronto a la ciudad.
 
 ### 10.1. Caer a 0
 
