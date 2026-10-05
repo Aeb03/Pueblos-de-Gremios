@@ -192,6 +192,7 @@ function loadState(){
       ?merged.inventory.ironSwords.map(sword=>({...sword,listed:Boolean(sword.listed)}))
       :[];
     merged.smithyBook.entries=Array.isArray(merged.smithyBook.entries)?merged.smithyBook.entries:[];
+    merged.smithyBook.unread=merged.smithyBook.entries.filter(entry=>entry.unread).length;
     return merged;
   }catch{
     return defaultState();
@@ -711,7 +712,8 @@ function catchUpSmithyTraffic(){
   const now=Date.now();
 
   if(state.smithyTraffic.activeVisitor&&now>=state.smithyTraffic.activeVisitor.endsAt){
-    resolveSmithyVisitor(state.smithyTraffic.activeVisitor);
+    const expiredVisitor=state.smithyTraffic.activeVisitor;
+    resolveSmithyVisitor(expiredVisitor,expiredVisitor.endsAt);
   }
 
   if(state.smithyTraffic.activeVisitor)return;
