@@ -1,9 +1,16 @@
-const APP_VERSION='0.2.0';
+const APP_VERSION='0.2.1';
 const SAVE_KEY='pueblos-gremios-save-v0.2.0';
 const EXPEDITION_DURATION_MS=30_000;
 const MINING_XP_STEP=100;
 
-const titles={city:'Villa del Roble',workers:'Trabajadores',expedition:'Expedición',kingdom:'Reino de Ardel',menu:'Menú'};
+const titles={
+  city:'Villa del Roble',
+  workers:'Trabajadores',
+  expedition:'Expedición',
+  kingdom:'Reino de Ardel',
+  inventory:'Inventario',
+  menu:'Menú'
+};
 const screens=[...document.querySelectorAll('.screen')];
 const nav=[...document.querySelectorAll('.nav-btn')];
 const title=document.getElementById('screenTitle');
@@ -11,9 +18,7 @@ const title=document.getElementById('screenTitle');
 const defaultState=()=>({
   version:APP_VERSION,
   resources:{coins:1240,wood:86,iron:42,stone:0},
-  workers:{
-    mara:{miningXp:0}
-  },
+  workers:{mara:{miningXp:0}},
   activeExpedition:null,
   lastMessage:''
 });
@@ -26,6 +31,7 @@ function loadState(){
     return {
       ...defaultState(),
       ...saved,
+      version:APP_VERSION,
       resources:{...defaultState().resources,...(saved.resources||{})},
       workers:{
         ...defaultState().workers,
@@ -41,6 +47,7 @@ function loadState(){
 let state=loadState();
 
 function saveState(){
+  state.version=APP_VERSION;
   localStorage.setItem(SAVE_KEY,JSON.stringify(state));
 }
 
@@ -58,25 +65,80 @@ document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=
 const dialog=document.getElementById('buildingDialog');
 const buildingName=document.getElementById('buildingName');
 const buildingCopy=document.getElementById('buildingCopy');
-const copy={
-  Ayuntamiento:'Centro administrativo del asentamiento. Aquí se gestionará el crecimiento y el prestigio.',
-  Taberna:'Atención de aventureros, cocina, comida, bebida y rumores.',
-  Herrería:'Producción de herramientas, armas y encargos especiales.',
-  Carpintería:'Madera, muebles, herramientas y componentes para otros edificios.',
-  Posada:'Alojamiento para aventureros, descanso y servicios de hospedaje.'
+const buildingResources=document.getElementById('buildingResources');
+const buildingResourceEmpty=document.getElementById('buildingResourceEmpty');
+let currentBuilding='';
+
+const buildingInfo={
+  Ayuntamiento:{
+    copy:'Centro administrativo del asentamiento. Aquí se gestionará el crecimiento y el prestigio.',
+    resources:[],
+    empty:'No usa materiales productivos directos.'
+  },
+  Taberna:{
+    copy:'Atención de aventureros, cocina, comida, bebida y rumores.',
+    resources:[],
+    empty:'Los alimentos, bebidas e ingredientes aparecerán aquí cuando incorporemos la producción de Taberna.'
+  },
+  Herrería:{
+    copy:'Producción de herramientas, armas y encargos especiales.',
+    resources:[
+      {icon:'⛏️',label:'Hierro',key:'iron'},
+      {icon:'🪨',label:'Piedra',key:'stone'}
+    ],
+    empty:''
+  },
+  Carpintería:{
+    copy:'Madera, muebles, herramientas y componentes para otros edificios.',
+    resources:[
+      {icon:'🪵',label:'Madera',key:'wood'}
+    ],
+    empty:''
+  },
+  Posada:{
+    copy:'Alojamiento para aventureros, descanso y servicios de hospedaje.',
+    resources:[],
+    empty:'La Posada mostrará aquí ocupación y suministros cuando incorporemos su sistema.'
+  }
 };
+
+function renderBuildingResources(name){
+  const info=buildingInfo[name]||{resources:[],empty:''};
+  buildingResources.replaceChildren();
+
+  info.resources.forEach(resource=>{
+    const chip=document.createElement('div');
+    chip.className='building-resource-chip';
+
+    const label=document.createElement('span');
+    label.textContent=`${resource.icon} ${resource.label}`;
+
+    const value=document.createElement('strong');
+    value.textContent=formatNumber(state.resources[resource.key]||0);
+
+    chip.append(label,value);
+    buildingResources.append(chip);
+  });
+
+  buildingResourceEmpty.textContent=info.resources.length?'':info.empty;
+  buildingResourceEmpty.hidden=info.resources.length>0||!info.empty;
+}
+
 document.querySelectorAll('[data-building]').forEach(b=>b.addEventListener('click',()=>{
   const n=b.dataset.building;
+  currentBuilding=n;
   buildingName.textContent=n;
-  buildingCopy.textContent=copy[n]||'Gestión del edificio.';
+  buildingCopy.textContent=buildingInfo[n]?.copy||'Gestión del edificio.';
+  renderBuildingResources(n);
   dialog.showModal();
 }));
 
 const els={
   coins:document.getElementById('coinsValue'),
-  wood:document.getElementById('woodValue'),
-  iron:document.getElementById('ironValue'),
-  stone:document.getElementById('stoneValue'),
+  inventoryCoins:document.getElementById('inventoryCoins'),
+  inventoryWood:document.getElementById('inventoryWood'),
+  inventoryIron:document.getElementById('inventoryIron'),
+  inventoryStone:document.getElementById('inventoryStone'),
   maraProfessionLevel:document.getElementById('maraProfessionLevel'),
   maraMiningLevel:document.getElementById('maraMiningLevel'),
   maraMiningXp:document.getElementById('maraMiningXp'),
@@ -157,9 +219,12 @@ function render(){
   resolveExpiredExpedition();
 
   els.coins.textContent=formatNumber(state.resources.coins);
-  els.wood.textContent=formatNumber(state.resources.wood);
-  els.iron.textContent=formatNumber(state.resources.iron);
-  els.stone.textContent=formatNumber(state.resources.stone);
+  els.inventoryCoins.textContent=formatNumber(state.resources.coins);
+  els.inventoryWood.textContent=formatNumber(state.resources.wood);
+  els.inventoryIron.textContent=formatNumber(state.resources.iron);
+  els.inventoryStone.textContent=formatNumber(state.resources.stone);
+
+  if(dialog.open&&currentBuilding)renderBuildingResources(currentBuilding);
 
   const level=miningLevel();
   const levelBase=(level-1)*MINING_XP_STEP;
@@ -238,7 +303,7 @@ if('serviceWorker' in navigator){
   });
   window.addEventListener('load',async()=>{
     try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=0.2.0',{updateViaCache:'none'});
+      const reg=await navigator.serviceWorker.register('./sw.js?v=0.2.1',{updateViaCache:'none'});
       await reg.update();
     }catch{}
   });
