@@ -87,6 +87,7 @@ function make(classKey='warrior'){
   const result=COMBAT.resolveEncounter(a,'boar',2,DATA,rngSequence([.9,.9,.999]));
   assert.strictEqual(result.won,false);
   assert.strictEqual(result.adventurer.hpCurrent,0);
+  assert.strictEqual(result.hpLoss,a.hpCurrent,'una derrota que incapacita debe registrar la pérdida total de PV');
   assert.strictEqual(result.adventurer.status,'Incapacitado');
   assert.strictEqual(result.xpLost,9);
   assert.strictEqual(result.adventurer.xp,11);
