@@ -1822,27 +1822,98 @@ El Mesón usa esa información para generar comentarios contextuales.
 
 ---
 
-## 34. Combate — orientación mínima actual
+## 34. Combate — simulación probabilística, no combate persistente
 
-Todavía no está cerrado el motor final.
+Decisión arquitectónica aprobada:
 
-Dirección aceptada:
+**Los combates NO se ejecutan continuamente en primer plano ni en segundo plano.**
 
-- combate no visual;
-- micro-simulación por rondas/fases;
-- Iniciativa;
+El juego no debe mantener cientos o miles de peleas resolviéndose ronda por ronda de forma persistente, porque eso generaría un flujo innecesario de cálculos, eventos y datos.
+
+Las estadísticas de enemigos, aventureros, equipo, habilidades, estados y composición del grupo existen para alimentar un **motor de resolución probabilística de combate**.
+
+### Principio
+
+Cuando una misión/salida necesita resolver un enfrentamiento, el motor toma una instantánea de los datos relevantes:
+
+- nivel;
 - Vida;
-- daño;
+- Maná;
+- Ataque;
 - Defensa;
+- Iniciativa;
 - habilidades;
 - estados;
-- comportamiento por IA.
+- equipo y calidad;
+- composición del grupo;
+- sinergias;
+- enemigo(s);
+- cantidad;
+- rareza;
+- terreno/amenaza;
+- preparación, comida, afilado, provisiones, etc.
 
-Para Herida, como primera referencia de este nuevo sistema:
+Con esos datos calcula:
 
-- daño periódico al final de rondas durante una duración limitada.
+- probabilidad de victoria;
+- riesgo de heridas;
+- consumo esperado de recursos/provisiones;
+- posibilidad de incapacitación;
+- duración estimada;
+- calidad del resultado;
+- drops posibles;
+- XP;
+- demás consecuencias.
 
-Debe diseñarse junto con las estadísticas definitivas de los aventureros.
+Luego **resuelve el resultado**, sin mantener un combate activo corriendo en tiempo real.
+
+### Simulación interna
+
+Puede existir una micro-simulación breve en memoria para obtener un resultado más creíble —por ejemplo, unas pocas iteraciones o rondas abstractas—, pero:
+
+- se ejecuta sólo al momento de resolver;
+- no permanece activa durante todo el tiempo de misión;
+- no genera tráfico continuo;
+- no requiere sincronizar cada golpe;
+- no almacena cada acción individual salvo que sea necesario para depuración.
+
+### Informe de combate
+
+El jugador puede recibir un resumen narrativo construido a partir del resultado:
+
+> La manada concentró sus ataques sobre el Explorador.  
+> El Guerrero absorbió la mayor parte del daño.  
+> El Sanador gastó gran parte de su Maná.  
+> Victoria. 1 aventurero volvió herido.
+
+Ese informe puede usar los datos calculados para dar sensación de combate sin que el sistema haya tenido que representar cada golpe en vivo.
+
+### Estados como Herida
+
+Herida y otros estados siguen siendo útiles como variables del modelo.
+
+Por ejemplo, Herida puede aumentar:
+
+- daño esperado durante el enfrentamiento;
+- riesgo de terminar herido;
+- consumo de curación;
+- probabilidad de incapacitación.
+
+No es obligatorio simular literalmente cada turno para que el estado tenga efecto.
+
+### Objetivo técnico
+
+**Muchos aventureros pueden estar realizando actividades simultáneamente sin que cada actividad sea un proceso de combate activo.**
+
+El sistema conserva sólo:
+
+- estado inicial relevante;
+- hora de inicio/fin;
+- semilla/resultado cuando corresponda;
+- resultado final;
+- cambios persistentes importantes.
+
+Esto permite escalar el Mundo y sus Reinos sin convertir la simulación en una corriente permanente de datos.
 
 ---
 
