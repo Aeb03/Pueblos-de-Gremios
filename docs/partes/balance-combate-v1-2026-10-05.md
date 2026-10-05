@@ -8,6 +8,12 @@ Resultado técnico: **ejecución completa sin error de proceso**.
 
 > Esta es una prueba automática del simulador de desarrollo. No es prueba funcional del juego ni validación Android.
 
+## Nota de revisión
+
+Este baseline fue generado antes de aclarar que las afinidades de Estado **no implican habilidades de Estado desbloqueadas en Nv.1**.
+
+Por lo tanto, sus resultados se conservan como histórico técnico pero quedan **SUPERADOS para balance fino**. La siguiente corrida utilizará Nv.1 sin Estados ofensivos de clase desbloqueados y servirá como nueva referencia.
+
 ## Resultados
 
 | Escenario | Victoria | Desgaste Vida | ≥1 incapacitado | Maná consumido |
