@@ -1,4 +1,4 @@
-const CACHE='pueblos-gremios-v0.9.0a';
+const CACHE='pueblos-gremios-v0.9.0b';
 const ASSETS=[
   './index.html?v=0.9.0a',
   './styles.css?v=0.9.0a',
