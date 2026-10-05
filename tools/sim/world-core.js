@@ -248,7 +248,7 @@ function repairStep(state,a,rng){
 function wearEquipment(a,intensity,rng){
   for(const [,eq] of equipmentEntries(a)){
     if(eq.durability<=0)continue;
-    if(rng()<clamp(.62*intensity,0,1)){
+    if(rng()<clamp(.80*intensity,0,1)){
       let wear=1;
       if(intensity>=1.8&&rng()<.45)wear++;
       eq.durability=Math.max(0,eq.durability-wear);
@@ -487,6 +487,7 @@ function runCity(seed,profileKey){
     foundersAtLeast2AtCity3:city.foundersAtLeast2AtCity3,
     totalDowns:adv.reduce((s,a)=>s+a.downs,0),
     totalXpLost:adv.reduce((s,a)=>s+a.xpLost,0),
+    totalFights:adv.reduce((s,a)=>s+a.fights,0),
     rests:adv.reduce((s,a)=>s+a.rests,0),repairs:adv.reduce((s,a)=>s+a.repairs,0),
     earnings:earned,spending:spent,gearSpend:spend.gear,restSpend:spend.rest,repairSpend:spend.repair,
     recurringSpend:recurring,
@@ -533,6 +534,7 @@ function summarize(profileKey,rows){
     foundersLevelAtCity3:mean(rows.filter(r=>r.foundersLevelAtCity3!==null).map(r=>r.foundersLevelAtCity3)),
     foundersAtLeast2AtCity3:mean(rows.filter(r=>r.foundersAtLeast2AtCity3!==null).map(r=>r.foundersAtLeast2AtCity3)),
     downsMean:mean(rows.map(r=>r.totalDowns)),xpLostMean:mean(rows.map(r=>r.totalXpLost)),
+    fightsMean:mean(rows.map(r=>r.totalFights)),
     restsMean:mean(rows.map(r=>r.rests)),repairsMean:mean(rows.map(r=>r.repairs)),
     gearSpendMean:mean(rows.map(r=>r.gearSpend)),restSpendMean:mean(rows.map(r=>r.restSpend)),
     repairSpendMean:mean(rows.map(r=>r.repairSpend)),recurringSpendMean:mean(rows.map(r=>r.recurringSpend)),
