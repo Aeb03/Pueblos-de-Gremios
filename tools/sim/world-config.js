@@ -19,14 +19,17 @@ const CLASS={
 };
 
 const ITEM={
-  dagger:{price:24,class:['explorer'],attack:2,defense:0,initiative:0,mana:0},
-  bow:{price:28,class:['explorer'],attack:3,defense:0,initiative:1,mana:0},
-  staff:{price:26,class:['healer','mage'],attack:1,defense:0,initiative:0,mana:12},
-  shield:{price:22,class:['warrior'],attack:0,defense:3,initiative:-1,mana:0},
-  leather:{price:24,class:['warrior','explorer','healer','mage'],attack:0,defense:3,initiative:0,mana:0},
-  gloves:{price:12,class:['warrior','explorer','healer','mage'],attack:0,defense:1,initiative:0,mana:0},
-  boots:{price:12,class:['warrior','explorer','healer','mage'],attack:0,defense:0,initiative:1,mana:0}
+  dagger:{price:24,class:['explorer'],attack:2,defense:0,initiative:0,mana:0,durability:14,slot:'weapon'},
+  bow:{price:28,class:['explorer'],attack:3,defense:0,initiative:1,mana:0,durability:14,slot:'weapon'},
+  staff:{price:26,class:['healer','mage'],attack:1,defense:0,initiative:0,mana:12,durability:14,slot:'weapon'},
+  shield:{price:22,class:['warrior'],attack:0,defense:3,initiative:-1,mana:0,durability:14,slot:'offhand'},
+  leather:{price:24,class:['warrior','explorer','healer','mage'],attack:0,defense:3,initiative:0,mana:0,durability:16,slot:'body'},
+  gloves:{price:12,class:['warrior','explorer','healer','mage'],attack:0,defense:1,initiative:0,mana:0,durability:12,slot:'hands'},
+  boots:{price:12,class:['warrior','explorer','healer','mage'],attack:0,defense:0,initiative:1,mana:0,durability:12,slot:'feet'}
 };
+
+const REPAIR_RATE=.22;
+const REPAIR_THRESHOLD=.35;
 
 const RECIPES={
   dagger:{iron:3,firewood:1},
@@ -41,4 +44,4 @@ const RECIPES={
 const ALPHA_CHANCE=[.02,.04,.07,.10,.14];
 const BOSS_CHANCE=[.005,.01,.02,.04,.07];
 
-module.exports={TICK_MINUTES,MAX_MINUTES,PROFILES,CLASS,ITEM,RECIPES,ALPHA_CHANCE,BOSS_CHANCE};
+module.exports={TICK_MINUTES,MAX_MINUTES,PROFILES,CLASS,ITEM,RECIPES,ALPHA_CHANCE,BOSS_CHANCE,REPAIR_RATE,REPAIR_THRESHOLD};
