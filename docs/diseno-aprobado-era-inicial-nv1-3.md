@@ -1006,7 +1006,21 @@ Principalmente:
 
 El Jabalí da más Carne que el Lobo.
 
+Balance inicial cerrado para playtest:
+
+- Carne: **90 %**, 1–2 unidades.
+- Piel de Jabalí: **65 %**, 1 unidad.
+- Tendón: **40 %**, 1 unidad.
+- Colmillo de Jabalí: **12 %**, 1 unidad.
+
 El Cuchillo de caza es especialmente útil para aprovechar esta presa.
+
+### Comportamiento de combate cerrado
+
+- **Piel gruesa:** -10 % al daño físico recibido.
+- **Embestida:** ataque de ~125 % del daño básico; puede reducir Defensa durante 1 ronda.
+- **Arremetida salvaje:** se habilita por debajo de 35 % de Vida y puede ejecutar un ataque de ~140 % del daño básico; enfriamiento interno para que no se repita cada ronda.
+- Prioridad de IA: objetivo cercano / vulnerable; no coordina foco como los Lobos.
 
 ### Amenaza
 
@@ -1055,6 +1069,16 @@ La probabilidad base será baja y aumentará dinámicamente según factores como
 - tiempo transcurrido desde la última aparición;
 - futuros modificadores ecológicos.
 
+Primera tabla de prueba por chequeo ecológico (aprox. cada 5 min de actividad):
+
+- Controlada → **2 %**.
+- Creciente → **4 %**.
+- Alta → **7 %**.
+- Crítica → **10 %**.
+- Inminente → **14 %**.
+
+Cada chequeo fallido puede sumar una pequeña bonificación acumulativa de aparición, con tope, para evitar rachas excesivamente largas sin Raro. Tras aparecer un Alfa, esa acumulación se reinicia.
+
 Principio:
 
 **Nv.1 = imposible. Desde Nv.2 = posibilidad siempre existente, cuya probabilidad aumenta o disminuye según el estado del mundo.**
@@ -1095,9 +1119,15 @@ Referencia inicial:
 
 Mientras el Alfa esté vivo:
 
-- los Lobos aliados reciben una bonificación moderada;
+- todos los Lobos aliados reciben **+10 % daño**;
 - los Lobos comunes siguen beneficiándose de Fuerza de la manada;
-- las bonificaciones tendrán un límite para evitar escalado excesivo.
+- las bonificaciones combinadas quedan limitadas para evitar escalado excesivo.
+
+**Aullido de caza** se usa como máximo una vez cada 3 rondas y otorga durante 2 rondas una mejora temporal de Iniciativa a la manada.
+
+**Mordisco Alfa** tiene una probabilidad inicial de **25 %** de aplicar Herida.
+
+**Salto del Alfa** prioriza un objetivo ya atacado por otro Lobo y reduce su Defensa durante 1 ronda.
 
 ### Dificultad conceptual
 
@@ -1108,9 +1138,9 @@ Mientras el Alfa esté vivo:
 
 ### XP
 
-Balance provisional:
+Balance inicial cerrado para playtest:
 
-- aproximadamente 35–40 XP.
+- **38 XP**.
 
 ### Drops
 
@@ -1123,6 +1153,14 @@ Conserva la familia de materiales Lobo:
 La Carne no necesita una variante Alfa si no aporta una diferencia real.
 
 Piel y Colmillo sí conservan el origen.
+
+Balance inicial de drops:
+
+- Carne: **100 %**, 1–2 unidades.
+- **Piel de Lobo Alfa: 100 %**, 1 unidad.
+- **Colmillo de Lobo Alfa: 30 %**, 1 unidad.
+
+La Piel Alfa garantizada asegura que encontrar y derrotar al primer Raro siempre produzca al menos un material especial útil.
 
 ### Identidad material de la rama Lobo
 
@@ -1149,12 +1187,15 @@ Mientras exista un Alfa activo:
 
 Derrotarlo reduce de forma importante la Presencia.
 
-Referencia provisional:
+Balance inicial cerrado:
 
-- Lobo Alfa derrotado → aproximadamente -12 Presencia;
+- Lobo Alfa derrotado → **-12 Presencia**;
 - Lobos comunes del encuentro reducen su valor normal.
 
-Puede existir un estado temporal tipo **Manada desorganizada** que reduzca durante un tiempo el crecimiento de Lobos.
+Después de derrotarlo se aplica **Manada desorganizada** durante 10 minutos de actividad:
+
+- el crecimiento de Presencia de Lobos se reduce aproximadamente a la mitad;
+- no impide que aparezcan Lobos comunes.
 
 ### Misiones
 
@@ -1197,6 +1238,16 @@ La probabilidad base será baja y aumentará dinámicamente según factores como
 - tiempo transcurrido desde la última aparición de Boss;
 - tiempo transcurrido desde que la ciudad alcanzó Nv.3;
 - futuros modificadores ecológicos o de temporada.
+
+Primera tabla de prueba por chequeo ecológico (aprox. cada 5 min de actividad):
+
+- Controlada → **0,5 %**.
+- Creciente → **1 %**.
+- Alta → **2 %**.
+- Crítica → **4 %**.
+- Inminente → **7 %**.
+
+Cada chequeo fallido puede sumar una pequeña bonificación acumulativa, con tope. Tras aparecer un Boss, esa acumulación se reinicia. La chance del Boss siempre permanece sensiblemente por debajo de la de un Raro.
 
 Principio:
 
@@ -1244,13 +1295,22 @@ El Gran Jabalí es la culminación de la identidad de su especie:
 
 #### Fase final — Furia acorralada
 
-Cuando baja de cierto porcentaje de Vida:
+Al bajar de **30 % de Vida**:
 
-- aumenta su daño;
-- puede actuar con mayor frecuencia o mejorar su presión ofensiva;
+- +20 % daño;
+- mejora su prioridad de uso de Embestida/Cornada;
 - no recupera Vida gratuitamente.
 
 La intención es que el final del combate sea más peligroso y memorable.
+
+#### Valores relativos de habilidades
+
+Se cierran como referencia independiente de las estadísticas absolutas de los aventureros:
+
+- **Piel monumental:** -15 % daño físico recibido.
+- **Cornada brutal:** ~130 % del daño básico y 25 % de aplicar Herida.
+- **Embestida arrolladora:** ~150 % al objetivo principal y ~50 % de daño secundario al resto del grupo.
+- **Pisotón:** ~60 % del daño básico a todos los integrantes; no se usa más de una vez cada 3 rondas.
 
 #### Dificultad conceptual
 
@@ -1263,9 +1323,9 @@ Debe poder derrotarse con contenido disponible **antes** de cualquier recompensa
 
 #### XP
 
-Balance provisional:
+Balance inicial cerrado para playtest:
 
-- aproximadamente **80–100 XP totales** de encuentro, distribuidos por participación según el sistema final.
+- **90 XP totales** de encuentro, distribuidos por participación según el sistema final.
 
 #### Monedas
 
@@ -1281,6 +1341,15 @@ Conserva la familia de materiales Jabalí:
 - **Colmillo de Gran Jabalí**.
 
 Piel y Colmillo conservan siempre su origen Boss.
+
+Balance inicial de drops:
+
+- Carne: **100 %**, 3–5 unidades.
+- **Piel de Gran Jabalí: 100 %**, 1 unidad.
+- Tendón de Gran Jabalí: **50 %**, 1 unidad.
+- **Colmillo de Gran Jabalí: 40 %**, 1 unidad.
+
+La Piel de Gran Jabalí es el material Boss garantizado del encuentro. El Colmillo funciona como segundo premio especial menos frecuente.
 
 #### Identidad material de la rama Jabalí
 
@@ -1308,7 +1377,10 @@ Mientras exista un Gran Jabalí activo:
 
 Derrotarlo produce una reducción fuerte de Presencia/Amenaza de la rama Jabalí.
 
-El valor exacto se balanceará con playtest.
+Balance inicial cerrado:
+
+- Gran Jabalí derrotado → **-25 Presencia** de la rama Jabalí.
+- durante 10 minutos de actividad posteriores, el crecimiento de Jabalíes se reduce aproximadamente a la mitad (**Territorio calmado**).
 
 #### Misiones
 
@@ -1341,6 +1413,17 @@ En este primer tramo:
 
 - Lobo Alfa → mínimo Nv.2.
 - Gran Jabalí → mínimo Nv.3.
+
+### Estado del bloque de enemigos Nv.1–3
+
+Con estas decisiones quedan **CERRADOS EN PRUEBA**:
+
+- Lobo común.
+- Jabalí común.
+- Lobo Alfa.
+- Gran Jabalí.
+
+Los valores absolutos de Vida, Daño y Defensa se fijarán al cerrar las estadísticas de los aventureros iniciales, manteniendo las relaciones de dificultad definidas en estas fichas. El resto de comportamiento, drops, aparición, amenaza y roles queda asentado como base de implementación.
 
 
 
