@@ -1,7 +1,7 @@
 'use strict';
 
 const {
-  TICK_MINUTES,MAX_MINUTES,PROFILES,CLASS,ITEM,RECIPES,
+  TICK_MINUTES,MAX_MINUTES,PROFILES,CLASS,ITEM,RECIPES,FOOD,MATERIAL,CITY_LOOT_MIN_TREASURY,
   ALPHA_CHANCE,BOSS_CHANCE,REPAIR_RATE,REPAIR_THRESHOLD
 }=require('./world-config');
 
@@ -38,7 +38,8 @@ function newAdventurer(cls,id,rng){
     hpMax:b.hp,hp:b.hp,manaMax:b.mana,mana:b.mana,
     attack:b.attack,defense:b.defense,initiative:b.initiative,evasion:b.evasion,
     coins:randInt(rng,55,75),earned:0,spent:0,rests:0,repairs:0,downs:0,fights:0,
-    lootValue:0,
+    meals:0,rations:0,rationPrepared:false,
+    loot:{},
     spending:{gear:0,rest:0,repair:0,consumable:0},
     equipment:{},
     active:true
@@ -52,13 +53,19 @@ function initialState(rng,profile){
       level:1,dev:0,level2At:null,level3At:null,
       foundersLevelAtCity3:null,foundersAtLeast2AtCity3:null,
       coins:240,missionPaid:0,sales:0,serviceRevenue:0,repairRevenue:0,lootPurchases:0,
-      resources:{iron:8,stone:6,wood:10,firewood:6,meat:4,skin:1,tendon:1},
+      resources:{
+        iron:8,stone:6,wood:10,firewood:6,meat:4,skin:1,tendon:1,
+        wolfSkin:0,boarSkin:0,wolfFang:0,boarTusk:0,
+        alphaWolfSkin:0,alphaFang:0,greatBoarSkin:0,greatBoarTendon:0,greatBoarTusk:0
+      },
       stock:{dagger:0,bow:0,staff:0,shield:0,leather:0,gloves:0,boots:0},
       produced:{dagger:0,bow:0,staff:0,shield:0,leather:0,gloves:0,boots:0},
       textile:false,textileAt:null,presence:{wolf:25,boar:20},
       alphaSeen:0,bossSeen:0,alphaDefeated:0,bossDefeated:0,alphaPity:0,bossPity:0,
       missionsCompleted:0,workerOutings:0,blockedPurchases:0,repairBlocked:0,
       demand:{attempts:0,fulfilled:0,stockMiss:0,coinMiss:0},
+      food:{platesSold:0,rationsSold:0,stockMiss:0},
+      lootMarket:{offerUnits:0,acceptedUnits:0,noDemandUnits:0,treasuryRejectUnits:0,valuePaid:0},
       threatIncidents:0,cityAttacks:0,workerInjuries:0,resourceLossValue:0
     },
     adv:[
@@ -123,7 +130,28 @@ function workerStep(state,rng){
   }
 }
 
-const canCraft=(city,item)=>Object.entries(RECIPES[item]).every(([k,v])=>(city.resources[k]||0)>=v);
+function totalHide(city){
+  return ['skin','wolfSkin','boarSkin','alphaWolfSkin','greatBoarSkin']
+    .reduce((sum,key)=>sum+(city.resources[key]||0),0);
+}
+function hasInput(city,key,qty){
+  if(key==='hide')return totalHide(city)>=qty;
+  return (city.resources[key]||0)>=qty;
+}
+function consumeInput(city,key,qty){
+  if(key!=='hide'){
+    city.resources[key]-=qty;
+    return;
+  }
+  let remaining=qty;
+  for(const hideKey of ['skin','wolfSkin','boarSkin','alphaWolfSkin','greatBoarSkin']){
+    if(remaining<=0)break;
+    const take=Math.min(city.resources[hideKey]||0,remaining);
+    city.resources[hideKey]-=take;
+    remaining-=take;
+  }
+}
+const canCraft=(city,item)=>Object.entries(RECIPES[item]).every(([k,v])=>hasInput(city,k,v));
 function craftStep(state,rng){
   const {city,profile}=state;
   const available=['dagger','bow','staff','shield'];
@@ -136,7 +164,7 @@ function craftStep(state,rng){
       .sort((a,b)=>city.stock[a]-city.stock[b]);
     if(!candidates.length)break;
     const item=candidates[0];
-    for(const [k,v] of Object.entries(RECIPES[item]))city.resources[k]-=v;
+    for(const [k,v] of Object.entries(RECIPES[item]))consumeInput(city,k,v);
     city.stock[item]++;city.produced[item]++;city.dev+=.45;
   }
 }
@@ -278,15 +306,133 @@ function restStep(state,a){
   return true;
 }
 
+function addLoot(a,key,qty=1){
+  a.loot[key]=(a.loot[key]||0)+qty;
+}
+function rollCommonLoot(a,enemy,count,rng){
+  for(let i=0;i<count;i++){
+    if(enemy==='wolf'){
+      if(rng()<.70)addLoot(a,'meat',1);
+      if(rng()<.55)addLoot(a,'wolfSkin',1);
+      if(rng()<.15)addLoot(a,'wolfFang',1);
+    }else{
+      if(rng()<.90)addLoot(a,'meat',randInt(rng,1,2));
+      if(rng()<.65)addLoot(a,'boarSkin',1);
+      if(rng()<.40)addLoot(a,'tendon',1);
+      if(rng()<.12)addLoot(a,'boarTusk',1);
+    }
+  }
+}
+function rollAlphaLoot(group,rng){
+  const living=group.filter(a=>a.hp>0);
+  if(!living.length)return;
+  const owner=choice(rng,living);
+  addLoot(owner,'meat',randInt(rng,1,2));
+  addLoot(owner,'alphaWolfSkin',1);
+  if(rng()<.30)addLoot(owner,'alphaFang',1);
+  for(let i=0;i<2;i++)rollCommonLoot(choice(rng,living),'wolf',1,rng);
+}
+function rollBossLoot(group,rng){
+  const living=group.filter(a=>a.hp>0);
+  if(!living.length)return;
+  const owner=choice(rng,living);
+  addLoot(owner,'meat',randInt(rng,3,5));
+  addLoot(owner,'greatBoarSkin',1);
+  if(rng()<.50)addLoot(owner,'greatBoarTendon',1);
+  if(rng()<.40)addLoot(owner,'greatBoarTusk',1);
+}
+function materialTarget(city,key){
+  const cfg=MATERIAL[key];
+  if(!cfg)return 0;
+  return cfg.target[Math.max(0,Math.min(2,city.level-1))]||0;
+}
 function sellLootStep(state,a,rng){
   const {city,profile}=state;
-  if(a.lootValue<4||rng()>profile.sellLoot)return false;
-  const value=Math.max(1,Math.floor(a.lootValue));
-  if(city.coins<value)return false;
+  if(rng()>profile.sellLoot)return false;
 
-  city.coins-=value;city.lootPurchases+=value;
-  a.coins+=value;a.earned+=value;a.lootValue=0;
+  let sold=false;
+  for(const [key,qtyRaw] of Object.entries(a.loot)){
+    let qty=Math.floor(qtyRaw||0);
+    if(qty<=0||!MATERIAL[key])continue;
+
+    city.lootMarket.offerUnits+=qty;
+    const target=materialTarget(city,key);
+    const have=city.resources[key]||0;
+    const need=Math.max(0,target-have);
+
+    if(need<=0){
+      city.lootMarket.noDemandUnits+=qty;
+      continue;
+    }
+
+    const price=MATERIAL[key].price;
+    const spendable=Math.max(0,city.coins-CITY_LOOT_MIN_TREASURY);
+    const affordable=Math.floor(spendable/price);
+    const accepted=Math.min(qty,need,affordable);
+
+    if(accepted<=0){
+      city.lootMarket.treasuryRejectUnits+=qty;
+      continue;
+    }
+
+    const value=accepted*price;
+    city.coins-=value;
+    city.lootPurchases+=value;
+    city.lootMarket.valuePaid+=value;
+    city.lootMarket.acceptedUnits+=accepted;
+    city.resources[key]=(city.resources[key]||0)+accepted;
+    a.coins+=value;a.earned+=value;
+    a.loot[key]-=accepted;
+    sold=true;
+
+    const remaining=qty-accepted;
+    if(remaining>0){
+      if(accepted>=need)city.lootMarket.noDemandUnits+=remaining;
+      else city.lootMarket.treasuryRejectUnits+=remaining;
+    }
+  }
+  return sold;
+}
+function canServeFood(city,kind){
+  const f=FOOD[kind];
+  return city.resources.meat>=f.meat&&city.resources.firewood>=f.firewood;
+}
+function serveFood(state,a,kind){
+  const {city}=state,f=FOOD[kind];
+  if(!canServeFood(city,kind)){city.food.stockMiss++;return false;}
+  if(a.coins<f.price)return false;
+
+  city.resources.meat-=f.meat;
+  city.resources.firewood-=f.firewood;
+  recordSpend(a,'consumable',f.price);
+  city.coins+=f.price;city.serviceRevenue+=f.price;
+
+  if(kind==='plate'){
+    a.hp=Math.min(a.hpMax,a.hp+Math.ceil(a.hpMax*f.hpRestore));
+    a.mana=Math.min(a.manaMax,a.mana+Math.ceil(a.manaMax*f.manaRestore));
+    a.meals++;city.food.platesSold++;
+  }else{
+    a.rationPrepared=true;a.rations++;city.food.rationsSold++;
+  }
   return true;
+}
+function plateStep(state,a,rng){
+  const hp=a.hp/a.hpMax,mana=a.manaMax?a.mana/a.manaMax:1;
+  if(hp<state.profile.restHp||mana<state.profile.restMana)return false;
+  if(hp>=.88&&mana>=.80)return false;
+  if(rng()>.55)return false;
+  return serveFood(state,a,'plate');
+}
+function rationStep(state,a,rng,important=false){
+  if(a.rationPrepared)return false;
+  const chance=important?.70:clamp(.12+state.profile.shop*.60,.15,.35);
+  if(rng()>chance)return false;
+  return serveFood(state,a,'ration');
+}
+function prepLossFactor(a){
+  if(!a.rationPrepared)return {hp:1,mana:1};
+  a.rationPrepared=false;
+  return {hp:1-FOOD.ration.hpProtection,mana:1-FOOD.ration.manaProtection};
 }
 
 function commonRisk(a,enemy,count){
@@ -310,14 +456,16 @@ function commonEncounter(state,a,enemy,rng){
   const {city}=state;
   const count=enemy==='wolf'?(rng()<.60?1:(rng()<.75?2:3)):(rng()<.80?1:2);
   const {meanLoss,win}=commonRisk(a,enemy,count);
-  a.hp=Math.max(0,a.hp-Math.ceil(a.hpMax*meanLoss*(.65+rng()*.70)));
-  a.mana=Math.max(0,a.mana-Math.ceil(a.manaMax*({warrior:.10,explorer:.22,healer:.26,mage:.30}[a.cls])*(.65+rng()*.70)));
+  const prep=prepLossFactor(a);
+  a.hp=Math.max(0,a.hp-Math.ceil(a.hpMax*meanLoss*(.65+rng()*.70)*prep.hp));
+  a.mana=Math.max(0,a.mana-Math.ceil(a.manaMax*({warrior:.10,explorer:.22,healer:.26,mage:.30}[a.cls])*(.65+rng()*.70)*prep.mana));
   a.fights++;wearEquipment(a,1,rng);
 
   const won=rng()<win&&a.hp>0;
   if(!won||a.hp<=0){a.hp=0;loseXpOnDown(a);return false;}
 
   gainXp(a,(enemy==='wolf'?10:14)*count);
+  rollCommonLoot(a,enemy,count,rng);
 
   if(rng()<state.profile.paidMission){
     const reward=Math.round((enemy==='wolf'?6:8)*count*state.profile.missionBias);
@@ -325,8 +473,6 @@ function commonEncounter(state,a,enemy,rng){
       city.coins-=reward;city.missionPaid+=reward;a.coins+=reward;a.earned+=reward;
     }
     city.missionsCompleted++;city.dev+=.22;
-  }else{
-    a.lootValue+=(enemy==='wolf'?randInt(rng,2,5):randInt(rng,3,6))*count;
   }
 
   city.presence[enemy]=Math.max(0,city.presence[enemy]-(enemy==='wolf'?3:4)*count);
@@ -354,15 +500,21 @@ function groupEncounter(state,group,kind,rng){
     xpTotal=90;reward=60;presenceDrop=25;
   }
 
+  for(const a of group)rationStep(state,a,rng,true);
+
   const won=rng()<win;
   for(const a of group){
-    const individual=clamp(hpLossMean*(.72+rng()*.56),0,.98);
+    const prep=prepLossFactor(a);
+    const individual=clamp(hpLossMean*(.72+rng()*.56)*prep.hp,0,.98);
     a.hp=Math.max(0,a.hp-Math.ceil(a.hpMax*individual));
-    a.mana=Math.max(0,a.mana-Math.ceil(a.manaMax*manaUse*(.75+rng()*.35)));
+    a.mana=Math.max(0,a.mana-Math.ceil(a.manaMax*manaUse*(.75+rng()*.35)*prep.mana));
     a.fights++;wearEquipment(a,kind==='boss'?2:1.35,rng);
     if(rng()<downChance/group.length||(!won&&rng()<.55)){a.hp=0;loseXpOnDown(a);}
   }
   if(!won)return false;
+
+  if(kind==='alpha')rollAlphaLoot(group,rng);
+  else rollBossLoot(group,rng);
 
   const living=group.filter(a=>a.hp>0),share=living.length?xpTotal/living.length:0;
   for(const a of living)gainXp(a,share);
@@ -458,7 +610,10 @@ function adventurerStep(state,rng){
       }
       a.hp=Math.ceil(a.hpMax*.45);a.mana=Math.ceil(a.manaMax*.50);a.rests++;continue;
     }
-    if(restStep(state,a)||rng()>profile.adv)continue;
+    if(restStep(state,a))continue;
+    plateStep(state,a,rng);
+    if(rng()>profile.adv)continue;
+    rationStep(state,a,rng,false);
     const enemy=city.presence.boar>city.presence.wolf&&rng()<.55?'boar':(rng()<.62?'wolf':'boar');
     commonEncounter(state,a,enemy,rng);
   }
@@ -489,13 +644,17 @@ function runCity(seed,profileKey){
     totalXpLost:adv.reduce((s,a)=>s+a.xpLost,0),
     totalFights:adv.reduce((s,a)=>s+a.fights,0),
     rests:adv.reduce((s,a)=>s+a.rests,0),repairs:adv.reduce((s,a)=>s+a.repairs,0),
-    earnings:earned,spending:spent,gearSpend:spend.gear,restSpend:spend.rest,repairSpend:spend.repair,
+    meals:adv.reduce((s,a)=>s+a.meals,0),rations:adv.reduce((s,a)=>s+a.rations,0),
+    earnings:earned,spending:spent,gearSpend:spend.gear,restSpend:spend.rest,repairSpend:spend.repair,foodSpend:spend.consumable,
     recurringSpend:recurring,
     reinvestRate:earned?spent/earned:0,
     recurringReinvestRate:earned?recurring/earned:0,
     spendShareOfAvailable:(earned+adv.length*65)>0?spent/(earned+adv.length*65):0,
     missionPaid:city.missionPaid,sales:city.sales,serviceRevenue:city.serviceRevenue,repairRevenue:city.repairRevenue,
     lootPurchases:city.lootPurchases,
+    lootOfferUnits:city.lootMarket.offerUnits,lootAcceptedUnits:city.lootMarket.acceptedUnits,
+    lootNoDemandUnits:city.lootMarket.noDemandUnits,lootTreasuryRejectUnits:city.lootMarket.treasuryRejectUnits,
+    platesSold:city.food.platesSold,rationsSold:city.food.rationsSold,foodStockMiss:city.food.stockMiss,
     blockedPurchases:city.blockedPurchases,repairBlocked:city.repairBlocked,
     demandAttempts:city.demand.attempts,demandFulfilled:city.demand.fulfilled,
     demandStockMiss:city.demand.stockMiss,demandCoinMiss:city.demand.coinMiss,
@@ -536,8 +695,10 @@ function summarize(profileKey,rows){
     downsMean:mean(rows.map(r=>r.totalDowns)),xpLostMean:mean(rows.map(r=>r.totalXpLost)),
     fightsMean:mean(rows.map(r=>r.totalFights)),
     restsMean:mean(rows.map(r=>r.rests)),repairsMean:mean(rows.map(r=>r.repairs)),
+    mealsMean:mean(rows.map(r=>r.meals)),rationsMean:mean(rows.map(r=>r.rations)),
     gearSpendMean:mean(rows.map(r=>r.gearSpend)),restSpendMean:mean(rows.map(r=>r.restSpend)),
-    repairSpendMean:mean(rows.map(r=>r.repairSpend)),recurringSpendMean:mean(rows.map(r=>r.recurringSpend)),
+    repairSpendMean:mean(rows.map(r=>r.repairSpend)),foodSpendMean:mean(rows.map(r=>r.foodSpend)),
+    recurringSpendMean:mean(rows.map(r=>r.recurringSpend)),
     reinvestRate:mean(rows.map(r=>r.reinvestRate)),recurringReinvestRate:mean(rows.map(r=>r.recurringReinvestRate)),
     spendShareOfAvailable:mean(rows.map(r=>r.spendShareOfAvailable)),
     cityCoinsMean:mean(rows.map(r=>r.cityCoins)),blockedPurchasesMean:mean(rows.map(r=>r.blockedPurchases)),
@@ -545,6 +706,11 @@ function summarize(profileKey,rows){
     demandFulfilledRate:rows.reduce((s,r)=>s+r.demandAttempts,0)?rows.reduce((s,r)=>s+r.demandFulfilled,0)/rows.reduce((s,r)=>s+r.demandAttempts,0):0,
     demandStockMissRate:rows.reduce((s,r)=>s+r.demandAttempts,0)?rows.reduce((s,r)=>s+r.demandStockMiss,0)/rows.reduce((s,r)=>s+r.demandAttempts,0):0,
     demandCoinMissRate:rows.reduce((s,r)=>s+r.demandAttempts,0)?rows.reduce((s,r)=>s+r.demandCoinMiss,0)/rows.reduce((s,r)=>s+r.demandAttempts,0):0,
+    lootOfferUnitsMean:mean(rows.map(r=>r.lootOfferUnits)),
+    lootAcceptedRate:rows.reduce((s,r)=>s+r.lootOfferUnits,0)?rows.reduce((s,r)=>s+r.lootAcceptedUnits,0)/rows.reduce((s,r)=>s+r.lootOfferUnits,0):0,
+    lootNoDemandRate:rows.reduce((s,r)=>s+r.lootOfferUnits,0)?rows.reduce((s,r)=>s+r.lootNoDemandUnits,0)/rows.reduce((s,r)=>s+r.lootOfferUnits,0):0,
+    lootTreasuryRejectRate:rows.reduce((s,r)=>s+r.lootOfferUnits,0)?rows.reduce((s,r)=>s+r.lootTreasuryRejectUnits,0)/rows.reduce((s,r)=>s+r.lootOfferUnits,0):0,
+    lootPurchaseValueMean:mean(rows.map(r=>r.lootPurchases)),
     alphaSeenRate:rows.filter(r=>r.alphaSeen>0).length/rows.length,
     bossSeenRate:rows.filter(r=>r.bossSeen>0).length/rows.length,
     bossDefeatRate:rows.filter(r=>r.bossDefeated>0).length/rows.length,
