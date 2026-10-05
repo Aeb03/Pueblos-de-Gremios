@@ -496,6 +496,8 @@ function resetTestWorld(){
 }
 
 function isLocalTestHost(){
+  const params=new URLSearchParams(location.search);
+  if(params.get('test')==='1')return true;
   return location.hostname==='127.0.0.1'||location.hostname==='localhost';
 }
 
