@@ -266,7 +266,7 @@ function smithyHasStorageSpace(units=1){
 }
 
 function smithyListedSwords(){
-  return smithyListedSwords();
+  return smithyStorage().ironSwords.filter(sword=>sword.listed);
 }
 
 
@@ -1587,28 +1587,39 @@ function renderSwordInventory(){
   }
 
   swords.forEach((sword,index)=>{
-    const card=document.createElement('article');
-    card.className=`sword-item quality-${sword.qualityTier}`;
+    const row=document.createElement('article');
+    row.className=`smithy-sword-row quality-${sword.qualityTier}`;
 
-    const head=document.createElement('div');
-    head.className='sword-item-head';
-    head.innerHTML=`<strong>⚔️ Espada #${index+1}</strong><span>${sword.qualityLabel} · ${sword.qualityScore}</span>`;
+    const top=document.createElement('div');
+    top.className='smithy-sword-top';
+    top.innerHTML=`
+      <strong>⚔️ Espada #${index+1}</strong>
+      <span>${sword.qualityLabel} · ${sword.qualityScore}</span>
+    `;
 
-    const stats=document.createElement('div');
-    stats.className='sword-stats';
-    stats.innerHTML=`<span>Daño <b>${sword.damage}</b></span><span>Durabilidad <b>${sword.durability}</b></span><span>Valor <b>${formatNumber(sword.estimatedValue)} 🪙</b></span>`;
+    const facts=document.createElement('div');
+    facts.className='smithy-sword-facts';
+    facts.innerHTML=`
+      <span>Daño <b>${sword.damage}</b></span>
+      <span>Dur. <b>${sword.durability}</b></span>
+      <span>Valor <b>${formatNumber(sword.estimatedValue)} 🪙</b></span>
+    `;
+
+    const actions=document.createElement('div');
+    actions.className='smithy-sword-actions';
 
     const price=document.createElement('label');
-    price.className='sword-price';
-    price.innerHTML=`<span>Tu precio</span><input type="number" min="5" max="9999" step="5" value="${sword.salePrice}" data-sword-price="${sword.id}" aria-label="Precio de venta de Espada #${index+1}">`;
+    price.className='compact-price';
+    price.innerHTML=`<span>Precio</span><input type="number" min="5" max="9999" step="5" value="${sword.salePrice}" data-sword-price="${sword.id}" aria-label="Precio de venta de Espada #${index+1}">`;
 
     const listButton=document.createElement('button');
-    listButton.className='small-action exhibition-toggle';
+    listButton.className='small-action';
     listButton.dataset.swordList=sword.id;
-    listButton.textContent=sword.listed?'Quitar de Exhibición':'Poner en Exhibición';
+    listButton.textContent=sword.listed?'Quitar':'Exhibir';
 
-    card.append(head,stats,price,listButton);
-    els.swordInventoryList.append(card);
+    actions.append(price,listButton);
+    row.append(top,facts,actions);
+    els.swordInventoryList.append(row);
   });
 }
 
@@ -1870,7 +1881,7 @@ function render(){
       els.startExpedition.textContent='Mara está descansando';
     }else if(!enoughStamina){
       els.startExpedition.disabled=true;
-      els.startExpedition.textContent='Falta Resistencia';
+      els.startExpedition.textContent='Sin res.';
     }else{
       els.startExpedition.disabled=false;
       els.startExpedition.textContent='Iniciar expedición';
@@ -1936,7 +1947,7 @@ function render(){
       els.startHandleCraft.textContent='Eldon está descansando';
     }else if(!enoughStamina){
       els.startHandleCraft.disabled=true;
-      els.startHandleCraft.textContent='Falta Resistencia';
+      els.startHandleCraft.textContent='Sin res.';
     }else if(!enoughWood){
       els.startHandleCraft.disabled=true;
       els.startHandleCraft.textContent=`Faltan ${HANDLE_WOOD_COST-state.resources.wood} madera`;
@@ -1981,11 +1992,11 @@ function render(){
     els.craftProgress.value=progress;
     els.craftCountdown.textContent=`Termina en ${formatRemaining(craft.endsAt-now)}`;
     els.startHeadCraft.disabled=true;
-    els.startHeadCraft.textContent='Borin está trabajando';
+    els.startHeadCraft.textContent='Ocupado';
     els.startPickaxeAssembly.disabled=true;
-    els.startPickaxeAssembly.textContent='Borin está trabajando';
+    els.startPickaxeAssembly.textContent='Ocupado';
     els.startSwordCraft.disabled=true;
-    els.startSwordCraft.textContent='Borin está trabajando';
+    els.startSwordCraft.textContent='Ocupado';
   }else{
     const resting=state.workers.borin.restingAtInn;
     const headStamina=state.workers.borin.stamina>=CRAFT_STAMINA_COST;
@@ -2007,26 +2018,26 @@ function render(){
 
     if(resting){
       els.startHeadCraft.disabled=true;
-      els.startHeadCraft.textContent='Borin está descansando';
+      els.startHeadCraft.textContent='Descansando';
       els.startPickaxeAssembly.disabled=true;
-      els.startPickaxeAssembly.textContent='Borin está descansando';
+      els.startPickaxeAssembly.textContent='Descansando';
       els.startSwordCraft.disabled=true;
-      els.startSwordCraft.textContent='Borin está descansando';
+      els.startSwordCraft.textContent='Descansando';
     }else{
       els.startHeadCraft.disabled=!headStamina||!enoughIron||!storageSpace;
       els.startHeadCraft.textContent=!storageSpace
         ?'Almacén lleno'
         :!headStamina
-          ?'Falta Resistencia'
+          ?'Sin res.'
           :!enoughIron
-            ?`Faltan ${CRAFT_IRON_COST-state.resources.iron} hierro`
+            ?`Falta hierro`
             :'Fabricar';
 
       els.startPickaxeAssembly.disabled=!assemblyStamina||!hasComponents;
       els.startPickaxeAssembly.textContent=!assemblyStamina
-        ?'Falta Resistencia'
+        ?'Sin res.'
         :!hasComponents
-          ?'Falta cabeza o mango'
+          ?'Faltan piezas'
           :'Ensamblar';
 
       els.startSwordCraft.disabled=!swordUnlocked||!swordStamina||!swordIron||!storageSpace;
@@ -2035,9 +2046,9 @@ function render(){
         :!swordUnlocked
           ?`Requiere Nv. ${SWORD_RECIPE_LEVEL}`
           :!swordStamina
-            ?'Falta Resistencia'
+            ?'Sin res.'
             :!swordIron
-              ?`Faltan ${SWORD_IRON_COST-state.resources.iron} hierro`
+              ?`Falta hierro`
               :'Forjar';
     }
   }
