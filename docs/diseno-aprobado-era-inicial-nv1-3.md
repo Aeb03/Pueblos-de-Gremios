@@ -757,7 +757,28 @@ La idea es separar:
 
 Las herramientas y equipo utilizan una sola variable de desgaste: **Durabilidad**.
 
-Para trabajadores:
+### Aventureros y equipo fundador
+
+Los aventureros llegan con equipo rudimentario funcional, pero **también se desgasta**.
+
+Reglas:
+
+- arma/foco fundador: alrededor de **8 Durabilidad**;
+- ropa/protección fundadora: alrededor de **10 Durabilidad**;
+- es personal del aventurero;
+- no puede venderse ni transferirse a la ciudad;
+- puede repararse;
+- puede ser sustituido por equipo comercial mejor;
+- a Durabilidad 0 deja de aportar su función hasta repararse o reemplazarse.
+
+El objetivo es evitar dos extremos:
+
+- equipo fundador eterno que elimina demanda;
+- equipo fundador tan frágil que obliga a comprar inmediatamente.
+
+En simulación Normal aparecen ~1,9 reparaciones de equipo fundador por ciudad durante 90 min, pero las roturas completas son raras (~0,06 por ciudad).
+
+### Trabajadores:
 
 - el desgaste se consume por salida;
 - no por golpe individual;
@@ -1544,6 +1565,18 @@ Al procesar:
 
 No debe perderse la identidad del material.
 
+Primera traducción numérica **BALANCE EN PRUEBA**:
+
+- Cuero común → sin modificador.
+- Cuero de Lobo → **+1 Iniciativa**.
+- Cuero de Jabalí → **+1 Defensa**.
+- Cuero de Lobo Alfa → **+2 Iniciativa**.
+- Cuero de Gran Jabalí → **+2 Defensa** + propiedad de **Robustez** (~5 % menos daño esperado).
+
+La rama Lobo representa rapidez/ritmo y la rama Jabalí representa resistencia física.
+
+Estos valores son de simulación y pueden ajustarse sin romper la regla de identidad.
+
 Esta lógica podrá extenderse a:
 
 - pieles;
@@ -1586,11 +1619,23 @@ Las telas se incorporarán más adelante cuando exista una fuente lógica:
 - **Correas de cuero**
 - **Reparación básica de equipo de cuero**
 
-Las recetas concretas podrán usar combinaciones de:
+El curtido inicial conserva la especie **1:1**:
 
-- piel;
-- cuero curtido;
-- tendones.
+- Piel común → Cuero curtido común.
+- Piel de Lobo → Cuero curtido de Lobo.
+- Piel de Jabalí → Cuero curtido de Jabalí.
+- Piel de Lobo Alfa → Cuero curtido de Lobo Alfa.
+- Piel de Gran Jabalí → Cuero curtido de Gran Jabalí.
+
+Las piezas terminadas consumen cuero curtido manteniendo un único origen dominante para aplicar la identidad de la especie.
+
+BALANCE EN PRUEBA para el simulador:
+
+- Protección ligera: 3 Cuero curtido + 1 Tendón.
+- Guantes: 1 Cuero curtido.
+- Botas: 1 Cuero curtido.
+
+Esto permite que un material Raro/Boss único pueda utilizarse en una pieza pequeña sin obligar a esperar tres derrotas del mismo Raro/Boss.
 
 ### Herramienta
 
