@@ -456,7 +456,6 @@ function showScreen(name){
   title.textContent=name==='city'&&state.city.founded
     ?state.city.name
     :(titles[name]||'Pueblos de Gremios');
-  if(name==='smithy')markSmithyBookRead();
   window.scrollTo({top:0,behavior:'smooth'});
   render();
 }
@@ -2096,6 +2095,11 @@ let activeSmithyTab='craft';
 
 function setSmithyTab(tab){
   activeSmithyTab=tab;
+  if(tab==='book'){
+    markSmithyBookRead();
+    renderSmithyBook(true);
+    renderSmithyVisitor();
+  }
   document.querySelectorAll('[data-smithy-tab]').forEach(button=>{
     button.classList.toggle('is-active',button.dataset.smithyTab===tab);
   });
@@ -2146,6 +2150,7 @@ els.swordInventoryList.addEventListener('click',event=>{
 
   if(!sword.listed&&smithyListedSwords().length>=state.shops.smithy.exhibitionCapacity){
     state.lastSmithyMessage=`La Exhibición está completa (${state.shops.smithy.exhibitionCapacity}/${state.shops.smithy.exhibitionCapacity}). Quitá una pieza antes de exponer otra.`;
+    setSmithyTab('sale');
     render();
     return;
   }
@@ -2215,7 +2220,7 @@ if('serviceWorker' in navigator){
 
   window.addEventListener('load',async()=>{
     try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=0.8.0',{updateViaCache:'none'});
+      const reg=await navigator.serviceWorker.register('./sw.js?v=0.8.1',{updateViaCache:'none'});
       await reg.update();
     }catch{}
   });
