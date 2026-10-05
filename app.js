@@ -528,6 +528,15 @@ function reachNextCityLevelForLocalTest(){
   render();
 }
 
+function recoverAdventurersForLocalTest(){
+  if(!isLocalTestHost())return;
+  state.adventurers=state.adventurers.map(npc=>COMBAT.recoverForTest(npc));
+  state.lastActivityMessage='Recuperación local aplicada: Vida y Maná completos para continuar la prueba.';
+  if(els.testProgressFeedback)els.testProgressFeedback.textContent=state.lastActivityMessage;
+  saveState();
+  render();
+}
+
 function currentScreen(){
   return document.querySelector('.screen.is-active')?.dataset.screen||'city';
 }
