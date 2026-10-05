@@ -495,6 +495,32 @@ function resetTestWorld(){
   render();
 }
 
+function isLocalTestHost(){
+  return location.hostname==='127.0.0.1'||location.hostname==='localhost';
+}
+
+function reachNextCityLevelForLocalTest(){
+  if(!isLocalTestHost())return;
+  if(!state.city.founded){
+    if(els.testProgressFeedback)els.testProgressFeedback.textContent='Primero fundá la ciudad.';
+    return;
+  }
+
+  const next=CITY.nextLevelInfo(state.city);
+  if(next.maxed){
+    if(els.testProgressFeedback)els.testProgressFeedback.textContent='Ciudad Nv. 3 ya alcanzada.';
+    return;
+  }
+
+  const result=addCityDevelopment(next.remaining,'herramienta local de prueba');
+  if(els.testProgressFeedback){
+    const names=result.arrivals.map(npc=>npc.fullName).join(', ');
+    els.testProgressFeedback.textContent=`Ciudad Nv. ${state.city.level} alcanzada.${names?` Nuevo residente: ${names}.`:''}`;
+  }
+  saveState();
+  render();
+}
+
 function currentScreen(){
   return document.querySelector('.screen.is-active')?.dataset.screen||'city';
 }
@@ -613,6 +639,9 @@ const els={
   kingdomFoundingMeta:document.getElementById('kingdomFoundingMeta'),
   kingdomAdventurerCount:document.getElementById('kingdomAdventurerCount'),
   kingdomAdventurerList:document.getElementById('kingdomAdventurerList'),
+  localTestTools:document.getElementById('localTestTools'),
+  testReachNextCityLevel:document.getElementById('testReachNextCityLevel'),
+  testProgressFeedback:document.getElementById('testProgressFeedback'),
   smithyLevelCity:document.getElementById('smithyLevelCity'),
   smithyVisitBadge:document.getElementById('smithyVisitBadge'),
 
@@ -1857,6 +1886,7 @@ function renderFoundingAdventurers(){
 
 function render(){
   updateFoundationGate();
+  if(els.localTestTools)els.localTestTools.hidden=!isLocalTestHost();
   resolveExpiredExpedition();
   resolveExpiredCraft();
   resolveExpiredCarpentry();
@@ -2230,6 +2260,7 @@ els.toggleMaraInnRest.addEventListener('click',()=>toggleInnRest('mara'));
 els.toggleBorinInnRest.addEventListener('click',()=>toggleInnRest('borin'));
 els.toggleEldonInnRest.addEventListener('click',()=>toggleInnRest('eldon'));
 els.upgradeSmithy.addEventListener('click',upgradeSmithy);
+if(els.testReachNextCityLevel)els.testReachNextCityLevel.addEventListener('click',reachNextCityLevelForLocalTest);
 
 els.swordInventoryList.addEventListener('change',event=>{
   const input=event.target.closest('[data-sword-price]');
