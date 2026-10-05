@@ -1034,31 +1034,156 @@ Referencia inicial:
 
 ---
 
-## 24. Primer Raro y Boss — todavía pendientes
+## 24. Primer Raro — Lobo Alfa — aprobado EN PRUEBA
 
-La estructura del primer tramo mantiene:
+**Tipo:** Raro  
+**Nivel mínimo de aparición:** **Nv.2**.  
+**Rango de referencia del primer tramo:** Nv.2–3.  
+**Rol:** Líder ofensivo / potenciador de manada.
 
-- 2 comunes;
-- 1 Raro;
-- 1 Boss.
+### Aparición
 
-Candidato fuerte actual para Raro:
+El Lobo Alfa **no puede aparecer en Nv.1**.
 
-- **Lobo Alfa**.
+A partir de Nv.2, su posibilidad de aparición existe siempre mientras los Lobos formen parte del ecosistema local. No requiere superar un umbral fijo de Presencia.
 
-Candidato fuerte actual para Boss:
+La probabilidad base será baja y aumentará dinámicamente según factores como:
+
+- Presencia actual de Lobos;
+- nivel de Amenaza;
+- tamaño/actividad de las manadas;
+- tiempo transcurrido desde la última aparición;
+- futuros modificadores ecológicos.
+
+Principio:
+
+**Nv.1 = imposible. Desde Nv.2 = posibilidad siempre existente, cuya probabilidad aumenta o disminuye según el estado del mundo.**
+
+Así evitamos que un Raro aparezca demasiado pronto, pero también evitamos una regla rígida de “recién aparece cuando Presencia llega a X”.
+
+### Encuentro
+
+Referencia inicial:
+
+- 1 Lobo Alfa;
+- normalmente acompañado por 2 Lobos comunes;
+- con Presencia alta puede estar acompañado por 3.
+
+### Identidad de combate
+
+- Vida media-alta;
+- Defensa media;
+- Iniciativa alta;
+- daño superior al Lobo común;
+- peligro principal: sinergia con la manada.
+
+### Habilidades
+
+**Mordisco Alfa**
+- daño físico;
+- mayor posibilidad de aplicar Herida.
+
+**Aullido de caza**
+- potencia temporalmente a los Lobos aliados.
+
+**Salto del Alfa**
+- daño;
+- puede reducir Defensa;
+- favorece la concentración de ataques sobre un mismo objetivo.
+
+### Pasiva — Líder de la manada
+
+Mientras el Alfa esté vivo:
+
+- los Lobos aliados reciben una bonificación moderada;
+- los Lobos comunes siguen beneficiándose de Fuerza de la manada;
+- las bonificaciones tendrán un límite para evitar escalado excesivo.
+
+### Dificultad conceptual
+
+- 1 aventurero vs Alfa solo → elevada.
+- 1 aventurero vs Alfa + 2 Lobos → muy peligrosa.
+- 3 aventureros vs Alfa + 2 Lobos → normal.
+- 3 aventureros vs Alfa + 3 Lobos → normal-alta.
+
+### XP
+
+Balance provisional:
+
+- aproximadamente 35–40 XP.
+
+### Drops
+
+Conserva la familia de materiales Lobo:
+
+- Carne;
+- **Piel de Lobo Alfa**;
+- **Colmillo de Lobo Alfa**.
+
+La Carne no necesita una variante Alfa si no aporta una diferencia real.
+
+Piel y Colmillo sí conservan el origen.
+
+### Identidad material de la rama Lobo
+
+Dirección provisional:
+
+- Agilidad;
+- Iniciativa;
+- movilidad.
+
+Ejemplo:
+
+- Cuero de Lobo → pequeña mejora asociada a esa identidad.
+- Cuero de Lobo Alfa → mejora superior de la misma identidad.
+
+No se crea una receta nueva: cambia el material usado en la receta base.
+
+### Efecto territorial
+
+Mientras exista un Alfa activo:
+
+- las manadas pueden estar mejor organizadas;
+- aumenta ligeramente la presión de Lobos;
+- puede aumentar la frecuencia o peligrosidad de encuentros.
+
+Derrotarlo reduce de forma importante la Presencia.
+
+Referencia provisional:
+
+- Lobo Alfa derrotado → aproximadamente -12 Presencia;
+- Lobos comunes del encuentro reducen su valor normal.
+
+Puede existir un estado temporal tipo **Manada desorganizada** que reduzca durante un tiempo el crecimiento de Lobos.
+
+### Misiones
+
+Cuando aparece puede habilitarse una misión especial:
+
+**Cazar al Lobo Alfa**
+
+- recompensa elegida por la ciudad;
+- los aventureros deciden si aceptan;
+- también pueden perseguirlo por iniciativa propia.
+
+### Ataque a ciudad
+
+Si un Alfa está activo durante un ataque de Lobos:
+
+- la manada actúa de forma más coordinada;
+- aumenta la posibilidad de trabajadores heridos;
+- puede aumentar la pérdida de alimentos o daños a instalaciones exteriores.
+
+No roba monedas ni destruye de forma absurda estructuras pesadas.
+
+### Primer Boss
+
+El Boss del tramo sigue pendiente de definición.
+
+Candidato actual:
 
 - **Gran Jabalí** u otra variante equivalente.
 
-**No quedan cerrados todavía.**
-
-La intención es que:
-
-- el Raro no sea sólo “más vida”;
-- modifique o potencie el comportamiento de su especie;
-- tenga material superior;
-- el Boss requiera preparación/grupo;
-- sus materiales tengan uso real.
 
 ---
 
