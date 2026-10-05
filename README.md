@@ -4,20 +4,20 @@ PWA de gestión fantástica desarrollada paso a paso.
 
 ## Estado actual
 
-**v0.4.1 — Resistencia de trabajadores**
+**v0.4.2 — Descanso automático**
 
 - Se conserva el progreso previo: niveles, Herrería, recursos, productos y Prestigio.
-- La Resistencia pasa a ser una característica general de los trabajadores activos.
-- Mara mantiene 100 de Resistencia y la Cantera del Este consume 20 por expedición.
-- Borin ahora tiene 100 de Resistencia y fabricar una Cabeza de pico consume 15.
-- Un trabajador sin Resistencia suficiente no puede iniciar su tarea.
-- Mientras trabaja no recupera Resistencia.
-- Al terminar una tarea, comienza la recuperación normal.
-- Recuperación de playtest: +1 cada 10 segundos estando libre.
-- Posada: +5 cada 10 segundos mientras el trabajador descansa.
-- Mara y Borin pueden usar la Posada y no pueden trabajar mientras están descansando.
-- La recuperación usa timestamps y continúa con la PWA cerrada.
+- Mara y Borin tienen Resistencia y gastan al trabajar.
+- Mara gasta 20 por expedición.
+- Borin gasta 15 por Cabeza de pico.
+- Mientras trabajan no recuperan Resistencia.
+- Recuperación normal de playtest: +1 cada 10 segundos estando libres.
+- Posada: +5 cada 10 segundos mientras descansan.
+- Si un trabajador llega a 100/100 mientras descansa, sale automáticamente de la Posada.
+- El botón "Terminar descanso" sigue disponible para sacarlo antes de llegar a 100/100.
+- La recuperación y la salida automática usan tiempo real, incluso si la PWA estuvo cerrada.
 - Los ritmos actuales son de prueba y se balancearán más adelante.
+- Se corrigió también el versionado de los assets del Service Worker para que todos apunten a v0.4.2.
 
 ## Sistemas ya jugables
 
@@ -26,6 +26,7 @@ PWA de gestión fantástica desarrollada paso a paso.
 - Mejora de Herrería a Nv. 2 con aporte de Prestigio.
 - Inventario único de la ciudad.
 - Recuperación pasiva y descanso acelerado en Posada.
+- Salida automática de la Posada al completar la Resistencia.
 
 ## Próxima conexión prevista
 
