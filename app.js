@@ -500,14 +500,23 @@ function render(){
   }
 
   const requirements=smithyUpgradeRequirements();
-  els.reqSmithing.textContent=`${Math.min(smithingLevel(),2)}/2`;
-  els.reqCrafted.textContent=`${Math.min(state.buildings.smithy.craftedCount,SMITHY_UPGRADE_CRAFTED_REQUIRED)}/${SMITHY_UPGRADE_CRAFTED_REQUIRED}`;
-  els.reqStone.textContent=`${Math.min(state.resources.stone,SMITHY_UPGRADE_STONE_COST)}/${SMITHY_UPGRADE_STONE_COST}`;
-  els.reqCoins.textContent=`${Math.min(state.resources.coins,SMITHY_UPGRADE_COIN_COST)}/${SMITHY_UPGRADE_COIN_COST}`;
+  const smithyAlreadyUpgraded=state.buildings.smithy.level>=2;
 
-  Object.entries(requirements).forEach(([key,met])=>setRequirementState(key,met));
+  if(smithyAlreadyUpgraded){
+    els.reqSmithing.textContent='✓';
+    els.reqCrafted.textContent='✓';
+    els.reqStone.textContent='✓';
+    els.reqCoins.textContent='✓';
+    ['skill','crafted','stone','coins'].forEach(key=>setRequirementState(key,true));
+  }else{
+    els.reqSmithing.textContent=`${Math.min(smithingLevel(),2)}/2`;
+    els.reqCrafted.textContent=`${Math.min(state.buildings.smithy.craftedCount,SMITHY_UPGRADE_CRAFTED_REQUIRED)}/${SMITHY_UPGRADE_CRAFTED_REQUIRED}`;
+    els.reqStone.textContent=`${Math.min(state.resources.stone,SMITHY_UPGRADE_STONE_COST)}/${SMITHY_UPGRADE_STONE_COST}`;
+    els.reqCoins.textContent=`${Math.min(state.resources.coins,SMITHY_UPGRADE_COIN_COST)}/${SMITHY_UPGRADE_COIN_COST}`;
+    Object.entries(requirements).forEach(([key,met])=>setRequirementState(key,met));
+  }
 
-  if(state.buildings.smithy.level>=2){
+  if(smithyAlreadyUpgraded){
     els.smithyUpgradeTitle.textContent='Herrería Nv. 2 alcanzada';
     els.smithyUpgradeCopy.textContent='La próxima mejora se habilitará cuando ampliemos la progresión del edificio.';
     els.upgradeSmithy.disabled=true;
