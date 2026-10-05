@@ -267,3 +267,175 @@ Sin comprometer todavía versión exacta:
 11. Pedidos de trabajadores.
 12. Encargos contra criaturas/jefes y cálculo de poder de grupo.
 
+
+
+## 14. Encargos de aventura — recompensa, postulación y formación del grupo
+
+Este apartado queda asentado como diseño del sistema de **Encargos**.
+
+### Recompensa del encargo
+
+Todo Encargo debe ofrecer una recompensa clara a los aventureros.
+
+La recompensa puede combinar:
+
+- monedas;
+- objetos fabricados por la ciudad;
+- equipamiento;
+- consumibles;
+- otros bienes relevantes.
+
+Ejemplo:
+
+> Encargo: conseguir Cuerno de Minotauro  
+> Recompensa: 220 monedas + 1 Espada de hierro Buena
+
+La recompensa no es decorativa: forma parte de la decisión de los aventureros.
+
+Cuando el jugador publica el Encargo, los recursos ofrecidos deben quedar **reservados** para evitar gastarlos mientras la misión está comprometida.
+
+Si el Encargo se cancela antes de que el grupo parta, la recompensa vuelve al stock correspondiente.
+
+### IA de aceptación del Encargo
+
+Los aventureros no aceptan automáticamente cualquier misión.
+
+Cada NPC analiza el Encargo según factores como:
+
+- valor de la recompensa para él;
+- dinero ofrecido;
+- utilidad de los objetos ofrecidos;
+- dificultad del objetivo;
+- riesgo de derrota;
+- nivel y equipo propios;
+- estado actual;
+- personalidad;
+- necesidad de dinero/equipo;
+- relación futura con la ciudad o reputación;
+- compatibilidad con el grupo disponible.
+
+El resultado es una **intención de postularse**.
+
+Un aventurero ambicioso puede aceptar más riesgo por una buena recompensa.  
+Uno prudente puede exigir una probabilidad de éxito mayor.  
+Uno muy bien equipado puede valorar poco una espada común aunque el Encargo pague bien.
+
+### Propuesta recomendada para formar el grupo
+
+La solución recomendada es **postulación automática + confirmación del jugador**.
+
+Flujo:
+
+1. El jugador publica el Encargo y define la recompensa.
+2. Los aventureros elegibles lo ven automáticamente.
+3. Cada NPC decide si se postula usando su IA.
+4. Las postulaciones aparecen en la Sede del Gremio durante una ventana de tiempo.
+5. El jugador ve quién se postuló y qué aporta cada uno.
+6. El jugador arma o confirma el grupo final.
+7. Antes de partir, el juego muestra una estimación de:
+   - poder del grupo;
+   - dificultad;
+   - riesgo;
+   - probabilidad aproximada de éxito;
+   - probabilidad de obtener el drop buscado.
+8. El jugador confirma **Enviar grupo**.
+9. Los aventureros parten.
+10. Al finalizar se resuelve la misión.
+11. Si consiguen el objetivo, el botín pasa a la ciudad y la recompensa reservada se entrega a los aventureros.
+
+### Por qué no enviar el grupo automáticamente desde el principio
+
+No se recomienda que el juego despache en automático al primer grupo que cumpla mínimos porque:
+
+- el jugador perdería una decisión estratégica importante;
+- podría gastar una recompensa valiosa con un grupo mediocre;
+- impediría esperar unos segundos por mejores candidatos;
+- quitaría valor a roles, equipo y composición;
+- dificultaría entender por qué una misión salió mal.
+
+La postulación sí debe ser automática para conservar la sensación de que los NPC tienen voluntad propia.
+
+### Automatización futura opcional
+
+Más adelante se puede desbloquear una opción de comodidad:
+
+**Despacho automático**
+
+El jugador define reglas como:
+
+- mínimo de probabilidad de éxito;
+- mínimo de poder;
+- roles requeridos;
+- máximo de riesgo;
+- cantidad de aventureros.
+
+Si se cumplen, el sistema puede enviar el grupo sin confirmación.
+
+Esto sería una herramienta avanzada, no la regla inicial.
+
+## 15. Resolución del Encargo y entrega
+
+Un Encargo debe separar dos probabilidades:
+
+1. **Éxito de la misión**: el grupo logra derrotar/superar el objetivo.
+2. **Obtención del objeto buscado**: aun ganando, el drop raro puede o no aparecer.
+
+Ejemplo:
+
+> Jefe Minotauro  
+> Probabilidad estimada de éxito del grupo: 78%  
+> Probabilidad de Cuerno si derrotan al jefe: 35%
+
+El sistema no debe confundir dificultad del combate con rareza del drop.
+
+### Resultado exitoso
+
+Si el grupo completa la misión:
+
+- recibe los drops obtenidos;
+- el objeto objetivo se transfiere a la ciudad si apareció;
+- se entrega la recompensa prometida;
+- los aventureros pueden conservar otros drops no comprometidos;
+- se registra el resultado en la Sede del Gremio.
+
+### Resultado sin drop objetivo
+
+Puede ocurrir que el grupo venza pero no consiga el objeto buscado.
+
+En ese caso se considera que la expedición fue exitosa pero el **Encargo no cumplió el objetivo completo**.
+
+La política exacta de recompensa puede variar según el contrato:
+
+- recompensa sólo por conseguir el objeto;
+- recompensa base por intento + bono por éxito;
+- recompensas parciales.
+
+Esto se balanceará después.
+
+### Resultado fallido
+
+Si el grupo falla:
+
+- no obtiene el objetivo;
+- puede volver con consecuencias temporales;
+- no debe destruirse automáticamente todo el equipo;
+- pueden existir heridas, tiempo de recuperación o pérdida parcial de botín.
+
+El grado de castigo se definirá con pruebas.
+
+## 16. Quién aporta la recompensa
+
+Cuando el Encargo nace de un trabajador, el origen narrativo puede ser ese trabajador.
+
+Ejemplo:
+
+> Borin necesita un Cuerno de Minotauro.  
+> Borin ofrece: 180 monedas + 1 Espada de hierro.
+
+A nivel de sistema, mientras los trabajadores no tengan economía personal completa, la recompensa se reserva desde:
+
+- fondos de la ciudad;
+- stock del negocio correspondiente;
+- objetos seleccionados por el jugador.
+
+Más adelante, si los trabajadores tienen inventario o patrimonio propio, podrán aportar directamente sus propios bienes.
