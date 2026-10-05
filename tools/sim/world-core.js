@@ -161,28 +161,52 @@ function workerStep(state,rng){
   }
 }
 
-function totalHide(city){
-  return ['skin','wolfSkin','boarSkin','alphaWolfSkin','greatBoarSkin']
-    .reduce((sum,key)=>sum+(city.resources[key]||0),0);
+function hideOriginsWithQty(city,qty){
+  return Object.entries(TEXTILE_ORIGIN)
+    .filter(([,cfg])=>(city.resources[cfg.resource]||0)>=qty)
+    .map(([origin])=>origin);
 }
+
 function hasInput(city,key,qty){
-  if(key==='hide')return totalHide(city)>=qty;
+  if(key==='hide')return hideOriginsWithQty(city,qty).length>0;
   return (city.resources[key]||0)>=qty;
 }
-function consumeInput(city,key,qty){
-  if(key!=='hide'){
-    city.resources[key]-=qty;
+
+function consumeInput(city,key,qty,origin='neutral'){
+  if(key==='hide'){
+    const resource=TEXTILE_ORIGIN[origin].resource;
+    city.resources[resource]-=qty;
     return;
   }
-  let remaining=qty;
-  for(const hideKey of ['skin','wolfSkin','boarSkin','alphaWolfSkin','greatBoarSkin']){
-    if(remaining<=0)break;
-    const take=Math.min(city.resources[hideKey]||0,remaining);
-    city.resources[hideKey]-=take;
-    remaining-=take;
-  }
+  city.resources[key]-=qty;
 }
+
 const canCraft=(city,item)=>Object.entries(RECIPES[item]).every(([k,v])=>hasInput(city,k,v));
+
+function chooseTextileOrigin(city,item,qty,rng){
+  const available=hideOriginsWithQty(city,qty);
+  if(!available.length)return null;
+
+  // Materiales Raro/Boss sólo se consumen deliberadamente y en piezas pequeñas,
+  // evitando que la producción automática queme la primera piel especial sin control.
+  if(item!=='leather'){
+    if(available.includes('greatBoar')&&city.level>=3&&city.variantStock[item].greatBoar===0&&rng()<.55)return 'greatBoar';
+    if(available.includes('alphaWolf')&&city.level>=2&&city.variantStock[item].alphaWolf===0&&rng()<.50)return 'alphaWolf';
+  }
+
+  const common=available.filter(x=>x==='wolf'||x==='boar');
+  if(common.length){
+    common.sort((a,b)=>(city.textileProduced[a]||0)-(city.textileProduced[b]||0));
+    if(common.length===2&&city.textileProduced[common[0]]===city.textileProduced[common[1]])return rng()<.5?common[0]:common[1];
+    return common[0];
+  }
+
+  if(available.includes('neutral'))return 'neutral';
+  if(available.includes('alphaWolf'))return 'alphaWolf';
+  if(available.includes('greatBoar'))return 'greatBoar';
+  return available[0];
+}
+
 function craftStep(state,rng){
   const {city,profile}=state;
   const available=['dagger','bow','staff','shield'];
@@ -194,9 +218,25 @@ function craftStep(state,rng){
       .filter(i=>city.stock[i]<2&&canCraft(city,i))
       .sort((a,b)=>city.stock[a]-city.stock[b]);
     if(!candidates.length)break;
+
     const item=candidates[0];
-    for(const [k,v] of Object.entries(RECIPES[item]))consumeInput(city,k,v);
-    city.stock[item]++;city.produced[item]++;city.dev+=.45;
+    let origin='neutral';
+    const hideQty=RECIPES[item].hide||0;
+
+    if(ITEM[item].textile){
+      origin=chooseTextileOrigin(city,item,hideQty,rng);
+      if(!origin)continue;
+    }
+
+    for(const [k,v] of Object.entries(RECIPES[item]))consumeInput(city,k,v,origin);
+
+    city.stock[item]++;
+    city.produced[item]++;
+    if(ITEM[item].textile){
+      city.variantStock[item][origin]++;
+      city.textileProduced[origin]++;
+    }
+    city.dev+=.45;
   }
 }
 
