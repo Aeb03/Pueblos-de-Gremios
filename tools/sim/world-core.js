@@ -1,7 +1,7 @@
 'use strict';
 
 const {
-  TICK_MINUTES,MAX_MINUTES,PROFILES,CLASS,ITEM,RECIPES,FOOD,MATERIAL,CITY_LOOT_MIN_TREASURY,
+  TICK_MINUTES,MAX_MINUTES,PROFILES,CLASS,ITEM,TEXTILE_ORIGIN,RECIPES,FOOD,MATERIAL,CITY_LOOT_MIN_TREASURY,
   ALPHA_CHANCE,BOSS_CHANCE,REPAIR_RATE,REPAIR_THRESHOLD
 }=require('./world-config');
 
@@ -31,17 +31,41 @@ function styleForClass(cls,rng){
   return 'arcane';
 }
 
+function founderEquipment(cls,combatStyle){
+  const equipment={};
+  const add=(key)=>{
+    const it=ITEM[key];
+    equipment[key]={durability:it.durability,maxDurability:it.durability,founder:true,origin:'neutral'};
+  };
+
+  if(cls==='warrior'){
+    add('founderWarriorWeapon');
+    add('founderWarriorArmor');
+  }else if(cls==='explorer'){
+    add(combatStyle==='bow'?'founderExplorerBow':'founderExplorerDaggers');
+    add('founderExplorerClothes');
+  }else if(cls==='healer'){
+    add('founderHealerStaff');
+    add('founderHealerClothes');
+  }else if(cls==='mage'){
+    add('founderMageFocus');
+    add('founderMageRobe');
+  }
+  return equipment;
+}
+
 function newAdventurer(cls,id,rng){
   const b=CLASS[cls];
+  const combatStyle=styleForClass(cls,rng);
   return {
-    id,cls,combatStyle:styleForClass(cls,rng),level:1,xp:0,xpLost:0,
+    id,cls,combatStyle,level:1,xp:0,xpLost:0,
     hpMax:b.hp,hp:b.hp,manaMax:b.mana,mana:b.mana,
     attack:b.attack,defense:b.defense,initiative:b.initiative,evasion:b.evasion,
-    coins:randInt(rng,55,75),earned:0,spent:0,rests:0,repairs:0,downs:0,fights:0,
+    coins:randInt(rng,55,75),earned:0,spent:0,rests:0,repairs:0,founderRepairs:0,downs:0,fights:0,
     meals:0,rations:0,rationPrepared:false,
     loot:{},lootGenerated:0,lootSold:0,lootOfferMemory:{},
     spending:{gear:0,rest:0,repair:0,consumable:0},
-    equipment:{},
+    equipment:founderEquipment(cls,combatStyle),
     active:true
   };
 }
@@ -59,7 +83,14 @@ function initialState(rng,profile){
         alphaWolfSkin:0,alphaFang:0,greatBoarSkin:0,greatBoarTendon:0,greatBoarTusk:0
       },
       stock:{dagger:0,bow:0,staff:0,shield:0,leather:0,gloves:0,boots:0},
+      variantStock:{
+        leather:{neutral:0,wolf:0,boar:0,alphaWolf:0,greatBoar:0},
+        gloves:{neutral:0,wolf:0,boar:0,alphaWolf:0,greatBoar:0},
+        boots:{neutral:0,wolf:0,boar:0,alphaWolf:0,greatBoar:0}
+      },
       produced:{dagger:0,bow:0,staff:0,shield:0,leather:0,gloves:0,boots:0},
+      textileProduced:{neutral:0,wolf:0,boar:0,alphaWolf:0,greatBoar:0},
+      textileSold:{neutral:0,wolf:0,boar:0,alphaWolf:0,greatBoar:0},
       textile:false,textileAt:null,presence:{wolf:25,boar:20},
       alphaSeen:0,bossSeen:0,alphaDefeated:0,bossDefeated:0,alphaPity:0,bossPity:0,
       missionsCompleted:0,workerOutings:0,blockedPurchases:0,repairBlocked:0,
