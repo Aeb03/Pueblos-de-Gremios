@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17130f">
 <meta name="description" content="Pueblos de Gremios - gestión de un pueblo fantástico y su reino.">
-<link rel="manifest" href="./manifest.webmanifest?v=0.4.2">
-<link rel="icon" href="./icons/icon.svg?v=0.4.2" type="image/svg+xml">
-<link rel="stylesheet" href="./styles.css?v=0.4.2">
+<link rel="manifest" href="./manifest.webmanifest?v=0.5.0">
+<link rel="icon" href="./icons/icon.svg?v=0.5.0" type="image/svg+xml">
+<link rel="stylesheet" href="./styles.css?v=0.5.0">
 <title>Pueblos de Gremios</title>
 </head>
 <body>
@@ -63,9 +63,72 @@
       </div>
       <span class="state" id="maraState">Disponible</span>
     </article>
-    <article class="worker"><div class="avatar">E</div><div><h3>Eldon</h3><p>Carpintero · Nv. 1</p><small>Carpintería 1 · Tala 1</small></div><span class="state">Disponible</span></article>
+    <article class="worker worker-eldon">
+      <div class="avatar">E</div>
+      <div>
+        <h3>Eldon</h3>
+        <p>Carpintero · Nv. <span id="eldonProfessionLevel">1</span></p>
+        <small>Carpintería <span id="eldonCarpentryLevel">1</span> · <span id="eldonCarpentryXp">0</span>/<span id="eldonNextXp">100</span> XP</small>
+        <progress class="skill-progress" id="eldonXpProgress" value="0" max="100"></progress>
+        <small class="stamina-label">Resistencia <span id="eldonStaminaWorker">100</span>/100</small>
+        <progress class="stamina-progress" id="eldonStaminaWorkerProgress" value="100" max="100"></progress>
+      </div>
+      <span class="state" id="eldonState">Disponible</span>
+    </article>
     <article class="worker"><div class="avatar">N</div><div><h3>Nara</h3><p>Tabernera · Nv. 1</p><small>Cocina 1 · Hospitalidad 1</small></div><span class="state">Disponible</span></article>
   </div>
+</section>
+
+<section class="screen" data-screen="carpenter">
+  <button class="back-link" data-go="city">← Volver a la ciudad</button>
+
+  <div class="hero-card carpenter-art">
+    <span class="badge">Carpintería · Nv. 1</span>
+    <h2>Taller de Eldon</h2>
+    <p>Eldon transforma la madera de la ciudad en componentes para otros oficios.</p>
+  </div>
+
+  <div class="trade-resource-strip" aria-label="Recursos de Carpintería">
+    <div><span>🪵 Madera</span><strong id="carpenterWood">86</strong></div>
+    <div><span>🪚 Mangos</span><strong id="carpenterHandles">0</strong></div>
+  </div>
+
+  <article class="panel smithy-worker">
+    <div class="smithy-worker-head">
+      <div class="avatar">E</div>
+      <div>
+        <p class="eyebrow">Carpintero asignado</p>
+        <h3>Eldon · Carpintería Nv. <span id="carpenterEldonLevel">1</span></h3>
+      </div>
+      <span class="state" id="carpenterEldonState">Disponible</span>
+    </div>
+    <small><span id="carpenterEldonXp">0</span>/<span id="carpenterEldonNextXp">100</span> XP</small>
+    <progress class="skill-progress" id="carpenterEldonProgress" value="0" max="100"></progress>
+    <small class="stamina-label">Resistencia <span id="carpenterEldonStamina">100</span>/100</small>
+    <progress class="stamina-progress" id="carpenterEldonStaminaProgress" value="100" max="100"></progress>
+  </article>
+
+  <article class="panel recipe-card">
+    <p class="eyebrow">Componente</p>
+    <div class="recipe-title">
+      <div class="recipe-icon">🪵</div>
+      <div>
+        <h3>Mango de pico</h3>
+        <p>Componente de madera que la Herrería necesita para ensamblar un Pico de hierro.</p>
+      </div>
+    </div>
+    <div class="kv"><span>Coste</span><strong>3 madera</strong></div>
+    <div class="kv"><span>Tiempo de prueba</span><strong>20 s</strong></div>
+    <div class="kv"><span>Coste de Resistencia</span><strong>15</strong></div>
+    <div class="kv"><span>Experiencia</span><strong>+40 XP Carpintería</strong></div>
+    <div class="craft-status">
+      <div class="kv"><span>Estado</span><strong id="carpentryStatus">Lista para fabricar</strong></div>
+      <progress id="carpentryProgress" value="0" max="100"></progress>
+      <p class="countdown" id="carpentryCountdown"></p>
+    </div>
+    <button class="primary" id="startHandleCraft">Fabricar mango</button>
+    <p class="feedback" id="carpentryFeedback" aria-live="polite"></p>
+  </article>
 </section>
 
 <section class="screen" data-screen="smithy">
@@ -74,7 +137,7 @@
   <div class="hero-card smithy-art">
     <span class="badge">Herrería · Nv. <span id="smithyLevelHero">1</span></span>
     <h2>Forja de Borin</h2>
-    <p>Transformá el hierro recuperado por Mara en componentes útiles para el pueblo.</p>
+    <p>Borin fabrica piezas metálicas y ensambla herramientas usando componentes de otros oficios.</p>
   </div>
 
   <div class="trade-resource-strip" aria-label="Recursos de Herrería">
@@ -98,31 +161,52 @@
   </article>
 
   <article class="panel recipe-card">
-    <p class="eyebrow">Receta inicial</p>
+    <p class="eyebrow">Componente metálico</p>
     <div class="recipe-title">
       <div class="recipe-icon">⛏️</div>
       <div>
         <h3>Cabeza de pico de hierro</h3>
-        <p>Primer componente de una futura herramienta completa. Más adelante Carpintería fabricará el mango.</p>
+        <p>La pieza metálica del pico. Necesita un mango de Carpintería para convertirse en herramienta.</p>
       </div>
     </div>
     <div class="kv"><span>Coste</span><strong>5 hierro</strong></div>
     <div class="kv"><span>Tiempo de prueba</span><strong>20 s</strong></div>
     <div class="kv"><span>Coste de Resistencia</span><strong>15</strong></div>
     <div class="kv"><span>Experiencia</span><strong>+40 XP Herrería</strong></div>
+    <button class="primary" id="startHeadCraft">Fabricar cabeza de pico</button>
+  </article>
+
+  <article class="panel recipe-card assembly-card">
+    <p class="eyebrow">Ensamblaje</p>
+    <div class="recipe-title">
+      <div class="recipe-icon">🛠️</div>
+      <div>
+        <h3>Pico de hierro</h3>
+        <p>Borin une una cabeza de hierro con un mango fabricado por Eldon.</p>
+      </div>
+    </div>
+    <div class="kv"><span>Componentes</span><strong>1 cabeza + 1 mango</strong></div>
+    <div class="kv"><span>Tiempo de prueba</span><strong>15 s</strong></div>
+    <div class="kv"><span>Coste de Resistencia</span><strong>10</strong></div>
+    <div class="kv"><span>Experiencia</span><strong>+20 XP Herrería</strong></div>
+    <button class="primary" id="startPickaxeAssembly">Ensamblar Pico de hierro</button>
+  </article>
+
+  <article class="panel">
+    <p class="eyebrow">Trabajo actual</p>
     <div class="craft-status">
-      <div class="kv"><span>Estado</span><strong id="craftStatus">Lista para fabricar</strong></div>
+      <div class="kv"><span>Estado</span><strong id="craftStatus">Lista para trabajar</strong></div>
       <progress id="craftProgress" value="0" max="100"></progress>
       <p class="countdown" id="craftCountdown"></p>
     </div>
-    <button class="primary" id="startCraft">Fabricar cabeza de pico</button>
     <p class="feedback" id="smithyFeedback" aria-live="polite"></p>
   </article>
 
   <article class="panel product-stock">
-    <div class="section-head compact"><h3>Producción</h3><span>Stock</span></div>
+    <div class="section-head compact"><h3>Componentes y herramientas</h3><span>Stock</span></div>
     <div class="inventory-row"><span>⛏️ Cabezas de pico</span><strong id="smithyPickaxeHeads">0</strong></div>
-    <p class="muted">Las piezas producidas pertenecen al inventario general de la ciudad.</p>
+    <div class="inventory-row"><span>🪵 Mangos de pico</span><strong id="smithyHandles">0</strong></div>
+    <div class="inventory-row"><span>🛠️ Picos de hierro</span><strong id="smithyIronPickaxes">0</strong></div>
   </article>
 
   <article class="panel upgrade-card">
@@ -140,7 +224,6 @@
     <p class="feedback" id="upgradeFeedback" aria-live="polite"></p>
   </article>
 </section>
-
 
 <section class="screen" data-screen="inn">
   <button class="back-link" data-go="city">← Volver a la ciudad</button>
@@ -193,6 +276,27 @@
     <p class="feedback" id="borinInnFeedback" aria-live="polite"></p>
   </article>
 
+  <article class="panel inn-worker-card">
+    <div class="smithy-worker-head">
+      <div class="avatar">E</div>
+      <div>
+        <p class="eyebrow">Trabajador</p>
+        <h3>Eldon · Carpintero Nv. <span id="innEldonLevel">1</span></h3>
+      </div>
+      <span class="state" id="innEldonState">Disponible</span>
+    </div>
+
+    <div class="stamina-block">
+      <div class="kv"><span>Resistencia</span><strong><span id="innEldonStamina">100</span>/100</strong></div>
+      <progress class="stamina-progress" id="innEldonStaminaProgress" value="100" max="100"></progress>
+      <div class="kv"><span>Recuperación normal</span><strong>+1 cada 10 s</strong></div>
+      <div class="kv"><span>Descansando en Posada</span><strong>+5 cada 10 s</strong></div>
+    </div>
+
+    <button class="primary" id="toggleEldonInnRest">Descansar en Posada</button>
+    <p class="feedback" id="eldonInnFeedback" aria-live="polite"></p>
+  </article>
+
   <article class="panel">
     <p class="eyebrow">Regla de prueba</p>
     <p class="muted">La recuperación usa tiempo real y continúa con la PWA cerrada. La velocidad está acelerada para poder probarla; después ajustaremos el balance definitivo.</p>
@@ -213,6 +317,13 @@
     <div class="kv"><span>Resistencia actual</span><strong><span id="expeditionStamina">100</span>/100</strong></div>
     <progress class="stamina-progress" id="expeditionStaminaProgress" value="100" max="100"></progress>
     <div class="kv"><span>Posibles recursos</span><strong>⛏️ 4–7 · 🪨 2–4</strong></div>
+    <div class="kv"><span>Herramienta</span><strong id="expeditionTool">Sin pico</strong></div>
+    <div class="kv"><span>Veta dura</span><strong id="hardVeinChance">No disponible</strong></div>
+    <div class="equipment-box">
+      <div class="kv"><span>Picos en inventario</span><strong id="expeditionPickaxes">0</strong></div>
+      <button class="primary" id="equipIronPickaxe">Equipar Pico de hierro</button>
+      <p class="muted">Con el Pico de hierro equipado, cada expedición tiene 15% de probabilidad de activar una Veta dura con hierro adicional.</p>
+    </div>
     <div class="expedition-status" id="expeditionStatusBox">
       <div class="kv"><span>Estado</span><strong id="expeditionStatus">Lista para partir</strong></div>
       <progress id="expeditionProgress" value="0" max="100"></progress>
@@ -249,6 +360,12 @@
     <article class="panel inventory-group">
       <p class="eyebrow">Productos</p>
       <div class="inventory-row"><span>⛏️ Cabeza de pico de hierro</span><strong id="inventoryPickaxeHeads">0</strong></div>
+      <div class="inventory-row"><span>🪵 Mango de pico</span><strong id="inventoryHandles">0</strong></div>
+      <div class="inventory-row"><span>🛠️ Pico de hierro</span><strong id="inventoryIronPickaxes">0</strong></div>
+    </article>
+    <article class="panel inventory-group">
+      <p class="eyebrow">Equipamiento</p>
+      <div class="inventory-row"><span>⛏️ Herramienta de Mara</span><strong id="inventoryMaraTool">Sin equipar</strong></div>
     </article>
     <p class="muted inventory-note">El stock es único para toda la ciudad. Cada negocio muestra sólo lo que necesita.</p>
   </div>
@@ -263,8 +380,8 @@
     <button id="installBtn">📲<span id="installLabel">Instalar PWA</span></button>
   </div>
   <div class="panel">
-    <p><strong>Versión:</strong> v0.4.2 — Descanso automático</p>
-    <p class="muted">Los trabajadores salen solos de la Posada al llegar a 100/100, pero podés terminar el descanso antes cuando quieras.</p>
+    <p><strong>Versión:</strong> v0.5.0 — Cadena del Pico</p>
+    <p class="muted">Mara, Eldon y Borin ya forman una cadena productiva: recursos → componentes → Pico de hierro → Veta dura.</p>
   </div>
 </section>
 
@@ -290,6 +407,6 @@
   </form>
 </dialog>
 </main>
-<script src="./app.js?v=0.4.2" defer></script>
+<script src="./app.js?v=0.5.0" defer></script>
 </body>
 </html>
