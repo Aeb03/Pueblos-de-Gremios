@@ -269,173 +269,239 @@ Sin comprometer todavía versión exacta:
 
 
 
-## 14. Encargos de aventura — recompensa, postulación y formación del grupo
+## 14. Encargos de aventura — formación automática y recompensa por aventurero
 
-Este apartado queda asentado como diseño del sistema de **Encargos**.
+Este apartado reemplaza la propuesta anterior de confirmación manual del grupo.
 
-### Recompensa del encargo
+### Principio
 
-Todo Encargo debe ofrecer una recompensa clara a los aventureros.
+El Encargo **no debe bloquear el juego esperando que el jugador acepte postulantes**.
 
-La recompensa puede combinar:
+El jugador publica el Encargo y continúa jugando normalmente.
 
-- monedas;
-- objetos fabricados por la ciudad;
-- equipamiento;
-- consumibles;
-- otros bienes relevantes.
+Los aventureros evalúan el Encargo por IA y, cuando existe una combinación de aventureros que:
 
-Ejemplo:
+- acepta voluntariamente la misión;
+- cumple el tamaño permitido del grupo;
+- supera el umbral mínimo de éxito;
+- dispone de una recompensa válida para todos los participantes;
 
-> Encargo: conseguir Cuerno de Minotauro  
-> Recompensa: 220 monedas + 1 Espada de hierro Buena
+el sistema forma el grupo y lo envía **automáticamente**.
 
-La recompensa no es decorativa: forma parte de la decisión de los aventureros.
+El jugador no necesita confirmar la salida.
 
-Cuando el jugador publica el Encargo, los recursos ofrecidos deben quedar **reservados** para evitar gastarlos mientras la misión está comprometida.
+### Por qué se adopta el envío automático
 
-Si el Encargo se cancela antes de que el grupo parta, la recompensa vuelve al stock correspondiente.
+Para el jugador el Encargo no tiene coste final si no se cumple el objetivo.
 
-### IA de aceptación del Encargo
+La recompensa queda reservada mientras la misión está comprometida, pero:
 
-Los aventureros no aceptan automáticamente cualquier misión.
+- si el grupo falla;
+- si derrota al objetivo pero no obtiene el objeto pedido;
+- o si el Encargo no puede completarse;
 
-Cada NPC analiza el Encargo según factores como:
+la recompensa no se entrega y vuelve a estar disponible.
 
-- valor de la recompensa para él;
+Por eso no se considera necesario frenar el flujo de juego con una confirmación manual.
+
+Los aventureros, en cambio, sí evalúan su propio riesgo antes de aceptar.
+
+## 15. IA de aceptación y formación del grupo
+
+Cada aventurero analiza:
+
+- recompensa ofrecida;
+- utilidad personal de los objetos;
 - dinero ofrecido;
-- utilidad de los objetos ofrecidos;
-- dificultad del objetivo;
-- riesgo de derrota;
-- nivel y equipo propios;
+- dificultad;
+- riesgo estimado;
+- nivel;
+- equipamiento;
+- calidad de su equipo;
+- rol;
 - estado actual;
 - personalidad;
-- necesidad de dinero/equipo;
-- relación futura con la ciudad o reputación;
-- compatibilidad con el grupo disponible.
+- compatibilidad con otros aventureros disponibles.
 
-El resultado es una **intención de postularse**.
+Si el NPC considera atractivo el Encargo, queda disponible para formar grupo.
 
-Un aventurero ambicioso puede aceptar más riesgo por una buena recompensa.  
-Uno prudente puede exigir una probabilidad de éxito mayor.  
-Uno muy bien equipado puede valorar poco una espada común aunque el Encargo pague bien.
+El sistema busca combinaciones válidas entre aventureros interesados y calcula una probabilidad estimada de éxito.
 
-### Propuesta recomendada para formar el grupo
+Cuando una combinación entra en el **rango de éxito aceptable**, el grupo parte automáticamente.
 
-La solución recomendada es **postulación automática + confirmación del jugador**.
+El umbral exacto no queda fijado todavía; se balanceará con pruebas.
 
-Flujo:
+El Encargo puede permanecer publicado en segundo plano todo el tiempo necesario sin bloquear otras actividades de la ciudad.
 
-1. El jugador publica el Encargo y define la recompensa.
-2. Los aventureros elegibles lo ven automáticamente.
-3. Cada NPC decide si se postula usando su IA.
-4. Las postulaciones aparecen en la Sede del Gremio durante una ventana de tiempo.
-5. El jugador ve quién se postuló y qué aporta cada uno.
-6. El jugador arma o confirma el grupo final.
-7. Antes de partir, el juego muestra una estimación de:
-   - poder del grupo;
-   - dificultad;
-   - riesgo;
-   - probabilidad aproximada de éxito;
-   - probabilidad de obtener el drop buscado.
-8. El jugador confirma **Enviar grupo**.
-9. Los aventureros parten.
-10. Al finalizar se resuelve la misión.
-11. Si consiguen el objetivo, el botín pasa a la ciudad y la recompensa reservada se entrega a los aventureros.
+## 16. Recompensa — siempre expresada por aventurero
 
-### Por qué no enviar el grupo automáticamente desde el principio
-
-No se recomienda que el juego despache en automático al primer grupo que cumpla mínimos porque:
-
-- el jugador perdería una decisión estratégica importante;
-- podría gastar una recompensa valiosa con un grupo mediocre;
-- impediría esperar unos segundos por mejores candidatos;
-- quitaría valor a roles, equipo y composición;
-- dificultaría entender por qué una misión salió mal.
-
-La postulación sí debe ser automática para conservar la sensación de que los NPC tienen voluntad propia.
-
-### Automatización futura opcional
-
-Más adelante se puede desbloquear una opción de comodidad:
-
-**Despacho automático**
-
-El jugador define reglas como:
-
-- mínimo de probabilidad de éxito;
-- mínimo de poder;
-- roles requeridos;
-- máximo de riesgo;
-- cantidad de aventureros.
-
-Si se cumplen, el sistema puede enviar el grupo sin confirmación.
-
-Esto sería una herramienta avanzada, no la regla inicial.
-
-## 15. Resolución del Encargo y entrega
-
-Un Encargo debe separar dos probabilidades:
-
-1. **Éxito de la misión**: el grupo logra derrotar/superar el objetivo.
-2. **Obtención del objeto buscado**: aun ganando, el drop raro puede o no aparecer.
+La recompensa indicada en un Encargo se interpreta **por participante**, no como un premio total a repartir.
 
 Ejemplo:
 
-> Jefe Minotauro  
-> Probabilidad estimada de éxito del grupo: 78%  
-> Probabilidad de Cuerno si derrotan al jefe: 35%
+> Recompensa: 200 monedas + 1 Espada de hierro Buena
 
-El sistema no debe confundir dificultad del combate con rareza del drop.
+Si participan 3 aventureros, el coste real de una misión cumplida es:
 
-### Resultado exitoso
+- 600 monedas;
+- 3 Espadas de hierro Buenas.
 
-Si el grupo completa la misión:
+Si el grupo finalmente se forma con 2 aventureros, cada uno recibe:
 
-- recibe los drops obtenidos;
-- el objeto objetivo se transfiere a la ciudad si apareció;
-- se entrega la recompensa prometida;
-- los aventureros pueden conservar otros drops no comprometidos;
-- se registra el resultado en la Sede del Gremio.
+- 200 monedas;
+- 1 Espada de hierro Buena.
 
-### Resultado sin drop objetivo
+El coste final será:
 
-Puede ocurrir que el grupo venza pero no consiga el objeto buscado.
+- 400 monedas;
+- 2 Espadas de hierro Buenas.
 
-En ese caso se considera que la expedición fue exitosa pero el **Encargo no cumplió el objetivo completo**.
+### Reserva de recompensa
 
-La política exacta de recompensa puede variar según el contrato:
+Al publicar un Encargo debe existir capacidad real para pagar a todos los posibles participantes.
 
-- recompensa sólo por conseguir el objeto;
-- recompensa base por intento + bono por éxito;
-- recompensas parciales.
+Si el Encargo admite hasta 3 aventureros y promete:
 
-Esto se balanceará después.
+> 200 monedas + 1 Espada Buena por aventurero
 
-### Resultado fallido
+deben reservarse inicialmente:
 
-Si el grupo falla:
+- 600 monedas;
+- 3 Espadas Buenas.
 
-- no obtiene el objetivo;
-- puede volver con consecuencias temporales;
-- no debe destruirse automáticamente todo el equipo;
-- pueden existir heridas, tiempo de recuperación o pérdida parcial de botín.
+Cuando el grupo queda formado con menos miembros, el excedente se libera inmediatamente.
 
-El grado de castigo se definirá con pruebas.
+Ejemplo: si parten 2, se liberan:
 
-## 16. Quién aporta la recompensa
+- 200 monedas;
+- 1 Espada Buena.
+
+La recompensa correspondiente al grupo que partió permanece bloqueada hasta resolver el Encargo.
+
+## 17. Recompensas con distintos objetos
+
+Una lista como:
+
+> Espada Buena + Daga Buena + Martillo de batalla
+
+es ambigua si no definimos qué recibe cada aventurero.
+
+Para evitarlo, el sistema distinguirá dos tipos de recompensa de objetos.
+
+### A. Objeto fijo por aventurero
+
+Todos reciben el mismo objeto.
+
+Ejemplo:
+
+> 200 monedas + 1 Espada Buena por aventurero
+
+Requiere una espada por cada integrante.
+
+### B. Elección de 1 objeto de un conjunto de recompensa
+
+El jugador ofrece un **conjunto de opciones**.
+
+Ejemplo:
+
+> 200 monedas + elegir 1 de:
+> - Espada de hierro Buena
+> - Daga Buena
+> - Martillo de batalla Bueno
+
+Cada aventurero analiza cuál de esos objetos le resulta más útil.
+
+Antes de formar el grupo, el sistema comprueba que puede asignarse **un objeto aceptable a cada integrante sin duplicar una pieza inexistente**.
+
+Ejemplo:
+
+- Guerrero → Espada
+- Pícaro → Daga
+- Bárbaro → Martillo
+
+Si dos aventureros desean la misma espada y sólo hay una, uno puede elegir su segunda mejor opción si sigue considerando atractiva la recompensa.
+
+Si no existe una asignación válida para todos, ese grupo no se forma.
+
+### Paquetes múltiples
+
+Más adelante podrá existir un paquete explícito del tipo:
+
+> 200 monedas + Espada + Poción
+
+En ese caso queda claro que **cada aventurero recibe todos los elementos indicados**.
+
+No se interpretará una simple lista de armas distintas como que cada aventurero recibe todas.
+
+## 18. Condición de pago del Encargo
+
+La recompensa se entrega **únicamente si se cumple el objetivo exacto publicado**.
+
+Ejemplo:
+
+> Objetivo: entregar 1 Cuerno de Minotauro
+
+No alcanza con matar al Minotauro.
+
+Si el grupo derrota al jefe pero el Cuerno no aparece:
+
+- el Encargo se considera no cumplido;
+- los aventureros no reciben la recompensa del Encargo;
+- la recompensa reservada vuelve a la ciudad.
+
+Por lo tanto se separan claramente:
+
+1. **Probabilidad de derrotar al objetivo.**
+2. **Probabilidad de conseguir el objeto pedido.**
+
+Ejemplo:
+
+> Éxito de combate estimado: 78%  
+> Drop de Cuerno al derrotarlo: 35%
+
+La probabilidad real de completar el Encargo depende de ambas.
+
+## 19. Intercambio al completar
+
+Si el grupo obtiene el objeto solicitado:
+
+1. los aventureros regresan con el botín;
+2. el objeto comprometido se transfiere a la ciudad;
+3. la recompensa reservada se transfiere a cada aventurero;
+4. cada NPC recibe su dinero y el objeto de recompensa que le corresponde;
+5. el Encargo queda completado;
+6. el resultado queda registrado en la Sede del Gremio.
+
+El intercambio debe resolverse como una operación única: no puede entregarse el objeto a la ciudad sin pagar a los aventureros ni pagar la recompensa sin recibir el objetivo.
+
+## 20. Botín adicional
+
+El Encargo obliga a entregar únicamente el objeto solicitado.
+
+Otros drops conseguidos durante la aventura pertenecen inicialmente a los aventureros.
+
+Esos objetos pueden:
+
+- quedarse en su inventario;
+- aparecer posteriormente en la Sede del Gremio;
+- ser vendidos mediante su IA de venta;
+- utilizarse por el propio NPC.
+
+Esto conecta Encargos y economía sin regalar automáticamente todo el botín al jugador.
+
+## 21. Quién aporta la recompensa
 
 Cuando el Encargo nace de un trabajador, el origen narrativo puede ser ese trabajador.
 
 Ejemplo:
 
 > Borin necesita un Cuerno de Minotauro.  
-> Borin ofrece: 180 monedas + 1 Espada de hierro.
+> Recompensa por aventurero: 200 monedas + 1 Espada de hierro Buena.
 
-A nivel de sistema, mientras los trabajadores no tengan economía personal completa, la recompensa se reserva desde:
+Mientras los trabajadores no tengan patrimonio propio completo, la recompensa se reserva desde:
 
 - fondos de la ciudad;
 - stock del negocio correspondiente;
-- objetos seleccionados por el jugador.
+- objetos elegidos por el jugador.
 
-Más adelante, si los trabajadores tienen inventario o patrimonio propio, podrán aportar directamente sus propios bienes.
+Más adelante un trabajador podrá aportar bienes propios si el sistema económico lo permite.
