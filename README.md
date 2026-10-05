@@ -163,6 +163,7 @@ Menú incluye **Reiniciar Reino de prueba** para volver a ejecutar el proceso de
 La discusión de diseño más reciente quedó consolidada en:
 
 - [Diseño aprobado EN PRUEBA — Era, ciudad inicial y tramo Nv.1–3](docs/diseno-aprobado-era-inicial-nv1-3.md)
+- [Balance técnico v1 — Aventureros, combate y ritmo Nv.1–3](docs/balance-combate-aventureros-v1.md)
 
 Este documento reúne temporadas/Eras, estructura territorial, ciudad fundadora, negocios, trabajadores, recursos, amenaza/escoltas, misiones comunes, Textilería Nv.2, balance inicial y enemigos comunes aprobados para el primer tramo. No implica implementación inmediata: sirve como contrato de diseño para los próximos desarrollos y playtests.
 
