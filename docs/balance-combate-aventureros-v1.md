@@ -240,6 +240,29 @@ Las habilidades no se ejecutan de manera persistente. Sus datos alimentan la res
 
 Los Estados modifican el resultado esperado. No requieren almacenar rondas de combate reales.
 
+### Afinidad inicial de Estados por clase
+
+Los Estados **no pertenecen todos al Mago**. Cada clase tiene acceso natural a un subconjunto que refuerza su identidad.
+
+| Clase | Estados naturales iniciales |
+|---|---|
+| **Guerrero** | Herida, Aturdido |
+| **Explorador** | Herida, Veneno, Parálisis |
+| **Sanador** | Sin Estado ofensivo base; cura/limpia Estados |
+| **Mago** | Quemadura, Parálisis |
+
+Lectura de diseño:
+
+- **Herida** representa daño físico traumático: Guerrero y Explorador.
+- **Aturdido** representa impacto/control físico fuerte: principalmente Guerrero.
+- **Veneno** representa preparación, caza, sustancias y tácticas: principalmente Explorador.
+- **Parálisis** puede surgir por táctica/trampa del Explorador o por Rayo del Mago.
+- **Quemadura** pertenece inicialmente al daño elemental de Fuego del Mago.
+- **Sanador** se especializa en remover/mitigar Estados y sostener al grupo, no en repartir Estados ofensivos.
+
+Estas afinidades son la base de clase, no una prohibición eterna. Equipamiento, materiales especiales y futuras especializaciones pueden abrir otras formas de aplicar Estados cuando exista una razón de juego.
+
+
 ### Herida
 - +8 % de desgaste esperado mientras influye en el encuentro;
 - +15 % relativo al riesgo de regresar con lesión física persistente.
