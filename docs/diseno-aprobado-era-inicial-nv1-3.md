@@ -2168,9 +2168,9 @@ Objetivo temprano:
 
 Primera curva para simulación:
 
-- Nv.1 → 2: **60 XP**.
-- Nv.2 → 3: **100 XP**.
-- Nv.3 → 4: **160 XP**.
+- Nv.1 → 2: **45 XP**.
+- Nv.2 → 3: **90 XP**.
+- Nv.3 → 4: **150 XP**.
 
 Estos valores son de balance inicial y se ajustarán mediante simulación/playtest antes de extender la curva hasta el final de temporada.
 
