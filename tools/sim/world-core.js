@@ -97,6 +97,7 @@ function initialState(rng,profile){
       alphaSeen:0,bossSeen:0,alphaDefeated:0,bossDefeated:0,alphaPity:0,bossPity:0,
       missionsCompleted:0,workerOutings:0,blockedPurchases:0,repairBlocked:0,
       demand:{attempts:0,fulfilled:0,stockMiss:0,coinMiss:0},
+      demandByItem:{dagger:0,bow:0,staff:0,shield:0,leather:0,gloves:0,boots:0},
       food:{platesSold:0,rationsSold:0,stockMiss:0},
       lootMarket:{offerUnits:0,acceptedUnits:0,noDemandUnits:0,treasuryRejectUnits:0,valuePaid:0},
       threatIncidents:0,cityAttacks:0,workerInjuries:0,resourceLossValue:0
@@ -260,7 +261,11 @@ function craftOne(state,rng,candidatesPool){
 
   const candidates=candidatesPool
     .filter(i=>city.stock[i]<2&&canCraft(city,i))
-    .sort((a,b)=>city.stock[a]-city.stock[b]);
+    .sort((a,b)=>{
+      const demandDiff=(city.demandByItem[b]||0)-(city.demandByItem[a]||0);
+      if(demandDiff!==0)return demandDiff;
+      return city.stock[a]-city.stock[b];
+    });
   if(!candidates.length)return false;
 
   const item=candidates[0];
@@ -442,6 +447,7 @@ function buyStep(state,rng){
 
     city.demand.attempts++;
     const item=wanted.item,it=ITEM[item];
+    city.demandByItem[item]=Math.min(5,(city.demandByItem[item]||0)+1);
 
     if(city.stock[item]<=0){
       city.demand.stockMiss++;
@@ -474,6 +480,7 @@ function buyStep(state,rng){
 
     removeFounderInSlot(a,it.slot);
     a.equipment[item]={durability:it.durability,maxDurability:it.durability,origin,founder:false};
+    city.demandByItem[item]=Math.max(0,(city.demandByItem[item]||0)-2);
     city.demand.fulfilled++;
   }
 }
