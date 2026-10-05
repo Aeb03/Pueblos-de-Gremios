@@ -196,14 +196,21 @@ function chooseRawOriginToTan(city){
   if(!options.length)return null;
 
   // Curtir conserva identidad y no compromete todavía el material a un producto.
-  // Se prioriza material especial, luego el origen con mayor stock.
+  // Se priorizan especies identificadas; la piel genérica queda como respaldo.
   for(const special of ['greatBoar','alphaWolf']){
     if(options.includes(special))return special;
   }
-  options.sort((a,b)=>{
-    const ar=TEXTILE_ORIGIN[a].rawResource,br=TEXTILE_ORIGIN[b].rawResource;
-    return (city.resources[br]||0)-(city.resources[ar]||0);
-  });
+
+  const species=options.filter(x=>x==='wolf'||x==='boar');
+  if(species.length){
+    species.sort((a,b)=>{
+      const ar=TEXTILE_ORIGIN[a].rawResource,br=TEXTILE_ORIGIN[b].rawResource;
+      return (city.resources[br]||0)-(city.resources[ar]||0);
+    });
+    return species[0];
+  }
+
+  if(options.includes('neutral'))return 'neutral';
   return options[0];
 }
 
