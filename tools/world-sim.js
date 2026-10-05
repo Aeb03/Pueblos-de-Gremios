@@ -41,6 +41,7 @@ function main(){
     console.log(`  Ofertas al mercado: ${r.lootOfferUnitsMean.toFixed(1)} u | aceptado/ofrecido: ${pct(r.lootAcceptedRate)} | sin demanda: ${pct(r.lootNoDemandRate)} | tesorería: ${pct(r.lootTreasuryRejectRate)} | pagado: ${r.lootPurchaseValueMean.toFixed(1)}`);
     console.log(`  Monedas ciudad final: ${r.cityCoinsMean.toFixed(1)} | compras bloqueadas: ${r.blockedPurchasesMean.toFixed(1)}`);
     console.log(`  Alfa visto: ${pct(r.alphaSeenRate)} | Boss visto: ${pct(r.bossSeenRate)} | Boss derrotado: ${pct(r.bossDefeatRate)}`);
+    console.log(`  Cuero curtido N/W/B/A/G: ${r.tannedProducedMean.neutral.toFixed(1)} / ${r.tannedProducedMean.wolf.toFixed(1)} / ${r.tannedProducedMean.boar.toFixed(1)} / ${r.tannedProducedMean.alphaWolf.toFixed(2)} / ${r.tannedProducedMean.greatBoar.toFixed(2)}`);
     console.log(`  Textil producido N/W/B/A/G: ${r.textileProducedMean.neutral.toFixed(1)} / ${r.textileProducedMean.wolf.toFixed(1)} / ${r.textileProducedMean.boar.toFixed(1)} / ${r.textileProducedMean.alphaWolf.toFixed(2)} / ${r.textileProducedMean.greatBoar.toFixed(2)}`);
     console.log(`  Textil vendido N/W/B/A/G: ${r.textileSoldMean.neutral.toFixed(1)} / ${r.textileSoldMean.wolf.toFixed(1)} / ${r.textileSoldMean.boar.toFixed(1)} / ${r.textileSoldMean.alphaWolf.toFixed(2)} / ${r.textileSoldMean.greatBoar.toFixed(2)}`);
     console.log(`  Presencia final Lobo/Jabalí: ${r.wolfPresenceMean.toFixed(1)} / ${r.boarPresenceMean.toFixed(1)} | incidentes: ${r.threatIncidentsMean.toFixed(2)} | ataques: ${r.cityAttacksMean.toFixed(2)}\n`);
