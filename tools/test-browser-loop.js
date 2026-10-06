@@ -40,7 +40,7 @@ async function main(){
     await go('guildHall');await page.locator('#guildRewardInput').fill('5');await page.locator('#publishGuildMission').click();
     s=await read();assert.equal(s.worldSystems.guild.missions[0].reward,5,'No resetear precio al perder foco');
     await craft('smithy','nails');await craft('smithy','scissors');
-    await work();await tick();
+    await work();assert.equal(await page.locator('#mapWorkerProgress progress').count(),3);await tick();
     s=await read();assert.ok(s.worldSystems.clockMinutes>=10);assert.equal(s.worldSystems.production.stock.nails,1);assert.ok(s.resources.iron>5);assert.ok(s.worldSystems.guild.missions.some(m=>m.status==='accepted'));
     await tick();s=await read();assert.equal(s.worldSystems.production.stock.scissors,1);
     await craft('smithy','dagger');

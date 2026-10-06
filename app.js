@@ -2429,6 +2429,9 @@ function renderMapIntegrated(){
   els.boarPresence.textContent=Math.round(snap.presence.boar.value)+'/100 · '+snap.presence.boar.band.label;
   els.boarPresenceProgress.value=snap.presence.boar.value;
 
+  const workerProgress=document.getElementById('mapWorkerProgress');
+  if(workerProgress){workerProgress.replaceChildren();for(const job of state.worldSystems.map.workerJobs){appendWorldRow(workerProgress,{title:{mine:'Mara · Mina',wood:'Leñador · Bosque',hunt:'Cazador · Caza'}[job.kind]||'Salida de trabajador'});appendActivityProgress(workerProgress,job);}}
+
   els.mapZoneList.replaceChildren();
   for(const zone of snap.zones){
     appendWorldRow(els.mapZoneList,{
