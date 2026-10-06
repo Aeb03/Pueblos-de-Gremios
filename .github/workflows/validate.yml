@@ -22,6 +22,7 @@ jobs:
           node --check tools/test-city-progression.js
           node --check tools/test-activity-combat.js
           node --check tools/test-world-loop.js
+          node --check tools/integrated-world-sim.js
           node --check tools/balance-sim.js
           node --check tools/world-sim.js
           node --check tools/sim/world-config.js
@@ -38,6 +39,12 @@ jobs:
 
       - name: Check integrated world loop
         run: node tools/test-world-loop.js
+
+      - name: Check integrated world simulation
+        run: |
+          node tools/integrated-world-sim.js 100 1989 240 > /tmp/integrated-world.log
+          grep -q "INTEGRATED_WORLD_SIM" /tmp/integrated-world.log
+          cat /tmp/integrated-world.log
 
       - name: Check balance simulators
         run: |
