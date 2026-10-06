@@ -3116,6 +3116,11 @@ document.querySelectorAll('[data-world-recipe]').forEach(button=>{
 if(els.mapMineOuting)els.mapMineOuting.addEventListener('click',()=>integratedWorkerOuting('mine'));
 if(els.mapWoodOuting)els.mapWoodOuting.addEventListener('click',()=>integratedWorkerOuting('wood'));
 if(els.mapHuntOuting)els.mapHuntOuting.addEventListener('click',()=>integratedWorkerOuting('hunt'));
+if(els.equipMaraPickaxe)els.equipMaraPickaxe.addEventListener('click',()=>equipIntegratedWorkerTool('mara','ironPickaxe'));
+if(els.equipLoggerAxe)els.equipLoggerAxe.addEventListener('click',()=>equipIntegratedWorkerTool('logger','workAxe'));
+if(els.equipHunterBow)els.equipHunterBow.addEventListener('click',()=>equipIntegratedWorkerTool('hunter','huntingBow'));
+if(els.equipHunterKnife)els.equipHunterKnife.addEventListener('click',()=>equipIntegratedWorkerTool('hunter','huntingKnife'));
+if(els.repairWorkerTools)els.repairWorkerTools.addEventListener('click',repairIntegratedWorkerTools);
 
 els.swordInventoryList.addEventListener('change',event=>{
   const input=event.target.closest('[data-sword-price]');
