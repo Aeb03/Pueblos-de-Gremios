@@ -359,6 +359,31 @@
     return true;
   }
 
+  function buySharpening(state,npc,design){
+    if(npc.preparation?.sharpening)return false;
+    const compatible=npc.classKey==='warrior'||(npc.classKey==='explorer'&&npc.combatStyle!=='bow');
+    if(!compatible)return false;
+    const cfg=design.services.sharpening;
+    if(npc.coins<cfg.price)return false;
+    spendNpc(npc,'gear',cfg.price);
+    state.resources.coins+=cfg.price;
+    npc.preparation.sharpening=true;
+    logEvent(state,'service',npc.fullName+' pagó un Afilado básico antes de salir.');
+    return true;
+  }
+
+  function buyBowTuning(state,npc,design){
+    if(npc.preparation?.bowTuning)return false;
+    if(npc.classKey!=='explorer'||npc.combatStyle!=='bow')return false;
+    const cfg=design.services.bowTuning;
+    if(npc.coins<cfg.price)return false;
+    spendNpc(npc,'gear',cfg.price);
+    state.resources.coins+=cfg.price;
+    npc.preparation.bowTuning=true;
+    logEvent(state,'service',npc.fullName+' ajustó su arco antes de salir.');
+    return true;
+  }
+
   function restAtMeson(state,npc,design){
     const cfg=design.services.rest;
     if(npc.coins<cfg.price)return false;
@@ -742,12 +767,13 @@
       }
       if(eq.founder)continue;
       damageReduction+=Number(eq.damageReduction)||0;
-      winBonus+=(Number(eq.attack)||0)*.004+(Number(eq.initiative)||0)*.003;
+      winBonus+=(Number(eq.initiative)||0)*.003;
       lossMultiplier*=clamp(1-(Number(eq.defense)||0)*.018,.82,1);
       if(Number(eq.mana)>0)manaMultiplier*=.95;
     }
 
     if(npc.preparation?.sharpening)winBonus+=.015;
+    if(npc.preparation?.bowTuning)winBonus+=.012;
     return {
       damageReduction:clamp(damageReduction,0,.20),
       winBonus:clamp(winBonus,-.20,.15),
@@ -875,10 +901,15 @@
       Math.round(beforeMana-(beforeMana-result.adventurer.manaCurrent)*prep.manaFactor)
     );
     if(!result.won)result.adventurer.hpCurrent=0;
+    result.hpLoss=Math.max(0,beforeHp-result.adventurer.hpCurrent);
+    result.manaLoss=Math.max(0,beforeMana-result.adventurer.manaCurrent);
 
     const gained=result.won?rollDrops(result.adventurer,enemyKey,count,design,rng):{};
     wearEquipment(result.adventurer,rng,1);
-    if(result.adventurer.preparation)result.adventurer.preparation.sharpening=false;
+    if(result.adventurer.preparation){
+      result.adventurer.preparation.sharpening=false;
+      result.adventurer.preparation.bowTuning=false;
+    }
 
     Object.assign(npc,result.adventurer);
     npc.autonomy.currentActivity=null;
@@ -998,6 +1029,10 @@
       if(score<.56+rng()*.18)continue;
       if(!reserveMission(state,mission,npc))continue;
       if((mission.count>=2||mission.enemyKey!=='wolf')&&rng()<.65)buyRation(state,npc,design);
+      if(mission.count>=2||mission.enemyKey==='boar'){
+        if(rng()<.55)buySharpening(state,npc,design);
+        if(rng()<.55)buyBowTuning(state,npc,design);
+      }
       startNpcActivity(state,npc,{enemyKey:mission.enemyKey,count:mission.count,missionId:mission.id});
       logEvent(state,'mission-accept',npc.fullName+' aceptó '+mission.id+'.');
       return true;
@@ -1020,6 +1055,10 @@
       :(rng()<.82?1:2);
 
     if(count>=2&&rng()<.55)buyRation(state,npc,design);
+    if(count>=2){
+      if(rng()<.45)buySharpening(state,npc,design);
+      if(rng()<.45)buyBowTuning(state,npc,design);
+    }
     startNpcActivity(state,npc,{enemyKey,count});
     logEvent(state,'outing',npc.fullName+' salió por iniciativa propia contra '+count+'× '+design.enemies[enemyKey].name+'.');
     return true;
