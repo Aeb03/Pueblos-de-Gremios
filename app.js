@@ -2202,9 +2202,41 @@ function updateGuildRewardHint(){
   }
 }
 
+function updateDeliveryHint(){
+  if(!els.deliveryResourceSelect)return;
+  const key=els.deliveryResourceSelect.value||'meat';
+  const qty=Math.max(1,Math.floor(Number(els.deliveryQtyInput.value)||1));
+  const cfg=DESIGN.resources[key];
+  const level=Math.max(1,Math.min(3,Number(state.city.level)||1));
+  const target=Number(DESIGN.market.targets[level]?.[key])||0;
+  const have=Number(state.resources[key])||0;
+  const need=Math.max(0,target-have);
+  const reference=Math.max(1,(cfg?.price||1)*qty);
+  const min=Math.ceil(reference*DESIGN.mission.manualValueRange[0]);
+  const max=Math.floor(reference*DESIGN.mission.manualValueRange[1]);
+  els.deliveryHint.textContent='Demanda '+Math.round(need*100)/100+' · recomendado '+reference+' · permitido '+min+'–'+max+'.';
+  els.publishDeliveryMission.disabled=need<qty;
+  if(document.activeElement!==els.deliveryRewardInput)els.deliveryRewardInput.value=String(reference);
+}
+
+function updateEscortHint(){
+  if(!els.escortHint)return;
+  const bands=['wolf','boar'].map(species=>WORLD.threatBand(state.worldSystems.threat.presence[species],DESIGN));
+  const danger=Math.max(...bands.map(b=>DESIGN.threat.bands.findIndex(x=>x.id===b.id)));
+  const enabled=danger>=2;
+  const reference=10+Math.max(0,danger)*3;
+  els.escortHint.textContent=enabled
+    ?'Amenaza suficiente para escolta · recomendado '+reference+' monedas.'
+    :'Amenaza baja: todavía no hace falta pagar una escolta.';
+  els.publishEscortMission.disabled=!enabled;
+  if(document.activeElement!==els.escortRewardInput)els.escortRewardInput.value=String(reference);
+}
+
 function renderGuildIntegrated(){
   if(!els.guildMissionList)return;
   updateGuildRewardHint();
+  updateDeliveryHint();
+  updateEscortHint();
   const missions=state.worldSystems.guild.missions;
   const active=missions.filter(m=>m.status==='open'||m.status==='accepted');
   const slots=state.buildings.guildHall?.missionSlots||DESIGN.mission.startingConcurrent;
@@ -2217,10 +2249,18 @@ function renderGuildIntegrated(){
   }
 
   for(const mission of missions.slice(0,12)){
-    const enemy=DESIGN.enemies[mission.enemyKey];
     const npc=mission.acceptedBy?getAdventurer(mission.acceptedBy):null;
+    let objective='';
+    if(mission.type==='delivery'){
+      objective=mission.qty+'× '+(DESIGN.resources[mission.resourceKey]?.name||mission.resourceKey);
+    }else if(mission.type==='escort'){
+      objective='Escolta · '+mission.workerKind;
+    }else{
+      const enemy=DESIGN.enemies[mission.enemyKey];
+      objective=mission.count+'× '+(enemy?.name||mission.enemyKey);
+    }
     const subtitle=[
-      mission.count+'× '+(enemy?.name||mission.enemyKey),
+      objective,
       '🪙 '+mission.reward,
       npc?'Aceptada por '+npc.fullName:''
     ].filter(Boolean).join(' · ');
@@ -2459,6 +2499,29 @@ function publishGuildMissionAction(){
   const reward=Math.max(1,Math.round(Number(els.guildRewardInput.value)||1));
   const result=WORLD.publishHuntMission(state,{enemyKey,count,reward},DESIGN);
   els.guildFeedback.textContent=result.ok?'Misión publicada. Los aventureros decidirán si la aceptan.':result.reason;
+  if(result.ok)saveState();
+  render();
+}
+
+function publishDeliveryMissionAction(){
+  const resourceKey=els.deliveryResourceSelect.value||'meat';
+  const qty=Math.max(1,Math.floor(Number(els.deliveryQtyInput.value)||1));
+  const reward=Math.max(1,Math.round(Number(els.deliveryRewardInput.value)||1));
+  const result=WORLD.publishDeliveryMission(state,{resourceKey,qty,reward},DESIGN);
+  els.deliveryFeedback.textContent=result.ok
+    ?'Entrega publicada. Sólo la aceptará quien tenga ese material.'
+    :result.reason;
+  if(result.ok)saveState();
+  render();
+}
+
+function publishEscortMissionAction(){
+  const workerKind=els.escortWorkerSelect.value||'mine';
+  const reward=Math.max(1,Math.round(Number(els.escortRewardInput.value)||1));
+  const result=WORLD.publishEscortMission(state,{workerKind,reward},DESIGN);
+  els.escortFeedback.textContent=result.ok
+    ?'Escolta publicada. Un aventurero decidirá si toma el riesgo.'
+    :result.reason;
   if(result.ok)saveState();
   render();
 }
