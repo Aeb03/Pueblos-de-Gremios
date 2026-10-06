@@ -690,6 +690,13 @@
     return !item.classes||item.classes.includes(npc.classKey);
   }
 
+  function productScore(product){
+    if(!product||product.founder)return 0;
+    if(Number.isFinite(Number(product.durability))&&product.durability<=0)return -1;
+    return (product.attack||0)*2+(product.defense||0)*2+(product.initiative||0)+
+      (product.mana||0)*.15+(product.damageReduction||0)*30+(Number(product.quality)||50)*.01;
+  }
+
   function productForNeed(state,npc,design){
     const goods=state.worldSystems.production.goods;
     const candidates=[];
@@ -698,14 +705,14 @@
         if(!product.listed||!compatibleProduct(npc,product,design))continue;
         const item=design.equipment[key];
         if(!item)continue;
-        candidates.push({product,item,list,key});
+        const slotKey=product.slot==='weapon'?'weapon':product.slot;
+        const current=npc.equipment?.[slotKey];
+        const upgrade=productScore(product)-productScore(current);
+        if(current&&Number(current.durability)>0&&upgrade<.75)continue;
+        candidates.push({product,item,list,key,upgrade});
       }
     }
-    candidates.sort((a,b)=>{
-      const aScore=(a.product.attack||0)*2+(a.product.defense||0)*2+(a.product.initiative||0)+(a.product.mana||0)*.15+(a.product.damageReduction||0)*30;
-      const bScore=(b.product.attack||0)*2+(b.product.defense||0)*2+(b.product.initiative||0)+(b.product.mana||0)*.15+(b.product.damageReduction||0)*30;
-      return bScore-aScore;
-    });
+    candidates.sort((a,b)=>b.upgrade-a.upgrade||productScore(b.product)-productScore(a.product));
     return candidates.find(c=>npc.coins>=c.product.salePrice)||null;
   }
 
@@ -713,7 +720,10 @@
     const slot=product.slot;
     const key=slot==='weapon'?'weapon':slot;
     npc.equipment[key]=clone(product);
-    if(slot==='weapon')npc.weaponDamage=Math.max(1,(npc.weaponDamage||0)+(product.attack||0));
+    if(slot==='weapon'){
+      const founderDamage={warrior:4,explorer:4,healer:3,mage:3}[npc.classKey]||3;
+      npc.weaponDamage=founderDamage+(Number(product.attack)||0);
+    }
   }
 
   function buyGearStep(state,npc,design,rng){
