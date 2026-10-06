@@ -599,23 +599,92 @@
     return Math.max(1,(design.mission.baseRewards[enemyKey]||6)*Math.max(1,count||1));
   }
 
-  function publishHuntMission(state,{enemyKey='wolf',count=1,reward=null}={},design){
-    const slots=(state.buildings.guildHall?.missionSlots||design.mission.startingConcurrent);
-    const open=state.worldSystems.guild.missions.filter(m=>m.status==='open'||m.status==='accepted');
-    if(open.length>=slots)return {ok:false,reason:'No hay espacio de misiones disponible'};
+  function activeMissionCount(state){
+    return state.worldSystems.guild.missions.filter(m=>m.status==='open'||m.status==='accepted').length;
+  }
 
-    const reference=missionReference(enemyKey,count,design);
+  function hasMissionSlot(state,design){
+    const slots=state.buildings.guildHall?.missionSlots||design.mission.startingConcurrent;
+    return activeMissionCount(state)<slots;
+  }
+
+  function validateReward(reference,reward,design){
     const chosen=reward==null?reference:Math.round(Number(reward)||reference);
     const min=Math.ceil(reference*design.mission.manualValueRange[0]);
     const max=Math.floor(reference*design.mission.manualValueRange[1]);
-    if(chosen<min||chosen>max)return {ok:false,reason:'La recompensa debe estar entre '+min+' y '+max+' monedas'};
+    return {chosen,min,max,ok:chosen>=min&&chosen<=max};
+  }
+
+  function publishDeliveryMission(state,{resourceKey='meat',qty=1,reward=null}={},design){
+    if(!hasMissionSlot(state,design))return {ok:false,reason:'No hay espacio de misiones disponible'};
+    const cfg=design.resources[resourceKey];
+    if(!cfg)return {ok:false,reason:'Recurso inválido'};
+    const amount=Math.max(1,Math.floor(Number(qty)||1));
+    const target=stockTarget(state,resourceKey,design);
+    const have=Number(state.resources[resourceKey])||0;
+    const need=Math.max(0,target-have);
+    if(need<amount)return {ok:false,reason:'La ciudad no tiene una demanda real de '+amount+' unidades'};
+
+    const reference=Math.max(1,(cfg.price||1)*amount);
+    const price=validateReward(reference,reward,design);
+    if(!price.ok)return {ok:false,reason:'La recompensa debe estar entre '+price.min+' y '+price.max+' monedas'};
+
+    const mission={
+      id:'mission-'+state.worldSystems.guild.nextMissionSeq++,
+      type:'delivery',
+      resourceKey,
+      qty:amount,
+      reward:price.chosen,
+      reference,
+      status:'open',
+      active:true,
+      acceptedBy:null,
+      createdAtMinute:state.worldSystems.clockMinutes
+    };
+    state.worldSystems.guild.missions.unshift(mission);
+    logEvent(state,'guild','La Sede publicó una entrega de '+amount+'× '+cfg.name+'.');
+    return {ok:true,mission};
+  }
+
+  function publishEscortMission(state,{workerKind='mine',reward=null}={},design){
+    if(!hasMissionSlot(state,design))return {ok:false,reason:'No hay espacio de misiones disponible'};
+    const bands=['wolf','boar'].map(species=>threatBand(state.worldSystems.threat.presence[species],design));
+    const danger=Math.max(...bands.map(b=>design.threat.bands.findIndex(x=>x.id===b.id)));
+    if(danger<2)return {ok:false,reason:'La amenaza actual no justifica una misión de escolta'};
+
+    const reference=10+danger*3;
+    const price=validateReward(reference,reward,design);
+    if(!price.ok)return {ok:false,reason:'La recompensa debe estar entre '+price.min+' y '+price.max+' monedas'};
+
+    const mission={
+      id:'mission-'+state.worldSystems.guild.nextMissionSeq++,
+      type:'escort',
+      workerKind,
+      reward:price.chosen,
+      reference,
+      status:'open',
+      active:true,
+      acceptedBy:null,
+      createdAtMinute:state.worldSystems.clockMinutes
+    };
+    state.worldSystems.guild.missions.unshift(mission);
+    logEvent(state,'guild','La Sede publicó una escolta para una salida de '+workerKind+'.');
+    return {ok:true,mission};
+  }
+
+  function publishHuntMission(state,{enemyKey='wolf',count=1,reward=null}={},design){
+    if(!hasMissionSlot(state,design))return {ok:false,reason:'No hay espacio de misiones disponible'};
+
+    const reference=missionReference(enemyKey,count,design);
+    const price=validateReward(reference,reward,design);
+    if(!price.ok)return {ok:false,reason:'La recompensa debe estar entre '+price.min+' y '+price.max+' monedas'};
 
     const mission={
       id:'mission-'+state.worldSystems.guild.nextMissionSeq++,
       type:'hunt',
       enemyKey,
       count:Math.max(1,Math.floor(Number(count)||1)),
-      reward:chosen,
+      reward:price.chosen,
       reference,
       status:'open',
       active:true,
@@ -882,7 +951,11 @@
       mission.completedAtMinute=state.worldSystems.clockMinutes;
       state.worldSystems.guild.completed++;
       npc.history.missions++;
-      state.city.development=Number(((state.city.development||0)+(mission.enemyKey==='greatBoar'?1.8:mission.enemyKey==='alphaWolf'?1:.22)).toFixed(2));
+      const devGain=mission.type==='delivery'?.12:
+        mission.type==='escort'?.18:
+        (mission.enemyKey==='greatBoar'?1.8:mission.enemyKey==='alphaWolf'?1:.22);
+      state.city.development=Number(((state.city.development||0)+devGain).toFixed(2));
+      if(mission.type==='escort')state.worldSystems.map.escorts++;
       logEvent(state,'guild',npc.fullName+' completó la misión '+mission.id+' y cobró '+mission.reward+' monedas.');
     }else{
       releaseMissionReservation(state,mission,false,npc);
@@ -1033,8 +1106,42 @@
     const candidates=state.worldSystems.guild.missions
       .filter(m=>m.active&&m.status==='open')
       .sort((a,b)=>b.reward/b.reference-a.reward/a.reference);
+
     for(const mission of candidates){
-      if(mission.enemyKey!=='wolf'&&mission.enemyKey!=='boar')continue;
+      if(mission.type==='delivery'){
+        const have=Math.floor(Number(npc.loot?.[mission.resourceKey])||0);
+        if(have<mission.qty)continue;
+        const greed=(Number(npc.traits?.greed)||50)/100;
+        const rewardRatio=mission.reward/Math.max(1,mission.reference);
+        if((.48+greed*.22+rewardRatio*.18)<.62+rng()*.20)continue;
+        if(!reserveMission(state,mission,npc))continue;
+        npc.autonomy.currentActivity={
+          kind:'delivery',
+          missionId:mission.id,
+          startedAtMinute:state.worldSystems.clockMinutes,
+          resolvesAtMinute:state.worldSystems.clockMinutes+TICK_MINUTES
+        };
+        npc.status='En misión';
+        logEvent(state,'mission-accept',npc.fullName+' aceptó la entrega '+mission.id+'.');
+        return true;
+      }
+
+      if(mission.type==='escort'){
+        const wolf=state.worldSystems.threat.presence.wolf;
+        const boar=state.worldSystems.threat.presence.boar;
+        const enemyKey=wolf>=boar?'wolf':'boar';
+        const proxy={...mission,enemyKey,count:1};
+        const score=acceptanceScore(npc,proxy,deps,data,design);
+        if(score<.58+rng()*.18)continue;
+        if(!reserveMission(state,mission,npc))continue;
+        buyRation(state,npc,design);
+        startNpcActivity(state,npc,{enemyKey,count:1,missionId:mission.id});
+        npc.autonomy.currentActivity.kind='escort';
+        logEvent(state,'mission-accept',npc.fullName+' aceptó la escolta '+mission.id+'.');
+        return true;
+      }
+
+      if(mission.type!=='hunt'||(mission.enemyKey!=='wolf'&&mission.enemyKey!=='boar'))continue;
       const score=acceptanceScore(npc,mission,deps,data,design);
       if(score<.56+rng()*.18)continue;
       if(!reserveMission(state,mission,npc))continue;
@@ -1090,11 +1197,33 @@
     return false;
   }
 
+  function resolveDeliveryActivity(state,npc,activity,design){
+    const mission=state.worldSystems.guild.missions.find(m=>m.id===activity.missionId);
+    if(!mission){
+      npc.autonomy.currentActivity=null;
+      npc.status='Disponible';
+      return false;
+    }
+    const have=Math.floor(Number(npc.loot?.[mission.resourceKey])||0);
+    const ok=have>=mission.qty;
+    if(ok){
+      npc.loot[mission.resourceKey]-=mission.qty;
+      state.resources[mission.resourceKey]=(state.resources[mission.resourceKey]||0)+mission.qty;
+    }
+    completeMission(state,mission,npc,ok);
+    npc.autonomy.currentActivity=null;
+    npc.autonomy.intent=ok?'returning':'idle';
+    npc.status='Disponible';
+    return ok;
+  }
+
   function resolveDueActivities(state,deps,data,design,rng){
     for(const npc of state.adventurers){
       const activity=npc.autonomy?.currentActivity;
       if(!activity||activity.resolvesAtMinute>state.worldSystems.clockMinutes)continue;
-      if(activity.enemyKey==='wolf'||activity.enemyKey==='boar'){
+      if(activity.kind==='delivery'){
+        resolveDeliveryActivity(state,npc,activity,design);
+      }else if(activity.enemyKey==='wolf'||activity.enemyKey==='boar'){
         resolveCommonActivity(state,npc,activity,deps,data,design,rng);
       }
     }
@@ -1425,6 +1554,8 @@
     equipWorkerTool,
     repairWorkerTools,
     publishHuntMission,
+    publishDeliveryMission,
+    publishEscortMission,
     toggleMission,
     craftRecipe,
     enqueueRecipe,
