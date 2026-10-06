@@ -1,5 +1,6 @@
 const APP_VERSION='0.9.0g1';
 const SAVE_KEY='pueblos-gremios-save-v0.8.0';
+const FOUNDER_LEDGER_KEY='pueblos-gremios-founder-ledger-v1';
 const DATA=globalThis.PG_DATA;
 const ADV=globalThis.PG_ADVENTURER_CORE;
 const CITY=globalThis.PG_CITY_PROGRESSION;
@@ -465,6 +466,21 @@ function updateFoundationGate(){
   gate.hidden=Boolean(state.city.founded);
 }
 
+function loadFounderLedger(){
+  try{
+    const raw=localStorage.getItem(FOUNDER_LEDGER_KEY);
+    return raw?JSON.parse(raw):null;
+  }catch{return null;}
+}
+
+function persistFounderLedger(ledger){
+  localStorage.setItem(FOUNDER_LEDGER_KEY,JSON.stringify(ledger));
+}
+
+function cloneJson(value){
+  return JSON.parse(JSON.stringify(value));
+}
+
 function foundCity(){
   if(state.city.founded)return;
 
@@ -489,14 +505,33 @@ function foundCity(){
 
   state.city=city;
   state.resources={...DATA.founding.resources};
-  state.adventurers=generateFoundingAdventurers(city);
+
+  const previousLedger=loadFounderLedger();
+  const reusable=previousLedger&&
+    previousLedger.seasonId==='era-prueba-1'&&
+    previousLedger.claimed&&
+    Array.isArray(previousLedger.founders)&&
+    previousLedger.founders.length===DATA.founding.adventurerCount&&
+    !isLocalTestHost();
+
+  if(reusable){
+    state.adventurers=cloneJson(previousLedger.founders).map(npc=>{
+      npc.currentCityId=city.id;
+      npc.currentCityName=city.name;
+      npc.status='Disponible';
+      npc.active=true;
+      return ADV.normalizeAdventurer(npc,DATA);
+    });
+  }else{
+    state.adventurers=generateFoundingAdventurers(city);
+  }
   state.smithyTraffic={nextVisitAt:null,activeVisitor:null};
   state.smithyBook={entries:[],unread:0,archive:{visits:0,purchases:0,noPurchase:0,revenue:0}};
   state.worldSystems=null;
   state.accountLedger={
     seasonId:'era-prueba-1',
     founderPackClaimed:true,
-    cityLineageId:city.id
+    cityLineageId:previousLedger?.cityLineageId||city.id
   };
   WORLD.normalizeState(state,DATA,DESIGN);
   state.worldSystems.chronology.events.unshift({
@@ -504,9 +539,20 @@ function foundCity(){
     atMinute:0,
     day:1,
     type:'foundation',
-    text:name+' fue fundada con su único Pack de Fundación de la Era.',
-    meta:{cityId:city.id}
+    text:name+(reusable?' fue refundada reutilizando el Pack de Fundación de la Era.':' fue fundada con su único Pack de Fundación de la Era.'),
+    meta:{cityId:city.id,reusedFounderPack:reusable}
   });
+
+  if(!reusable||!previousLedger){
+    persistFounderLedger({
+      seasonId:'era-prueba-1',
+      claimed:true,
+      cityLineageId:city.id,
+      founders:cloneJson(state.adventurers),
+      foundationResources:cloneJson(DATA.founding.resources),
+      claimedAt:Date.now()
+    });
+  }
   saveState();
   updateFoundationGate();
 
@@ -518,6 +564,7 @@ function resetTestWorld(){
   const ok=globalThis.confirm('¿Reiniciar el Reino de prueba? Se borrará el progreso local de esta prueba y volverás a fundar la ciudad.');
   if(!ok)return;
   localStorage.removeItem(SAVE_KEY);
+  if(isLocalTestHost())localStorage.removeItem(FOUNDER_LEDGER_KEY);
   state=WORLD.normalizeState(defaultState(),DATA,DESIGN);
   updateFoundationGate();
   const input=document.getElementById('foundationCityName');
@@ -2770,6 +2817,8 @@ function render(){
   updateFoundationGate();
   if(els.localTestTools)els.localTestTools.hidden=!isLocalTestHost();
   if(els.manualCombatLab)els.manualCombatLab.hidden=!isLocalTestHost();
+  const resetButton=document.getElementById('resetWorldBtn');
+  if(resetButton)resetButton.hidden=!isLocalTestHost();
   WORLD.normalizeState(state,DATA,DESIGN);
   resolveExpiredExpedition();
   resolveExpiredCraft();
