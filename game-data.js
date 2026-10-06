@@ -11,7 +11,7 @@ globalThis.PG_DATA={
     adventurerCount:3,
     founderClassKeys:['warrior','explorer','healer'],
     adventurerCoinRange:[55,75],
-    resources:{coins:900,wood:50,iron:24,stone:8}
+    resources:{coins:240,iron:8,stone:6,wood:10,firewood:6,meat:4,skin:1,tendon:1}
   },
 
   cityProgression:{
@@ -65,7 +65,8 @@ globalThis.PG_DATA={
     meson:{id:'meson',name:'Mesón',type:'service',startingLevel:1,capacity:5},
     smithy:{id:'smithy',name:'Herrería',type:'production',startingLevel:1},
     carpenter:{id:'carpenter',name:'Carpintería',type:'production',startingLevel:1},
-    guildHall:{id:'guildHall',name:'Sede del Gremio',type:'adventurer-market',startingLevel:1,implemented:false}
+    guildHall:{id:'guildHall',name:'Sede del Gremio',type:'adventurer-market',startingLevel:1,implemented:true},
+    textile:{id:'textile',name:'Textilería',type:'production',startingLevel:0,unlockCityLevel:2,implemented:true}
   },
 
   items:{
