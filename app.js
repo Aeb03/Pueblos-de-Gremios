@@ -743,6 +743,7 @@ const els={
   textileFeedback:document.getElementById('textileFeedback'),
   tannedStockSummary:document.getElementById('tannedStockSummary'),
   tanningActions:document.getElementById('tanningActions'),
+  textileOriginSelect:document.getElementById('textileOriginSelect'),
   textileStockList:document.getElementById('textileStockList'),
 
   mapWorldTime:document.getElementById('mapWorldTime'),
