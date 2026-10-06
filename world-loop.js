@@ -969,7 +969,6 @@
         mission.type==='escort'?.18:
         (mission.enemyKey==='greatBoar'?1.8:mission.enemyKey==='alphaWolf'?1:.22);
       state.city.development=Number(((state.city.development||0)+devGain).toFixed(2));
-      if(mission.type==='escort')state.worldSystems.map.escorts++;
       logEvent(state,'guild',npc.fullName+' completó la misión '+mission.id+' y cobró '+mission.reward+' monedas.');
     }else{
       releaseMissionReservation(state,mission,false,npc);
@@ -1022,6 +1021,9 @@
     const mission=activity.missionId
       ?state.worldSystems.guild.missions.find(m=>m.id===activity.missionId)
       :null;
+    if(mission?.type==='escort'&&result.won){
+      workerOuting(state,mission.workerKind,design,rng,{forcedEscortId:npc.id});
+    }
     if(mission)completeMission(state,mission,npc,result.won);
 
     logEvent(
@@ -1399,7 +1401,7 @@
     return {ok:repaired.length>0,repaired,reason:repaired.length?'':'No hay herramientas dañadas o faltan monedas'};
   }
 
-  function workerOuting(state,kind,design,rng=Math.random){
+  function workerOuting(state,kind,design,rng=Math.random,options={}){
     const worker=workerForKind(state,kind);
     const tool=workerToolForKind(state,kind);
     if(!worker||!tool)return {ok:false,reason:'Trabajador o herramienta no disponible'};
@@ -1414,18 +1416,15 @@
       design.threat.bands.findIndex(b=>b.id===boarBand.id)
     );
 
-    if(danger>=2){
-      const escort=state.adventurers
-        .filter(npc=>npc.hpCurrent>npc.hpMax*.65&&!npc.autonomy.currentActivity)
-        .sort((a,b)=>groupPower(b)-groupPower(a))[0];
-      if(escort){
-        result.escort=escort.id;
-        state.worldSystems.map.escorts++;
-        logEvent(state,'escort',escort.fullName+' escoltó la salida de trabajo.');
-      }else if(rng()<.30+danger*.08){
-        result.injured=true;
-        state.worldSystems.map.workerInjuries++;
-      }
+    if(options.forcedEscortId){
+      const escort=state.adventurers.find(npc=>npc.id===options.forcedEscortId);
+      result.escort=options.forcedEscortId;
+      state.worldSystems.map.escorts++;
+      logEvent(state,'escort',(escort?.fullName||'Un aventurero')+' escoltó la salida de trabajo.');
+    }else if(danger>=2&&rng()<.30+danger*.08){
+      result.injured=true;
+      state.worldSystems.map.workerInjuries++;
+      logEvent(state,'worker-injury','La salida de trabajo sufrió un incidente por falta de escolta.');
     }
 
     const bonus=Number(toolCfg.resourceBonus)||0;
@@ -1508,6 +1507,7 @@
     state.worldSystems.clockMinutes+=TICK_MINUTES;
     state.worldSystems.day=1+Math.floor(state.worldSystems.clockMinutes/(24*60));
     processProductionQueue(state,design,rng);
+    if(deps.CITY)state.city=deps.CITY.normalizeCityProgress(state.city);
     resolveDueActivities(state,deps,data,design,rng);
     autonomyStep(state,deps,data,design,rng);
     threatStep(state,deps,data,design,rng);
