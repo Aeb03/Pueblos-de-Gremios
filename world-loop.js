@@ -944,6 +944,10 @@
         npc.status='Incapacitado';
         npc.history.defeats++;
         npc.history.incapacitations++;
+        const lost=deps.COMBAT.loseXpOnIncapacitation(npc,data);
+        npc.history.xpLost=(npc.history.xpLost||0)+lost;
+      }else if(npc.hpCurrent>0){
+        npc.status='Disponible';
       }
     }
 
@@ -953,6 +957,7 @@
       for(const npc of living){
         npc.xp=(npc.xp||0)+share;
         npc.history.victories++;
+        deps.COMBAT.applyLevelUps(npc,data);
       }
       const carrier=choice(rng,living.length?living:group);
       rollDrops(carrier,enemyKey,1,design,rng);
