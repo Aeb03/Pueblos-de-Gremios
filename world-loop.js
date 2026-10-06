@@ -928,20 +928,34 @@
 
   function sellLootStep(state,npc,design){
     let sold=0;
+    const tick=Math.floor((state.worldSystems.clockMinutes||0)/TICK_MINUTES);
+
     for(const [key,qtyRaw] of Object.entries(npc.loot||{})){
       const qty=Math.floor(Number(qtyRaw)||0);
       if(qty<=0||!design.resources[key])continue;
 
+      const memory=npc.lootOfferMemory[key];
+      if(memory&&Number(memory.retryAt)>tick&&Number(memory.knownQty)===qty)continue;
+
       const target=stockTarget(state,key,design);
       const have=Number(state.resources[key])||0;
       const need=Math.max(0,target-have);
-      if(need<=0)continue;
+      if(need<=0){
+        npc.lootOfferMemory[key]={knownQty:qty,retryAt:tick+3,reason:'no-demand'};
+        state.worldSystems.market.rejectedUnits+=qty;
+        continue;
+      }
 
       const price=design.resources[key].price||1;
       const spendable=Math.max(0,availableTreasury(state)-design.market.cityLootMinTreasury);
       const affordable=Math.floor(spendable/price);
       const accepted=Math.min(qty,need,affordable);
-      if(accepted<=0)continue;
+
+      if(accepted<=0){
+        npc.lootOfferMemory[key]={knownQty:qty,retryAt:tick+2,reason:'treasury'};
+        state.worldSystems.market.rejectedUnits+=qty;
+        continue;
+      }
 
       const value=accepted*price;
       state.resources.coins-=value;
@@ -952,6 +966,18 @@
       state.worldSystems.market.acceptedUnits+=accepted;
       state.worldSystems.market.valuePaid+=value;
       sold+=accepted;
+
+      const remaining=qty-accepted;
+      if(remaining<=0){
+        delete npc.lootOfferMemory[key];
+      }else{
+        npc.lootOfferMemory[key]={
+          knownQty:remaining,
+          retryAt:tick+(accepted>=need?3:2),
+          reason:accepted>=need?'no-demand':'treasury'
+        };
+      }
+
       logEvent(state,'loot',npc.fullName+' vendió '+accepted+'× '+design.resources[key].name+' a la ciudad.');
     }
     return sold;
