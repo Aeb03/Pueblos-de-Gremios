@@ -2,13 +2,15 @@
 
 PWA de gestión fantástica desarrollada paso a paso.
 
-## Integración actual — v0.9.1c (EN PRUEBA)
+## Integración actual — v0.9.1d (EN PRUEBA)
 
 Checkpoint `feature/v0.9.1-city-life`, construido sobre v0.9.0g4. Preserva la ciudad como centro del juego y limita la validación a Nv.1–3.
 
 El reloj avanza continuamente durante la sesión activa (3 segundos reales por minuto del mundo, ritmo de prueba). Las colas y salidas muestran barras y tiempo restante; se resuelven al cumplir su plazo. No requiere controles de combate o avance manual. La suspensión pausa el reloj; no se simulan ataques durante la ausencia.
 
 La partida de revisión `?prueba=nv1-3` usa un guardado separado y persistente; no borra la ciudad anterior. Los negocios vuelven a tener pestañas, colas y productos almacenados hasta que el jugador los pone a la venta. Aventureros, botín, servicios, equipo, misiones, trabajadores, mapa, amenaza y Textilería utilizan el mismo bucle.
+
+Visual v0.9.1d: Borin, Eldon y Nara permanecen dentro de sus edificios; sólo se muestran si están descansando en el Mesón. Aventureros y recolectores siguen visibles.
 
 Precios de cocina: Plato 4 monedas y Ración 5, con margen de materiales 1 y 2. [Balance v0.9.1c](docs/partes/v0.9.1c-meson-margin.md).
 

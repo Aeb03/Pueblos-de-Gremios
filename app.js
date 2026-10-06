@@ -1,4 +1,4 @@
-const APP_VERSION='0.9.1c';
+const APP_VERSION='0.9.1d';
 const MAIN_SAVE_KEY='pueblos-gremios-save-v0.8.0';
 const FULL_PLAYTEST=new URLSearchParams(location.search).get('prueba')==='nv1-3';
 const SAVE_KEY=FULL_PLAYTEST?'pueblos-gremios-playtest-nv1-3-v1':MAIN_SAVE_KEY;
@@ -3450,7 +3450,7 @@ if('serviceWorker' in navigator){
 
     window.addEventListener('load',async()=>{
       try{
-        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.1c',{updateViaCache:'none'});
+        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.1d',{updateViaCache:'none'});
         await reg.update();
       }catch{}
     });
