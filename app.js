@@ -59,6 +59,7 @@ const SMITHY_VISIT_MAX_MS=90_000;
 const SMITHY_VISIT_DURATION_MS=15_000;
 const SMITHY_BOOK_DETAIL_LIMIT=20;
 const SMITHY_OFFLINE_VISIT_CAP=6;
+const LEGACY_SMITHY_TRAFFIC_ENABLED=false;
 
 const titles={
   city:'Ciudad',
@@ -489,7 +490,7 @@ function foundCity(){
   state.city=city;
   state.resources={...DATA.founding.resources};
   state.adventurers=generateFoundingAdventurers(city);
-  state.smithyTraffic={nextVisitAt:Date.now()+randomVisitDelay(),activeVisitor:null};
+  state.smithyTraffic={nextVisitAt:null,activeVisitor:null};
   state.smithyBook={entries:[],unread:0,archive:{visits:0,purchases:0,noPurchase:0,revenue:0}};
   state.worldSystems=null;
   state.accountLedger={
@@ -2639,11 +2640,13 @@ function resolveAdventurerActivity(){
 function render(){
   updateFoundationGate();
   if(els.localTestTools)els.localTestTools.hidden=!isLocalTestHost();
+  if(els.manualCombatLab)els.manualCombatLab.hidden=!isLocalTestHost();
+  WORLD.normalizeState(state,DATA,DESIGN);
   resolveExpiredExpedition();
   resolveExpiredCraft();
   resolveExpiredCarpentry();
   syncAllWorkerStamina();
-  tickSmithyTraffic();
+  if(LEGACY_SMITHY_TRAFFIC_ENABLED)tickSmithyTraffic();
 
   els.coins.textContent=formatNumber(state.resources.coins);
 
@@ -2662,12 +2665,13 @@ function render(){
   els.cityDevelopmentProgress.value=Math.min(state.city.development,els.cityDevelopmentProgress.max);
   els.cityPopulationSummary.textContent=`Aventureros ${activeResidents}/${residentLimit} · Mesón ${activeResidents}/${mesonCapacity}`;
   els.cityProgressHint.textContent=cityNext.maxed
-    ?'Nivel máximo disponible en v0.9.0c. La población queda limitada a 5 residentes.'
+    ?'Nivel máximo disponible en v0.9.0g1. La población queda limitada a 5 residentes.'
     :`Faltan ${cityNext.remaining.toFixed(2)} de Desarrollo para Ciudad Nv. ${cityNext.level}. Expediciones, producción y mejoras hacen crecer la ciudad.`;
   els.smithyLevelCity.textContent=state.buildings.smithy.level;
   if(currentScreen()==='city')title.textContent=state.city.founded?state.city.name:'Nueva ciudad';
   renderFoundingAdventurers();
   renderAdventurerActivity();
+  renderIntegratedWorld();
 
   els.inventoryCoins.textContent=formatNumber(state.resources.coins);
   els.inventoryWood.textContent=formatNumber(state.resources.wood);
@@ -3058,7 +3062,7 @@ els.swordInventoryList.addEventListener('click',event=>{
 
 els.clearSmithyBook.addEventListener('click',clearReadSmithyBook);
 
-catchUpSmithyTraffic();
+if(LEGACY_SMITHY_TRAFFIC_ENABLED)catchUpSmithyTraffic();
 document.getElementById('foundCityBtn')?.addEventListener('click',foundCity);
 document.getElementById('foundationCityName')?.addEventListener('keydown',event=>{
   if(event.key==='Enter')foundCity();
@@ -3068,12 +3072,12 @@ document.getElementById('resetWorldBtn')?.addEventListener('click',resetTestWorl
 setInterval(render,500);
 document.addEventListener('visibilitychange',()=>{
   if(!document.hidden){
-    catchUpSmithyTraffic();
+    if(LEGACY_SMITHY_TRAFFIC_ENABLED)catchUpSmithyTraffic();
     render();
   }
 });
 window.addEventListener('focus',()=>{
-  catchUpSmithyTraffic();
+  if(LEGACY_SMITHY_TRAFFIC_ENABLED)catchUpSmithyTraffic();
   render();
 });
 
