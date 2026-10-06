@@ -99,8 +99,16 @@
     meanHpLossRate*=clamp(1-levelBonus-weaponBonus*.018,.45,1);
     winChance=clamp(winChance+levelBonus*.08+weaponBonus*.0015,.55,.999);
 
+    const mods=adventurer.combatMods||{};
+    meanHpLossRate*=clamp(Number(mods.lossMultiplier)||1,.45,1.60);
+    meanHpLossRate*=1-clamp(Number(mods.damageReduction)||0,0,.25);
+    winChance=clamp(winChance+(Number(mods.winBonus)||0),.45,.999);
+
     const manaBase=Number(data.activityCombat?.manaUse?.[classKey])||0;
-    const meanManaUseRate=clamp(manaBase*pressure.manaMultiplier,0,1);
+    const meanManaUseRate=clamp(
+      manaBase*pressure.manaMultiplier*clamp(Number(mods.manaMultiplier)||1,.65,1.35),
+      0,1
+    );
 
     return {
       combatSchemaVersion:COMBAT_SCHEMA_VERSION,
