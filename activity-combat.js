@@ -271,6 +271,7 @@
     statsForLevel,
     previewEncounter,
     resolveEncounter,
+    applyLevelUps,
     loseXpOnIncapacitation,
     recoverForTest
   };
