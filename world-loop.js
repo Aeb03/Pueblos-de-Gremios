@@ -528,6 +528,20 @@
       origin:job.origin||'neutral'
     });
     state.worldSystems.production.qualityLog=state.worldSystems.production.qualityLog.slice(0,20);
+
+    const currentBest=state.worldSystems.chronology.records.bestCraftedItem;
+    if(!currentBest||quality.score>currentBest.score){
+      state.worldSystems.chronology.records.bestCraftedItem={
+        recipeKey:job.recipeKey,
+        name:recipe.name,
+        score:quality.score,
+        quality:quality.label,
+        origin:job.origin||'neutral',
+        atMinute:state.worldSystems.clockMinutes
+      };
+      logEvent(state,'record','Nuevo récord de fabricación: '+recipe.name+' · '+quality.label+' ('+quality.score+').');
+    }
+
     state.city.development=Number(((state.city.development||0)+.45).toFixed(2));
     logEvent(state,'craft','Producción terminada: '+recipe.name+' · '+quality.label+'.');
     return {ok:true,quality};
@@ -1078,9 +1092,23 @@
       if(kind==='rare'){
         state.worldSystems.threat.alphaDefeated++;
         state.worldSystems.threat.presence.wolf=Math.max(0,state.worldSystems.threat.presence.wolf-design.enemies.alphaWolf.presenceDrop);
+        if(!state.worldSystems.chronology.records.firstAlphaWolfDefeat){
+          state.worldSystems.chronology.records.firstAlphaWolfDefeat={
+            atMinute:state.worldSystems.clockMinutes,
+            members:group.map(n=>({id:n.id,name:n.fullName}))
+          };
+          logEvent(state,'record','Primera derrota del Lobo Alfa registrada en las Crónicas.');
+        }
       }else{
         state.worldSystems.threat.bossDefeated++;
         state.worldSystems.threat.presence.boar=Math.max(0,state.worldSystems.threat.presence.boar-design.enemies.greatBoar.presenceDrop);
+        if(!state.worldSystems.chronology.records.firstGreatBoarDefeat){
+          state.worldSystems.chronology.records.firstGreatBoarDefeat={
+            atMinute:state.worldSystems.clockMinutes,
+            members:group.map(n=>({id:n.id,name:n.fullName}))
+          };
+          logEvent(state,'record','Primera derrota del Gran Jabalí registrada en las Crónicas.');
+        }
       }
       logEvent(state,'special-win','Un grupo derrotó a '+design.enemies[enemyKey].name+'.',{members:group.map(n=>n.id)});
     }else{
