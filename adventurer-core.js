@@ -121,6 +121,11 @@
       starter.body={...starter.body,...clone(npc.equipment.body),slot:'body'};
     }
 
+    for(const [slot,item] of Object.entries(npc?.equipment||{})){
+      if(slot==='weapon'||slot==='body'||!item||typeof item!=='object')continue;
+      starter[slot]={...clone(item),slot:item.slot||slot};
+    }
+
     return starter;
   }
 
