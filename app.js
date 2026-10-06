@@ -2340,6 +2340,34 @@ function renderMapIntegrated(){
       });
     }
   }
+
+  if(els.mapWorkerToolsSummary){
+    els.mapWorkerToolsSummary.replaceChildren();
+    const workerTools=[
+      ['Mara',state.workers.mara.worldTool],
+      ['Leñador',state.workers.logger.worldTool],
+      ['Cazador',state.workers.hunter.worldTool],
+      ['Cazador · cosecha',state.workers.hunter.harvestTool]
+    ];
+    for(const [name,tool] of workerTools){
+      if(!tool)continue;
+      appendWorldRow(els.mapWorkerToolsSummary,{
+        title:name+' · '+tool.name,
+        subtitle:tool.tier==='improved'?'Herramienta mejorada':'Herramienta fundadora',
+        right:'Dur. '+tool.durability+'/'+tool.maxDurability,
+        className:tool.durability<=0?'is-danger':(tool.durability<=tool.maxDurability*.35?'is-warning':'')
+      });
+    }
+
+    const stock=state.worldSystems.production.stock;
+    els.equipMaraPickaxe.disabled=(stock.ironPickaxe||0)<1;
+    els.equipLoggerAxe.disabled=(stock.workAxe||0)<1;
+    els.equipHunterKnife.disabled=(stock.huntingKnife||0)<1;
+    els.equipHunterBow.disabled=(state.worldSystems.production.goods.huntingBow||[]).length<1;
+
+    const damaged=workerTools.some(([,tool])=>tool&&tool.durability<tool.maxDurability);
+    els.repairWorkerTools.disabled=!damaged||WORLD.availableTreasury(state)<2;
+  }
 }
 
 function renderProductionIntegrated(){
@@ -2461,11 +2489,32 @@ function integratedWorkerOuting(kind){
   if(result.ok){
     syncCityFromIntegratedWorld();
     const gained=Object.entries(result.gained).map(([k,v])=>(DESIGN.resources[k]?.name||k)+' +'+v).join(' · ');
-    els.mapOutingFeedback.textContent=gained+(result.escort?' · salida escoltada':'')+(result.injured?' · trabajador herido':'');
+    els.mapOutingFeedback.textContent=gained+
+      (result.special?' · '+result.special:'')+
+      (result.escort?' · salida escoltada':'')+
+      (result.injured?' · trabajador herido':'');
     saveState();
   }else{
     els.mapOutingFeedback.textContent=result.reason||'No se pudo realizar la salida.';
   }
+  render();
+}
+
+function equipIntegratedWorkerTool(workerKey,toolKey){
+  const result=WORLD.equipWorkerTool(state,workerKey,toolKey,DESIGN);
+  els.mapOutingFeedback.textContent=result.ok
+    ?result.tool.name+' equipado.'
+    :result.reason;
+  if(result.ok)saveState();
+  render();
+}
+
+function repairIntegratedWorkerTools(){
+  const result=WORLD.repairWorkerTools(state,DESIGN);
+  els.mapOutingFeedback.textContent=result.ok
+    ?'Herramientas reparadas: '+result.repaired.join(', ')+'.'
+    :result.reason;
+  if(result.ok)saveState();
   render();
 }
 
