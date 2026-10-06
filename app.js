@@ -3160,6 +3160,11 @@ if(els.advanceWorld120)els.advanceWorld120.addEventListener('click',()=>advanceI
 if(els.publishGuildMission)els.publishGuildMission.addEventListener('click',publishGuildMissionAction);
 if(els.guildEnemySelect)els.guildEnemySelect.addEventListener('change',updateGuildRewardHint);
 if(els.guildEnemyCount)els.guildEnemyCount.addEventListener('change',updateGuildRewardHint);
+if(els.publishDeliveryMission)els.publishDeliveryMission.addEventListener('click',publishDeliveryMissionAction);
+if(els.deliveryResourceSelect)els.deliveryResourceSelect.addEventListener('change',updateDeliveryHint);
+if(els.deliveryQtyInput)els.deliveryQtyInput.addEventListener('input',updateDeliveryHint);
+if(els.publishEscortMission)els.publishEscortMission.addEventListener('click',publishEscortMissionAction);
+if(els.escortWorkerSelect)els.escortWorkerSelect.addEventListener('change',updateEscortHint);
 if(els.guildMissionList)els.guildMissionList.addEventListener('click',event=>{
   const button=event.target.closest('[data-mission-toggle]');
   if(!button)return;
