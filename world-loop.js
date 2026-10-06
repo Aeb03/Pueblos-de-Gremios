@@ -1182,7 +1182,6 @@
   }
 
   function serviceAndMarketDecision(state,npc,design,rng){
-    sellLootStep(state,npc,design);
     repairStep(state,npc,rng);
     const need=recoveryNeed(npc,design);
     if(need.needsRest){
@@ -1237,6 +1236,7 @@
       if(serviceAndMarketDecision(state,npc,design,rng))continue;
       if(npc.hpCurrent<=0)continue;
       if(tryMissionDecision(state,npc,deps,data,design,rng))continue;
+      sellLootStep(state,npc,design);
       spontaneousDecision(state,npc,design,rng);
       npc.autonomy.lastDecisionAt=state.worldSystems.clockMinutes;
     }
