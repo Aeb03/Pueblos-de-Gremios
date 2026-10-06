@@ -2,6 +2,14 @@
 
 PWA de gestión fantástica desarrollada paso a paso.
 
+## Integración actual — v0.9.0g2 (EN PRUEBA)
+
+Rama `feature/v0.9.0d-g-integrated-loop`. El circuito integrado conecta misiones de caza, entrega y escolta; decisiones autónomas; combate y consecuencias persistentes; Mesón; botín y compras; producción; herramientas; Textilería; amenaza y crecimiento de ciudad Nv. 1–3.
+
+El crecimiento y las llegadas se sincronizan dentro de cada tramo de diez minutos, incluso al avanzar dos horas juntas. Se conserva el guardado `pueblos-gremios-save-v0.8.0`. El tiempo se avanza desde los controles de simulación del Menú; el reloj automático y la validación en Android siguen pendientes.
+
+Validación automática: cuatro suites de módulos, diez escenarios del bucle y 100 simulaciones de cuatro horas. Ver [parte de integración](docs/partes/v0.9.0g2-integrated-loop.md).
+
 ## Estado actual
 
 **v0.8.0 — Fundación de ciudad — 📌 ESTABLE EN ANDROID**

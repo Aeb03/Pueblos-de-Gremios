@@ -1,4 +1,4 @@
-const APP_VERSION='0.9.0g1';
+const APP_VERSION='0.9.0g2';
 const SAVE_KEY='pueblos-gremios-save-v0.8.0';
 const FOUNDER_LEDGER_KEY='pueblos-gremios-founder-ledger-v1';
 const DATA=globalThis.PG_DATA;
@@ -2079,7 +2079,7 @@ function renderFoundingAdventurers(){
   });
 }
 
-const WORLD_DEPS={COMBAT,CITY};
+const WORLD_DEPS={COMBAT,CITY,onCityProgress:syncCityFromIntegratedWorld};
 
 function addWorldEvent(type,text,meta={}){
   if(!state.worldSystems?.chronology)return;
@@ -2843,7 +2843,7 @@ function render(){
   els.cityDevelopmentProgress.value=Math.min(state.city.development,els.cityDevelopmentProgress.max);
   els.cityPopulationSummary.textContent=`Aventureros ${activeResidents}/${residentLimit} · Mesón ${activeResidents}/${mesonCapacity}`;
   els.cityProgressHint.textContent=cityNext.maxed
-    ?'Nivel máximo disponible en v0.9.0g1. La población queda limitada a 5 residentes.'
+    ?'Nivel máximo disponible en v0.9.0g2. La población queda limitada a 5 residentes.'
     :`Faltan ${cityNext.remaining.toFixed(2)} de Desarrollo para Ciudad Nv. ${cityNext.level}. Expediciones, producción y mejoras hacen crecer la ciudad.`;
   els.smithyLevelCity.textContent=state.buildings.smithy.level;
   if(currentScreen()==='city')title.textContent=state.city.founded?state.city.name:'Nueva ciudad';
@@ -3358,7 +3358,7 @@ if('serviceWorker' in navigator){
 
     window.addEventListener('load',async()=>{
       try{
-        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0g1',{updateViaCache:'none'});
+        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0g2',{updateViaCache:'none'});
         await reg.update();
       }catch{}
     });

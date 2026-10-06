@@ -1528,13 +1528,25 @@
     state.worldSystems.townHall.alerts=alerts;
   }
 
+  function syncCityProgress(state,deps,rng){
+    if(!deps.CITY)return;
+    const previousLevel=Number(state.city.level)||1;
+    state.city=deps.CITY.normalizeCityProgress(state.city);
+    for(let level=previousLevel+1;level<=state.city.level;level++){
+      state.city.levelReachedAt[level]=state.city.levelReachedAt[level]||Date.now();
+      logEvent(state,'city-level','La ciudad alcanzó Nv. '+level+'.');
+    }
+    if(deps.onCityProgress)deps.onCityProgress(state,rng);
+  }
+
   function stepWorld(state,deps,data,design,rng=Math.random){
     normalizeState(state,data,design);
     state.worldSystems.clockMinutes+=TICK_MINUTES;
     state.worldSystems.day=1+Math.floor(state.worldSystems.clockMinutes/(24*60));
     processProductionQueue(state,design,rng);
-    if(deps.CITY)state.city=deps.CITY.normalizeCityProgress(state.city);
+    syncCityProgress(state,deps,rng);
     resolveDueActivities(state,deps,data,design,rng);
+    syncCityProgress(state,deps,rng);
     autonomyStep(state,deps,data,design,rng);
     threatStep(state,deps,data,design,rng);
     updateUnlocks(state,design);

@@ -180,12 +180,11 @@ function playerPolicy(state,rng){
 
 function run(seed,minutes=240){
   const {state,rng}=initial(seed);
-  const deps={COMBAT,CITY};
+  const deps={COMBAT,CITY,onCityProgress:reconcilePopulation};
 
   for(let minute=0;minute<minutes;minute+=10){
     playerPolicy(state,rng);
     WORLD.advanceWorld(state,10,deps,DATA,DESIGN,rng);
-    reconcilePopulation(state,rng);
   }
 
   const ws=state.worldSystems;

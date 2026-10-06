@@ -6,6 +6,7 @@ require('../game-data.js');
 const DATA=globalThis.PG_DATA;
 const ADV=require('../adventurer-core.js');
 const COMBAT=require('../activity-combat.js');
+const CITY=require('../city-progression.js');
 const DESIGN=require('../world-design-data.js');
 const WORLD=require('../world-loop.js');
 
@@ -204,4 +205,27 @@ function state({withAdventurer=true}={}){
   assert.ok(npc.hpCurrent<=hpBefore);
 })();
 
-console.log('test-world-loop: 9 suites OK');
+(function growthIsAppliedInsideBatchedAdvance(){
+  const s=state({withAdventurer:false});
+  s.city.development=9.4;
+  assert.equal(WORLD.enqueueRecipe(s,'nails',DESIGN).ok,true);
+  const observations=[];
+  const deps={COMBAT,CITY,onCityProgress(current){
+    observations.push({minute:current.worldSystems.clockMinutes,level:current.city.level});
+    if(current.city.level>=2&&!current.city.populationMilestones.level2Arrival){
+      current.adventurers.push(adventurer('mage'));
+      current.city.populationMilestones.level2Arrival=true;
+    }
+  }};
+  WORLD.advanceWorld(s,120,deps,DATA,DESIGN,fixed(.999));
+  assert.ok(observations.some(o=>o.minute===10&&o.level===2));
+  assert.equal(s.adventurers.length,1);
+  assert.equal(s.worldSystems.chronology.events.filter(e=>e.type==='city-level').length,1);
+  assert.ok(s.city.levelReachedAt[2]);
+  const restored=WORLD.normalizeState(JSON.parse(JSON.stringify(s)),DATA,DESIGN);
+  WORLD.advanceWorld(restored,10,deps,DATA,DESIGN,fixed(.999));
+  assert.equal(restored.adventurers.length,1);
+  assert.equal(restored.worldSystems.chronology.events.filter(e=>e.type==='city-level').length,1);
+})();
+
+console.log('test-world-loop: 10 suites OK');
