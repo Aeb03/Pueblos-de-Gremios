@@ -36,3 +36,18 @@
 .screen[data-screen="smithy"]>.smithy-tab-panel,
 .screen[data-screen="carpenter"]>.recipe-card{display:none!important}
 .approved-production-panel{display:grid;gap:10px}
+/* Administración por lugar: pestañas táctiles y contenido acotado. */
+.management-tabs{display:flex;gap:8px;overflow-x:auto;padding:10px 0;margin-bottom:12px;scrollbar-width:thin}
+.management-tabs button{flex:none;min-height:44px;white-space:nowrap;padding:10px 14px}
+.management-tabs .is-active{background:#57412b;border-color:#d1ac65;color:#fff1c9}
+.business-management{display:grid;gap:12px}
+.management-card{padding:12px;border:1px solid #59442d;border-radius:12px;display:grid;gap:8px;background:#1c1610}
+.management-card p{margin:0}.management-card small{color:#c5b599;font-size:.8rem}
+.price-field{display:flex;gap:12px;align-items:center}.price-field input{min-height:44px;width:110px;background:#130f0b;border:1px solid #7a6241;border-radius:8px;color:#fff1d8;padding:8px;font:inherit}
+.management-section[hidden],.business-management[hidden],#simulationTestTools[hidden]{display:none!important}
+.screen[data-screen="smithy"]>.approved-production-panel,.screen[data-screen="carpenter"]>.approved-production-panel{display:none}
+.world-event-row small{font-size:.8rem;line-height:1.4}.world-event-row strong{font-size:.9rem;overflow-wrap:anywhere}
+#cityRecentActivity{margin:12px 0}.founding-adventurer details{margin-top:10px}.founding-adventurer summary{min-height:44px;cursor:pointer}
+
+.recipe-row{grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center}
+.recipe-row small{grid-column:1/-1}.recipe-row button{min-height:44px}

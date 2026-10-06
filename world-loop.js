@@ -35,10 +35,11 @@
       },
       goods:{
         dagger:[],huntingBow:[],simpleStaff:[],woodenShield:[],
-        leatherProtection:[],leatherGloves:[],leatherBoots:[]
+        leatherProtection:[],leatherGloves:[],leatherBoots:[],legacySword:[]
       },
       queue:[],
-      qualityLog:[]
+      qualityLog:[],
+      policies:{smithy:'store',carpenter:'store',textile:'store'}
     };
   }
 
@@ -136,6 +137,7 @@
       gear:0,rest:0,repair:0,consumable:0,
       ...(npc.spending||{})
     };
+    npc.inventory=Array.isArray(npc.inventory)?npc.inventory:[];
     npc.rationPrepared=Boolean(npc.rationPrepared);
     npc.preparation={
       sharpening:false,
@@ -156,6 +158,19 @@
     };
     ensureEquipmentDurability(npc);
     return npc;
+  }
+
+  function refreshCombatStats(npc,data){
+    const core=globalThis.PG_ADVENTURER_CORE;
+    if(!core||!data.adventurerRoles[npc.classKey])return;
+    const stats=core.statsForLevel(npc.classKey,npc.level,data);
+    for(const eq of Object.values(npc.equipment||{})){
+      if(!eq||eq.founder||eq.durability===0)continue;
+      for(const key of ['attack','defense','initiative','mana'])stats[key]+=Number(eq[key])||0;
+    }
+    npc.stats=stats;
+    npc.manaMax=stats.mana;
+    npc.manaCurrent=Math.min(npc.manaMax,npc.manaCurrent);
   }
 
   function makeWorkerTool(toolKey,design){
@@ -212,6 +227,7 @@
     ws.market={...emptyWorldSystems().market,...(ws.market||{})};
     ws.market.lootOffers=Array.isArray(ws.market.lootOffers)?ws.market.lootOffers:[];
     ws.map={...emptyWorldSystems().map,...(ws.map||{})};
+    ws.map.workerJobs=Array.isArray(ws.map.workerJobs)?ws.map.workerJobs:[];
     ws.townHall={...emptyWorldSystems().townHall,...(ws.townHall||{})};
     ws.townHall.alerts=Array.isArray(ws.townHall.alerts)?ws.townHall.alerts:[];
     ws.chronology={...emptyWorldSystems().chronology,...(ws.chronology||{})};
@@ -232,17 +248,18 @@
 
     next.workers={
       ...(next.workers||{}),
+      nara:{name:'Nara',profession:'Mesonera',level:1,cookingXp:0,hospitalityXp:0,...(next.workers?.nara||{})},
       mara:{
         ...(next.workers?.mara||{}),
         worldTool:normalizeWorkerTool(next.workers?.mara?.worldTool,'roughPick',design)
       },
       logger:{
-        profession:'Leñador',level:1,outings:0,status:'Disponible',
+        profession:'Leñador',level:1,outings:0,status:'Disponible',stamina:100,woodcuttingXp:0,
         ...(next.workers?.logger||{}),
         worldTool:normalizeWorkerTool(next.workers?.logger?.worldTool,'roughAxe',design)
       },
       hunter:{
-        profession:'Cazador',level:1,outings:0,status:'Disponible',
+        profession:'Cazador',level:1,outings:0,status:'Disponible',stamina:100,huntingXp:0,
         ...(next.workers?.hunter||{}),
         worldTool:normalizeWorkerTool(next.workers?.hunter?.worldTool,'roughHuntingGear',design),
         harvestTool:next.workers?.hunter?.harvestTool
@@ -251,6 +268,7 @@
       }
     };
 
+    migrateBusinessStorage(next,design);
     next.accountLedger={
       seasonId:ws.season.id,
       founderPackClaimed:Boolean(next.city?.founded),
@@ -258,10 +276,26 @@
       ...(next.accountLedger||{})
     };
 
-    next.adventurers=Array.isArray(next.adventurers)?next.adventurers.map(ensureAdventurer):[];
+    next.adventurers=Array.isArray(next.adventurers)?next.adventurers.map(npc=>{ensureAdventurer(npc);refreshCombatStats(npc,data);return npc;}):[];
     updateUnlocks(next,design);
     updateAlerts(next,design);
     return next;
+  }
+
+  function migrateBusinessStorage(state,design){
+    const old=state.shops?.smithy?.storage;
+    const carpenter=state.shops?.carpenter?.storage;
+    const stock=state.worldSystems.production.stock;
+    for(const [oldKey,key] of [['pickaxeHeads','pickaxeHead'],['ironPickaxes','ironPickaxe']]){
+      if(old?.[oldKey]>0){stock[key]=(stock[key]||0)+old[oldKey];old[oldKey]=0;}
+    }
+    if(carpenter?.woodenHandles>0){stock.toolHandle=(stock.toolHandle||0)+carpenter.woodenHandles;carpenter.woodenHandles=0;}
+    for(const sword of old?.ironSwords||[]){
+      if(state.worldSystems.production.goods.legacySword.some(p=>p.id===sword.id))continue;
+      const reference=Number(sword.estimatedValue)||Number(sword.salePrice)||24;
+      state.worldSystems.production.goods.legacySword.push({...clone(sword),catalogId:'legacySword',ownerShop:'smithy',slot:'weapon',origin:'neutral',quality:sword.qualityScore||50,referencePrice:reference,salePrice:clamp(Number(sword.salePrice)||reference,Math.ceil(reference*.7),Math.floor(reference*1.3)),attack:Math.max(0,(sword.damage||4)-4),maxDurability:sword.maxDurability||sword.durability,listed:Boolean(sword.listed)});
+    }
+    if(old)old.ironSwords=[];
   }
 
   function logEvent(state,type,text,meta={}){
@@ -333,6 +367,7 @@
     state.resources.coins+=cfg.price;
     state.worldSystems.meson.revenue+=cfg.price;
     state.worldSystems.meson.platesSold++;
+    if(state.workers.nara)state.workers.nara.cookingXp+=5;
     npc.history.meals++;
     npc.hpCurrent=Math.min(npc.hpMax,npc.hpCurrent+Math.ceil(npc.hpMax*cfg.hpRestore));
     npc.manaCurrent=Math.min(npc.manaMax,npc.manaCurrent+Math.ceil(npc.manaMax*cfg.manaRestore));
@@ -353,6 +388,7 @@
     state.resources.coins+=cfg.price;
     state.worldSystems.meson.revenue+=cfg.price;
     state.worldSystems.meson.rationsSold++;
+    if(state.workers.nara)state.workers.nara.cookingXp+=5;
     npc.history.rations++;
     npc.rationPrepared=true;
     logEvent(state,'meson',npc.fullName+' compró una Ración de viaje.');
@@ -365,7 +401,7 @@
     if(!compatible)return false;
     const cfg=design.services.sharpening;
     if(npc.coins<cfg.price)return false;
-    spendNpc(npc,'gear',cfg.price);
+    spendNpc(npc,'consumable',cfg.price);
     state.resources.coins+=cfg.price;
     npc.preparation.sharpening=true;
     logEvent(state,'service',npc.fullName+' pagó un Afilado básico antes de salir.');
@@ -377,7 +413,7 @@
     if(npc.classKey!=='explorer'||npc.combatStyle!=='bow')return false;
     const cfg=design.services.bowTuning;
     if(npc.coins<cfg.price)return false;
-    spendNpc(npc,'gear',cfg.price);
+    spendNpc(npc,'consumable',cfg.price);
     state.resources.coins+=cfg.price;
     npc.preparation.bowTuning=true;
     logEvent(state,'service',npc.fullName+' ajustó su arco antes de salir.');
@@ -391,15 +427,40 @@
     state.resources.coins+=cfg.price;
     state.worldSystems.meson.revenue+=cfg.price;
     state.worldSystems.meson.restsSold++;
+    if(state.workers.nara)state.workers.nara.hospitalityXp+=5;
     npc.history.rests++;
     const wasDown=npc.hpCurrent<=0||npc.status==='Incapacitado';
-    npc.hpCurrent=Math.min(npc.hpMax,Math.max(npc.hpCurrent,Math.ceil(npc.hpMax*cfg.restoreHp)));
-    npc.manaCurrent=Math.min(npc.manaMax,Math.max(npc.manaCurrent,Math.ceil(npc.manaMax*cfg.restoreMana)));
+    const thresholds=returnThresholds(npc,design);
+    npc.hpCurrent=Math.min(npc.hpMax,Math.max(npc.hpCurrent+Math.ceil(npc.hpMax*cfg.restoreHp),Math.ceil(npc.hpMax*(thresholds.hp+.05))));
+    npc.manaCurrent=Math.min(npc.manaMax,Math.max(npc.manaCurrent+Math.ceil(npc.manaMax*cfg.restoreMana),Math.ceil(npc.manaMax*(thresholds.mana+.05))));
     npc.status='Disponible';
     npc.autonomy.intent='rested';
     npc.autonomy.lastReturnReason=wasDown?'incapacitación':'recuperación';
     logEvent(state,'meson',npc.fullName+' descansó en el Mesón y volvió a estar disponible.');
     return true;
+  }
+
+  function beginSlowRecovery(state,npc){
+    const occupied=state.adventurers.filter(n=>n.autonomy.currentActivity?.kind==='recovery').length;
+    if(occupied>=(state.buildings.meson.capacity||5))return false;
+    npc.autonomy.currentActivity={kind:'recovery',startedAtMinute:state.worldSystems.clockMinutes,resolvesAtMinute:state.worldSystems.clockMinutes+TICK_MINUTES*3};
+    npc.autonomy.intent='convalescing';
+    npc.status='En convalecencia';
+    state.worldSystems.meson.convalescences=(state.worldSystems.meson.convalescences||0)+1;
+    logEvent(state,'meson',npc.fullName+' quedó alojado para recuperarse lentamente: no puede pagar el descanso rápido.');
+    return true;
+  }
+
+  function finishSlowRecovery(state,npc,design){
+    const thresholds=returnThresholds(npc,design);
+    npc.hpCurrent=Math.max(npc.hpCurrent,Math.ceil(npc.hpMax*(thresholds.hp+.05)));
+    npc.manaCurrent=Math.max(npc.manaCurrent,Math.ceil(npc.manaMax*(thresholds.mana+.05)));
+    npc.history.freeRests=(npc.history.freeRests||0)+1;
+    npc.autonomy.currentActivity=null;
+    npc.autonomy.intent='rested';
+    npc.status='Disponible';
+    npc.mood='Estable';
+    logEvent(state,'meson',npc.fullName+' terminó su convalecencia en el Mesón.');
   }
 
   function rawOriginAvailable(state,design){
@@ -412,10 +473,11 @@
   }
 
   function tanHide(state,origin,design){
+    return enqueueRecipe(state,'tannedHide',design,origin);
+  }
+
+  function finishTanning(state,origin,design){
     const cfg=design.materialOrigins[origin];
-    if(!cfg||!state.worldSystems.textile.built)return {ok:false,reason:'Textilería no disponible'};
-    if((state.resources[cfg.raw]||0)<1)return {ok:false,reason:'No hay piel de ese origen'};
-    state.resources[cfg.raw]-=1;
     state.resources[cfg.tanned]=(state.resources[cfg.tanned]||0)+1;
     state.worldSystems.textile.tannedProduced[origin]=(state.worldSystems.textile.tannedProduced[origin]||0)+1;
     state.city.development=Number(((state.city.development||0)+.10).toFixed(2));
@@ -453,11 +515,16 @@
       qualityLabel:quality.label,
       referencePrice:price,
       salePrice:price,
-      listed:true
+      listed:false,
+      ownerShop:item.shop
     };
   }
 
   function consumeRecipeMaterials(state,recipe,origin,design){
+    if(recipe.rawOrigin){
+      const raw=design.materialOrigins[origin]?.raw;
+      if(!raw||(state.resources[raw]||0)<1)return false;
+    }
     if(recipe.materials){
       for(const [key,qty] of Object.entries(recipe.materials)){
         if((state.resources[key]||0)<qty)return false;
@@ -473,6 +540,7 @@
       if(!cfg||(state.resources[cfg.tanned]||0)<recipe.tannedHide)return false;
     }
 
+    if(recipe.rawOrigin)state.resources[design.materialOrigins[origin].raw]-=1;
     if(recipe.materials)for(const [key,qty] of Object.entries(recipe.materials))state.resources[key]-=qty;
     if(recipe.components)for(const [key,qty] of Object.entries(recipe.components))state.worldSystems.production.stock[key]-=qty;
     if(recipe.tannedHide)state.resources[design.materialOrigins[origin].tanned]-=recipe.tannedHide;
@@ -483,7 +551,6 @@
     const recipe=design.recipes[recipeKey];
     if(!recipe)return {ok:false,reason:'Receta inexistente'};
     if(recipe.shop==='textile'&&!state.worldSystems.textile.built)return {ok:false,reason:'Textilería no construida'};
-    if(recipe.id==='tannedHide')return tanHide(state,origin,design);
     if(!consumeRecipeMaterials(state,recipe,origin,design))return {ok:false,reason:'Faltan materiales o componentes'};
 
     const quality=productQuality(rng);
@@ -507,11 +574,14 @@
   function finishReservedRecipe(state,job,design,rng){
     const recipe=design.recipes[job.recipeKey];
     if(!recipe)return {ok:false,reason:'Receta inexistente'};
+    if(recipe.id==='tannedHide')return finishTanning(state,job.origin,design);
     const quality=productQuality(rng);
 
     if(design.equipment[job.recipeKey]&&Array.isArray(state.worldSystems.production.goods[job.recipeKey])){
       const product=craftEquipmentObject(job.recipeKey,job.origin||'neutral',quality,design);
+      product.listed=job.policy==='sell';
       state.worldSystems.production.goods[job.recipeKey].push(product);
+      if(job.policy==='recycle')recycleProduct(state,product.id,design);
       if(recipe.shop==='textile'){
         state.worldSystems.textile.goodsProduced[job.origin||'neutral']=
           (state.worldSystems.textile.goodsProduced[job.origin||'neutral']||0)+1;
@@ -529,6 +599,11 @@
     });
     state.worldSystems.production.qualityLog=state.worldSystems.production.qualityLog.slice(0,20);
 
+    if(recipe.shop==='smithy'){
+      state.workers.borin.smithingXp=(state.workers.borin.smithingXp||0)+20;
+      state.buildings.smithy.craftedCount=(state.buildings.smithy.craftedCount||0)+1;
+    }
+    if(recipe.shop==='carpenter')state.workers.eldon.carpentryXp=(state.workers.eldon.carpentryXp||0)+20;
     const currentBest=state.worldSystems.chronology.records.bestCraftedItem;
     if(!currentBest||quality.score>currentBest.score){
       state.worldSystems.chronology.records.bestCraftedItem={
@@ -550,8 +625,10 @@
   function enqueueRecipe(state,recipeKey,design,origin='neutral'){
     const recipe=design.recipes[recipeKey];
     if(!recipe)return {ok:false,reason:'Receta inexistente'};
-    if(recipe.id==='tannedHide')return tanHide(state,origin,design);
     if(recipe.shop==='textile'&&!state.worldSystems.textile.built)return {ok:false,reason:'Textilería no construida'};
+    const crafter=recipe.shop==='smithy'?state.workers.borin:recipe.shop==='carpenter'?state.workers.eldon:null;
+    if(crafter?.restingAtInn)return {ok:false,reason:'El trabajador está descansando en el Mesón'};
+    if(crafter&&(crafter.stamina||0)<10)return {ok:false,reason:'El trabajador necesita recuperar Resistencia'};
 
     const queue=state.worldSystems.production.queue;
     const capacity=design.buildings[recipe.shop]?.queueCapacity||5;
@@ -566,17 +643,36 @@
       TICK_MINUTES,
       Math.ceil((Number(recipe.durationSec)||10)/60/TICK_MINUTES)*TICK_MINUTES
     );
+    const previous=queue.filter(j=>j.shop===recipe.shop).at(-1);
+    const startsAt=Math.max(state.worldSystems.clockMinutes,previous?.readyAtMinute||0);
     const job={
       id:nowId('job'),
       recipeKey,
       shop:recipe.shop,
       origin,
-      startedAtMinute:state.worldSystems.clockMinutes,
-      readyAtMinute:state.worldSystems.clockMinutes+durationMinutes
+      startedAtMinute:startsAt,
+      readyAtMinute:startsAt+durationMinutes,
+      policy:state.worldSystems.production.policies?.[recipe.shop]||'store'
     };
     queue.push(job);
+    if(crafter)crafter.stamina-=10;
     logEvent(state,'queue','Trabajo reservado: '+recipe.name+'. Materiales apartados.');
     return {ok:true,job};
+  }
+
+  function enqueueBatch(state,recipeKey,design,origin='neutral',quantity=1){
+    const qty=Number(quantity);
+    if(!Number.isInteger(qty)||qty<1||qty>5)return {ok:false,reason:'Elegí entre 1 y 5 trabajos'};
+    const temporary=clone(state);
+    for(let i=0;i<qty;i++){
+      const result=enqueueRecipe(temporary,recipeKey,design,origin);
+      if(!result.ok)return result;
+    }
+    state.resources=temporary.resources;
+    state.workers=temporary.workers;
+    state.worldSystems.production=temporary.worldSystems.production;
+    state.worldSystems.chronology=temporary.worldSystems.chronology;
+    return {ok:true,quantity:qty};
   }
 
   function processProductionQueue(state,design,rng){
@@ -662,8 +758,8 @@
 
   function publishEscortMission(state,{workerKind='mine',reward=null}={},design){
     if(!hasMissionSlot(state,design))return {ok:false,reason:'No hay espacio de misiones disponible'};
-    const bands=['wolf','boar'].map(species=>threatBand(state.worldSystems.threat.presence[species],design));
-    const danger=Math.max(...bands.map(b=>design.threat.bands.findIndex(x=>x.id===b.id)));
+    if(!workerForKind(state,workerKind))return {ok:false,reason:'Trabajador inexistente'};
+    const danger=workerDanger(state,workerKind,design);
     if(danger<2)return {ok:false,reason:'La amenaza actual no justifica una misión de escolta'};
 
     const reference=10+danger*3;
@@ -688,6 +784,8 @@
 
   function publishHuntMission(state,{enemyKey='wolf',count=1,reward=null}={},design){
     if(!hasMissionSlot(state,design))return {ok:false,reason:'No hay espacio de misiones disponible'};
+    if(!['wolf','boar'].includes(enemyKey))return {ok:false,reason:'Objetivo de caza no disponible'};
+    if(!Number.isInteger(Number(count))||count<1||count>(enemyKey==='wolf'?3:2))return {ok:false,reason:'Cantidad de enemigos inválida'};
 
     const reference=missionReference(enemyKey,count,design);
     const price=validateReward(reference,reward,design);
@@ -796,16 +894,26 @@
       }
     }
     candidates.sort((a,b)=>b.upgrade-a.upgrade||productScore(b.product)-productScore(a.product));
-    return candidates.find(c=>npc.coins>=c.product.salePrice)||null;
+    const reserve=design.services.rest.price+(npc.personalityKey==='frugal'?12:2);
+    return candidates.find(c=>npc.coins>=c.product.salePrice+reserve)||null;
   }
 
   function equipPurchased(npc,product){
     const slot=product.slot;
     const key=slot==='weapon'?'weapon':slot;
+    const old=npc.equipment[key];
+    if(old)npc.inventory.push(clone(old));
     npc.equipment[key]=clone(product);
+    for(const stat of ['attack','defense','initiative','mana']){
+      const before=old&&!old.founder&&old.durability!==0?(Number(old[stat])||0):0;
+      const delta=(Number(product[stat])||0)-before;
+      npc.stats[stat]=(npc.stats[stat]||0)+delta;
+      if(stat==='mana'){npc.manaMax+=delta;npc.manaCurrent=Math.min(npc.manaMax,npc.manaCurrent+Math.max(0,delta));}
+    }
     if(slot==='weapon'){
       const founderDamage={warrior:4,explorer:4,healer:3,mage:3}[npc.classKey]||3;
       npc.weaponDamage=founderDamage+(Number(product.attack)||0);
+      npc.equipment[key].damage=npc.weaponDamage;
     }
   }
 
@@ -845,6 +953,48 @@
     return true;
   }
 
+  function setProductSale(state,productId,{listed,price}={},design){
+    const product=Object.values(state.worldSystems.production.goods).flat().find(p=>p.id===productId);
+    if(!product)return {ok:false,reason:'El producto ya no está en el negocio'};
+    const reference=product.referencePrice;
+    const chosen=price==null?product.salePrice:Number(price);
+    const min=Math.ceil(reference*.70),max=Math.floor(reference*1.30);
+    if(!Number.isInteger(chosen)||chosen<min||chosen>max)return {ok:false,reason:'Precio permitido: '+min+'–'+max};
+    product.salePrice=chosen;
+    if(listed!=null)product.listed=Boolean(listed);
+    return {ok:true,product};
+  }
+
+  function recycleProduct(state,productId,design){
+    for(const list of Object.values(state.worldSystems.production.goods)){
+      const i=list.findIndex(p=>p.id===productId);
+      if(i<0)continue;
+      const product=list[i],recipe=design.recipes[product.catalogId];
+      if(!recipe)return {ok:false,reason:'La pieza no tiene receta de reciclaje'};
+      const recovered={};
+      for(const [key,qty] of Object.entries(recipe.materials||{})){
+        if(key==='firewood')continue;
+        const amount=Math.floor(qty*.5);
+        if(amount){state.resources[key]=(state.resources[key]||0)+amount;recovered[key]=amount;}
+      }
+      if(recipe.tannedHide){
+        const key=design.materialOrigins[product.origin].tanned;
+        const amount=Math.floor(recipe.tannedHide*.5);
+        if(amount){state.resources[key]=(state.resources[key]||0)+amount;recovered[key]=amount;}
+      }
+      list.splice(i,1);
+      logEvent(state,'recycle','El taller recicló '+product.name+'.',{recovered});
+      return {ok:true,recovered};
+    }
+    return {ok:false,reason:'El producto ya no está en el negocio'};
+  }
+
+  function setProductionPolicy(state,shop,policy){
+    if(!['smithy','carpenter','textile'].includes(shop)||!['store','sell','recycle'].includes(policy))return {ok:false};
+    state.worldSystems.production.policies={...(state.worldSystems.production.policies||{}),[shop]:policy};
+    return {ok:true};
+  }
+
   function computeCombatMods(npc,design){
     let damageReduction=0;
     let winBonus=0;
@@ -865,9 +1015,9 @@
       if(Number(eq.mana)>0)manaMultiplier*=.95;
     }
 
-    if(npc.preparation?.sharpening)winBonus+=.015;
     if(npc.preparation?.bowTuning)winBonus+=.012;
     return {
+      attackBonus:npc.preparation?.sharpening?1:0,
       damageReduction:clamp(damageReduction,0,.20),
       winBonus:clamp(winBonus,-.20,.15),
       lossMultiplier:clamp(lossMultiplier,.55,1.5),
@@ -984,7 +1134,7 @@
   }
 
   function completeMission(state,mission,npc,won){
-    if(!mission)return;
+    if(!mission||mission.status!=='accepted')return;
     if(won){
       releaseMissionReservation(state,mission,true,npc);
       mission.status='completed';
@@ -1004,28 +1154,28 @@
     }
   }
 
+  function calculateCommonOutcome(npc,enemyKey,count,deps,data,design,rng){
+    const snapshot=clone(npc);
+    snapshot.combatMods=computeCombatMods(snapshot,design);
+    const prep=usePreparationBeforeCombat(snapshot,design);
+    const result=deps.COMBAT.resolveEncounter(snapshot,enemyKey,count,data,rng);
+    if(result.won){
+      const savedHp=Math.floor(result.hpLoss*(1-prep.hpFactor));
+      const savedMana=Math.floor(result.manaLoss*(1-prep.manaFactor));
+      result.adventurer.hpCurrent=Math.min(result.adventurer.hpMax,result.adventurer.hpCurrent+savedHp);
+      result.adventurer.manaCurrent=Math.min(result.adventurer.manaMax,result.adventurer.manaCurrent+savedMana);
+      result.hpLoss-=savedHp;
+      result.manaLoss-=savedMana;
+    }
+    return result;
+  }
+
   function resolveCommonActivity(state,npc,activity,deps,data,design,rng){
     const enemyKey=activity.enemyKey;
-    const maxCount=enemyKey==='wolf'?3:2;
-    const count=Math.min(activity.count,maxCount);
-    npc.combatMods=computeCombatMods(npc,design);
-    const prep=usePreparationBeforeCombat(npc,design);
-
-    const beforeHp=npc.hpCurrent;
-    const beforeMana=npc.manaCurrent;
-    let result=deps.COMBAT.resolveEncounter(npc,enemyKey,count,data,rng);
-    result.adventurer.hpCurrent=Math.max(
-      0,
-      Math.round(beforeHp-(beforeHp-result.adventurer.hpCurrent)*prep.hpFactor)
-    );
-    result.adventurer.manaCurrent=Math.max(
-      0,
-      Math.round(beforeMana-(beforeMana-result.adventurer.manaCurrent)*prep.manaFactor)
-    );
-    if(!result.won)result.adventurer.hpCurrent=0;
-    result.hpLoss=Math.max(0,beforeHp-result.adventurer.hpCurrent);
-    result.manaLoss=Math.max(0,beforeMana-result.adventurer.manaCurrent);
-
+    const count=activity.count;
+    // El resultado se calcula una sola vez al partir. Los saves antiguos
+    // sin resultado se resuelven aquí para mantener compatibilidad.
+    const result=activity.resolution||calculateCommonOutcome(npc,enemyKey,count,deps,data,design,rng);
     const gained=result.won?rollDrops(result.adventurer,enemyKey,count,design,rng):{};
     wearEquipment(result.adventurer,rng,1);
     if(result.adventurer.preparation){
@@ -1034,6 +1184,8 @@
     }
 
     Object.assign(npc,result.adventurer);
+    npc.mood=result.won?'Animado':'Abatido';
+    npc.lastActivity={enemyKey,count,won:result.won,hpLoss:result.hpLoss,manaLoss:result.manaLoss,drops:gained,atMinute:state.worldSystems.clockMinutes};
     npc.autonomy.currentActivity=null;
     npc.autonomy.intent=result.won?'returning':'incapacitated';
 
@@ -1048,7 +1200,12 @@
       ?state.worldSystems.guild.missions.find(m=>m.id===activity.missionId)
       :null;
     if(mission?.type==='escort'&&result.won){
-      workerOuting(state,mission.workerKind,design,rng,{forcedEscortId:npc.id});
+      const worker=workerForKind(state,mission.workerKind);
+      delete worker.escortMissionId;
+      const outing=workerOuting(state,mission.workerKind,design,rng,{forcedEscortId:npc.id});
+      result.won=outing.ok;
+    }else if(mission?.type==='escort'){
+      delete workerForKind(state,mission.workerKind).escortMissionId;
     }
     if(mission)completeMission(state,mission,npc,result.won);
 
@@ -1070,7 +1227,10 @@
 
   function resolveSpecialEncounter(state,group,enemyKey,deps,data,design,rng){
     const kind=enemyKey==='alphaWolf'?'rare':'boss';
-    const prepared=group.reduce((sum,npc)=>sum+groupPower(npc),0);
+    const prepared=group.reduce((sum,npc)=>{
+      const mods=computeCombatMods(npc,design);
+      return sum+groupPower(npc)*(1+mods.winBonus)+(mods.attackBonus||0)*2;
+    },0);
     const levelAvg=group.reduce((sum,npc)=>sum+(npc.level||1),0)/Math.max(1,group.length);
     let winChance,hpLoss,manaUse,xp;
 
@@ -1084,7 +1244,6 @@
       manaUse=.72;xp=design.enemies.greatBoar.xp;
     }
 
-    group.forEach(npc=>buyRation(state,npc,design));
     const won=rng()<winChance;
 
     for(const npc of group){
@@ -1095,7 +1254,9 @@
       npc.manaCurrent=Math.max(0,npc.manaCurrent-Math.ceil(npc.manaMax*localMana));
       wearEquipment(npc,rng,kind==='boss'?2:1);
       npc.history.activities++;
-      if(!won&&rng()<.55){
+      if(npc.preparation){npc.preparation.sharpening=false;npc.preparation.bowTuning=false;}
+      npc.mood=won?'Animado':'Abatido';
+      if(npc.hpCurrent<=0||(!won&&rng()<.55)){
         npc.hpCurrent=0;
         npc.status='Incapacitado';
         npc.history.defeats++;
@@ -1145,12 +1306,62 @@
     return won;
   }
 
-  function startNpcActivity(state,npc,{enemyKey,count,missionId=null}){
+  function startSpecialActivity(state,group,enemyKey,deps,data,design,rng){
+    for(const npc of group){
+      repairStep(state,npc,rng);
+      buyRation(state,npc,design);
+    }
+    const temporary=clone(state);
+    const simulated=group.map(n=>temporary.adventurers.find(a=>a.id===n.id));
+    const won=resolveSpecialEncounter(temporary,simulated,enemyKey,deps,data,design,rng);
+    const groupId=nowId('group');
+    const resolution={won,members:simulated.map(n=>clone(n)),enemyKey};
+    for(const npc of group){
+      npc.autonomy.currentActivity={kind:'group',groupId,enemyKey,count:1,
+        members:group.map(n=>n.id),resolution,
+        snapshot:{adventurers:group.map(n=>clone({...n,autonomy:{...n.autonomy,currentActivity:null}})),enemy:clone(design.enemies[enemyKey]),presence:clone(state.worldSystems.threat.presence)},
+        startedAtMinute:state.worldSystems.clockMinutes,
+        resolvesAtMinute:state.worldSystems.clockMinutes+TICK_MINUTES*2};
+      npc.status='En grupo';
+      npc.autonomy.intent='group';
+    }
+    logEvent(state,'outing','Se preparó un grupo para enfrentar a '+design.enemies[enemyKey].name+'.',{members:group.map(n=>n.id),enemyKey});
+  }
+
+  function resolveGroupActivity(state,activity,design){
+    const {won,members,enemyKey}=activity.resolution;
+    for(const outcome of members){
+      const npc=state.adventurers.find(n=>n.id===outcome.id);
+      if(!npc||npc.autonomy.currentActivity?.groupId!==activity.groupId)continue;
+      Object.assign(npc,clone(outcome));
+      npc.autonomy.currentActivity=null;
+      npc.autonomy.intent=won?'returning':'incapacitated';
+      npc.lastActivity={enemyKey,count:1,won,atMinute:state.worldSystems.clockMinutes};
+    }
+    const kind=enemyKey==='alphaWolf'?'rare':'boss';
+    if(won){
+      const species=kind==='rare'?'wolf':'boar';
+      state.worldSystems.threat.presence[species]=Math.max(0,state.worldSystems.threat.presence[species]-design.enemies[enemyKey].presenceDrop);
+      state.worldSystems.threat[kind==='rare'?'alphaDefeated':'bossDefeated']++;
+      const key=kind==='rare'?'firstAlphaWolfDefeat':'firstGreatBoarDefeat';
+      if(!state.worldSystems.chronology.records[key]){
+        state.worldSystems.chronology.records[key]={atMinute:state.worldSystems.clockMinutes,members:members.map(n=>({id:n.id,name:n.fullName}))};
+        logEvent(state,'record','Primera derrota de '+design.enemies[enemyKey].name+' registrada.');
+      }
+    }
+    logEvent(state,won?'special-win':'special-loss',
+      members.map(n=>n.fullName).join(', ')+(won?' derrotaron a ':' regresaron sin vencer a ')+design.enemies[enemyKey].name+'.',
+      {members:members.map(n=>n.id),enemyKey,won});
+  }
+
+  function startNpcActivity(state,npc,{enemyKey,count,missionId=null},deps,data,design,rng){
     npc.autonomy.currentActivity={
       kind:missionId?'mission':'spontaneous',
       enemyKey,
       count,
       missionId,
+      snapshot:{adventurer:clone(npc),enemy:clone(design.enemies[enemyKey]),count,presence:clone(state.worldSystems.threat.presence),zone:enemyKey==='wolf'?'northForest':'stoneHills'},
+      resolution:calculateCommonOutcome(npc,enemyKey,count,deps,data,design,rng),
       startedAtMinute:state.worldSystems.clockMinutes,
       resolvesAtMinute:state.worldSystems.clockMinutes+TICK_MINUTES
     };
@@ -1183,15 +1394,20 @@
       }
 
       if(mission.type==='escort'){
+        const worker=workerForKind(state,mission.workerKind);
+        if(worker?.restingAtInn||(worker?.stamina??100)<20)continue;
+        if(!worker||worker.currentJob||worker.escortMissionId||worker.injuredUntil>state.worldSystems.clockMinutes||worker.worldTool.durability<=0)continue;
         const wolf=state.worldSystems.threat.presence.wolf;
         const boar=state.worldSystems.threat.presence.boar;
-        const enemyKey=wolf>=boar?'wolf':'boar';
+        const enemyKey=mission.workerKind==='mine'?'boar':'wolf';
         const proxy={...mission,enemyKey,count:1};
         const score=acceptanceScore(npc,proxy,deps,data,design);
         if(score<.58+rng()*.18)continue;
         if(!reserveMission(state,mission,npc))continue;
         buyRation(state,npc,design);
-        startNpcActivity(state,npc,{enemyKey,count:1,missionId:mission.id});
+        startNpcActivity(state,npc,{enemyKey,count:1,missionId:mission.id},deps,data,design,rng);
+        workerForKind(state,mission.workerKind).escortMissionId=mission.id;
+        workerForKind(state,mission.workerKind).stamina=(workerForKind(state,mission.workerKind).stamina??100)-20;
         npc.autonomy.currentActivity.kind='escort';
         logEvent(state,'mission-accept',npc.fullName+' aceptó la escolta '+mission.id+'.');
         return true;
@@ -1206,14 +1422,14 @@
         if(rng()<.55)buySharpening(state,npc,design);
         if(rng()<.55)buyBowTuning(state,npc,design);
       }
-      startNpcActivity(state,npc,{enemyKey:mission.enemyKey,count:mission.count,missionId:mission.id});
+      startNpcActivity(state,npc,{enemyKey:mission.enemyKey,count:mission.count,missionId:mission.id},deps,data,design,rng);
       logEvent(state,'mission-accept',npc.fullName+' aceptó '+mission.id+'.');
       return true;
     }
     return false;
   }
 
-  function spontaneousDecision(state,npc,design,rng){
+  function spontaneousDecision(state,npc,deps,data,design,rng){
     const traits=npc.traits||{};
     const courage=(Number(traits.courage)||50)/100;
     const ambition=(Number(traits.ambition)||50)/100;
@@ -1227,24 +1443,28 @@
       ?(rng()<.68?1:(rng()<.82?2:3))
       :(rng()<.82?1:2);
 
+    const predicted=missionRisk(npc,{enemyKey,count},deps,data,design);
+    const prudence=(Number(npc.traits?.prudence)||50)/100;
+    if(predicted.win<.58+prudence*.22)return false;
     if(count>=2&&rng()<.55)buyRation(state,npc,design);
     if(count>=2){
       if(rng()<.45)buySharpening(state,npc,design);
       if(rng()<.45)buyBowTuning(state,npc,design);
     }
-    startNpcActivity(state,npc,{enemyKey,count});
+    startNpcActivity(state,npc,{enemyKey,count},deps,data,design,rng);
     logEvent(state,'outing',npc.fullName+' salió por iniciativa propia contra '+count+'× '+design.enemies[enemyKey].name+'.');
     return true;
   }
 
   function serviceAndMarketDecision(state,npc,design,rng){
-    repairStep(state,npc,rng);
     const need=recoveryNeed(npc,design);
     if(need.needsRest){
       if(restAtMeson(state,npc,design))return true;
+      if(beginSlowRecovery(state,npc))return true;
       npc.autonomy.intent='needs-rest';
       return true;
     }
+    repairStep(state,npc,rng);
     if(need.moderate&&rng()<.35){
       if(serveMeal(state,npc,design))return true;
     }
@@ -1276,7 +1496,11 @@
     for(const npc of state.adventurers){
       const activity=npc.autonomy?.currentActivity;
       if(!activity||activity.resolvesAtMinute>state.worldSystems.clockMinutes)continue;
-      if(activity.kind==='delivery'){
+      if(activity.kind==='recovery'){
+        finishSlowRecovery(state,npc,design);
+      }else if(activity.kind==='group'){
+        resolveGroupActivity(state,activity,design);
+      }else if(activity.kind==='delivery'){
         resolveDeliveryActivity(state,npc,activity,design);
       }else if(activity.enemyKey==='wolf'||activity.enemyKey==='boar'){
         resolveCommonActivity(state,npc,activity,deps,data,design,rng);
@@ -1287,13 +1511,16 @@
   function autonomyStep(state,deps,data,design,rng){
     for(const npc of state.adventurers){
       ensureAdventurer(npc);
+      npc.needs={...(npc.needs||{}),recovery:Math.round((1-npc.hpCurrent/npc.hpMax)*100),equipment:Object.values(npc.equipment||{}).some(e=>e&&e.durability===0)?100:0};
       if(npc.autonomy.currentActivity)continue;
       npc.status=npc.hpCurrent<=0?'Incapacitado':'Disponible';
+      const deliveryPending=state.worldSystems.guild.missions.some(m=>m.type==='delivery'&&m.active&&m.status==='open'&&(npc.loot[m.resourceKey]||0)>=m.qty);
+      if(!deliveryPending||(recoveryNeed(npc,design).needsRest&&npc.coins<design.services.rest.price))sellLootStep(state,npc,design);
       if(serviceAndMarketDecision(state,npc,design,rng))continue;
       if(npc.hpCurrent<=0)continue;
       if(tryMissionDecision(state,npc,deps,data,design,rng))continue;
       sellLootStep(state,npc,design);
-      spontaneousDecision(state,npc,design,rng);
+      spontaneousDecision(state,npc,deps,data,design,rng);
       npc.autonomy.lastDecisionAt=state.worldSystems.clockMinutes;
     }
   }
@@ -1301,7 +1528,7 @@
   function maybeSpecialEncounters(state,deps,data,design,rng){
     const cityLevel=Number(state.city.level)||1;
     const healthy=state.adventurers
-      .filter(npc=>npc.hpCurrent>npc.hpMax*.60&&!npc.autonomy.currentActivity)
+      .filter(npc=>npc.hpCurrent>npc.hpMax*.60&&npc.manaCurrent>npc.manaMax*.40&&!npc.autonomy.currentActivity)
       .sort((a,b)=>groupPower(b)-groupPower(a));
 
     const wolfBand=threatBand(state.worldSystems.threat.presence.wolf,design);
@@ -1313,7 +1540,8 @@
       if(rng()<p){
         state.worldSystems.threat.alphaSeen++;
         state.worldSystems.threat.alphaPity=0;
-        resolveSpecialEncounter(state,healthy.slice(0,3),'alphaWolf',deps,data,design,rng);
+        startSpecialActivity(state,healthy.slice(0,3),'alphaWolf',deps,data,design,rng);
+        return;
       }else state.worldSystems.threat.alphaPity=clamp(state.worldSystems.threat.alphaPity+.002,0,.03);
     }
 
@@ -1322,7 +1550,7 @@
       if(rng()<p){
         state.worldSystems.threat.bossSeen++;
         state.worldSystems.threat.bossPity=0;
-        resolveSpecialEncounter(state,healthy.slice(0,3),'greatBoar',deps,data,design,rng);
+        startSpecialActivity(state,healthy.slice(0,3),'greatBoar',deps,data,design,rng);
       }else state.worldSystems.threat.bossPity=clamp(state.worldSystems.threat.bossPity+.001,0,.015);
     }
   }
@@ -1341,15 +1569,14 @@
           const loss=Math.min(state.resources.wood||0,randInt(rng,1,3));
           state.resources.wood-=loss;
         }
-        if(rng()<(species==='wolf'?.25:.35))state.worldSystems.map.workerInjuries++;
         logEvent(state,'threat','Incidente por amenaza de '+design.enemies[species].name+'.');
       }
 
       if(band.id==='imminent'&&rng()<.08){
         state.worldSystems.threat.cityAttacks++;
-        const coinLoss=Math.min(state.resources.coins||0,randInt(rng,6,15));
+        const coinLoss=Math.min(availableTreasury(state),randInt(rng,6,15));
         state.resources.coins-=coinLoss;
-        logEvent(state,'city-attack','La amenaza llegó a la ciudad. Se perdieron '+coinLoss+' monedas y hubo daños temporales.');
+        logEvent(state,'city-attack','La amenaza llegó a la ciudad. Se perdieron '+coinLoss+' monedas.');
       }
     }
   }
@@ -1382,6 +1609,7 @@
     const cfg=design.workerTools[toolKey];
     const worker=state.workers[workerKey];
     if(!cfg||!worker)return {ok:false,reason:'Herramienta o trabajador inválido'};
+    if(worker.currentJob||worker.escortMissionId)return {ok:false,reason:'Esperá a que regrese el trabajador'};
     if(cfg.worker!==workerKey)return {ok:false,reason:'La herramienta no corresponde a ese trabajador'};
 
     let available=false;
@@ -1412,7 +1640,7 @@
     const repaired=[];
     for(const key of keys){
       const worker=state.workers[key];
-      if(!worker)continue;
+      if(!worker||worker.currentJob||worker.escortMissionId)continue;
       for(const field of ['worldTool','harvestTool']){
         const tool=worker[field];
         if(!tool||tool.durability>=tool.maxDurability)continue;
@@ -1427,20 +1655,60 @@
     return {ok:repaired.length>0,repaired,reason:repaired.length?'':'No hay herramientas dañadas o faltan monedas'};
   }
 
+  function prepareWorkerTool(state,workerKey,design){
+    const worker=state.workers[workerKey];
+    if(!worker||worker.worldTool.durability<=0)return {ok:false,reason:'Repará la herramienta antes de prepararla'};
+    if(worker.currentJob||worker.escortMissionId)return {ok:false,reason:'Esperá a que el trabajador regrese'};
+    if(worker.toolPrepared)return {ok:false,reason:'La herramienta ya está preparada para la próxima salida'};
+    const price=design.services.sharpening.price;
+    if(availableTreasury(state)<price)return {ok:false,reason:'Faltan monedas disponibles'};
+    state.resources.coins-=price;
+    worker.toolPrepared=true;
+    logEvent(state,'service','Se preparó '+worker.worldTool.name+' para una salida de trabajo.');
+    return {ok:true};
+  }
+
+  function workerDanger(state,kind,design){
+    const species=kind==='mine'?'boar':'wolf';
+    const band=threatBand(state.worldSystems.threat.presence[species],design);
+    return design.threat.bands.findIndex(b=>b.id===band.id);
+  }
+
+  function startWorkerOuting(state,kind,design){
+    const worker=workerForKind(state,kind);
+    if(!worker||worker.worldTool.durability<=0)return {ok:false,reason:'Repará la herramienta antes de salir'};
+    if(worker.restingAtInn)return {ok:false,reason:'El trabajador está descansando en el Mesón'};
+    if((worker.stamina??100)<20)return {ok:false,reason:'El trabajador necesita recuperar Resistencia'};
+    if(worker.currentJob||worker.escortMissionId)return {ok:false,reason:'El trabajador ya está ocupado'};
+    if(worker.injuredUntil>state.worldSystems.clockMinutes)return {ok:false,reason:'El trabajador se está recuperando'};
+    const job={id:nowId('worker'),kind,resolvesAtMinute:state.worldSystems.clockMinutes+TICK_MINUTES};
+    worker.currentJob=job.id;
+    worker.stamina=(worker.stamina??100)-20;
+    state.worldSystems.map.workerJobs.push(job);
+    logEvent(state,'worker-start',(worker.profession||'Mara')+' partió a trabajar.',{kind});
+    return {ok:true,job};
+  }
+
+  function resolveWorkerJobs(state,design,rng){
+    for(const job of [...state.worldSystems.map.workerJobs]){
+      if(job.resolvesAtMinute>state.worldSystems.clockMinutes)continue;
+      delete workerForKind(state,job.kind).currentJob;
+      workerOuting(state,job.kind,design,rng);
+      state.worldSystems.map.workerJobs=state.worldSystems.map.workerJobs.filter(j=>j.id!==job.id);
+    }
+  }
+
   function workerOuting(state,kind,design,rng=Math.random,options={}){
     const worker=workerForKind(state,kind);
     const tool=workerToolForKind(state,kind);
     if(!worker||!tool)return {ok:false,reason:'Trabajador o herramienta no disponible'};
+    if(worker.currentJob||worker.escortMissionId)return {ok:false,reason:'Trabajador ocupado'};
+    if(worker.injuredUntil>state.worldSystems.clockMinutes)return {ok:false,reason:'Trabajador recuperándose'};
     if(tool.durability<=0)return {ok:false,reason:tool.name+' está agotado. Debe repararse antes de otra salida.'};
 
     const toolCfg=design.workerTools[tool.id]||{};
     const result={ok:true,kind,gained:{},escort:null,injured:false,tool:tool.name,toolWear:1};
-    const wolfBand=threatBand(state.worldSystems.threat.presence.wolf,design);
-    const boarBand=threatBand(state.worldSystems.threat.presence.boar,design);
-    const danger=Math.max(
-      design.threat.bands.findIndex(b=>b.id===wolfBand.id),
-      design.threat.bands.findIndex(b=>b.id===boarBand.id)
-    );
+    const danger=workerDanger(state,kind,design);
 
     if(options.forcedEscortId){
       const escort=state.adventurers.find(npc=>npc.id===options.forcedEscortId);
@@ -1449,15 +1717,18 @@
       logEvent(state,'escort',(escort?.fullName||'Un aventurero')+' escoltó la salida de trabajo.');
     }else if(danger>=2&&rng()<.30+danger*.08){
       result.injured=true;
+      worker.injuredUntil=state.worldSystems.clockMinutes+TICK_MINUTES*2;
       state.worldSystems.map.workerInjuries++;
       logEvent(state,'worker-injury','La salida de trabajo sufrió un incidente por falta de escolta.');
     }
 
-    const bonus=Number(toolCfg.resourceBonus)||0;
+    const prepared=Boolean(worker.toolPrepared);
+    const bonus=(Number(toolCfg.resourceBonus)||0)+(prepared?1:0);
+    worker.toolPrepared=false;
     if(kind==='mine'){
       result.gained.iron=randInt(rng,5,7)+bonus;
       result.gained.stone=randInt(rng,3,4);
-      if(toolCfg.hardVein&&rng()<.15){
+      if(toolCfg.hardVein&&(prepared||rng()<.15)){
         result.gained.iron+=randInt(rng,3,5);
         result.special='Veta dura';
       }
@@ -1493,6 +1764,8 @@
 
     tool.durability=Math.max(0,tool.durability-1);
     for(const [key,qty] of Object.entries(result.gained))state.resources[key]=(state.resources[key]||0)+qty;
+    const skill=kind==='mine'?'miningXp':kind==='wood'?'woodcuttingXp':'huntingXp';
+    worker[skill]=(worker[skill]||0)+40;
     state.worldSystems.map.workerOutings++;
     state.city.development=Number(((state.city.development||0)+1).toFixed(2));
     logEvent(state,'worker-outing','Salida de '+kind+' completada con '+tool.name+'.',result);
@@ -1519,6 +1792,9 @@
         });
       }
     }
+    for(const npc of state.adventurers||[]){
+      if(npc.autonomy?.intent==='needs-rest')alerts.push({type:'meson',severity:'warning',text:npc.fullName+' necesita descansar y no puede pagarlo.'});
+    }
     if((state.city.level||1)>=2&&!state.worldSystems.textile.built){
       alerts.push({type:'building',severity:'info',text:'Textilería disponible para construir.'});
     }
@@ -1542,7 +1818,14 @@
   function stepWorld(state,deps,data,design,rng=Math.random){
     normalizeState(state,data,design);
     state.worldSystems.clockMinutes+=TICK_MINUTES;
+    for(const [key,worker] of Object.entries(state.workers)){
+      const busy=worker.currentJob||worker.escortMissionId||state.worldSystems.production.queue.some(j=>(key==='borin'&&j.shop==='smithy')||(key==='eldon'&&j.shop==='carpenter'));
+      if(busy)continue;
+      worker.stamina=Math.min(100,(worker.stamina??100)+(worker.restingAtInn?15:3));
+      if(worker.stamina>=100)worker.restingAtInn=false;
+    }
     state.worldSystems.day=1+Math.floor(state.worldSystems.clockMinutes/(24*60));
+    resolveWorkerJobs(state,design,rng);
     processProductionQueue(state,design,rng);
     syncCityProgress(state,deps,rng);
     resolveDueActivities(state,deps,data,design,rng);
@@ -1566,6 +1849,21 @@
       minutes:steps*TICK_MINUTES,
       events:state.worldSystems.chronology.events.slice(0,12)
     };
+  }
+
+  function pulseActiveWorld(state,now,active,deps,data,design,rng=Math.random){
+    const ws=state.worldSystems;
+    const last=ws.lastPulseAt;
+    ws.lastPulseAt=now;
+    if(!active||!state.city.founded||!Number.isFinite(last))return {advanced:false};
+    const elapsed=now-last;
+    // No convertir una app suspendida o una sesión cerrada en ataques offline.
+    if(elapsed<0||elapsed>5000)return {advanced:false};
+    ws.activeMilliseconds=(ws.activeMilliseconds||0)+elapsed;
+    if(ws.activeMilliseconds<30000)return {advanced:false};
+    ws.activeMilliseconds-=30000;
+    advanceWorld(state,TICK_MINUTES,deps,data,design,rng);
+    return {advanced:true};
   }
 
   function townHallSnapshot(state,design){
@@ -1596,7 +1894,7 @@
         }
       },
       activeAdventurers:state.adventurers
-        .filter(npc=>npc.autonomy?.currentActivity)
+        .filter(npc=>npc.autonomy?.currentActivity&&npc.autonomy.currentActivity.kind!=='recovery')
         .map(npc=>({id:npc.id,name:npc.fullName,activity:clone(npc.autonomy.currentActivity)}))
     };
   }
@@ -1616,7 +1914,14 @@
     normalizeState,
     advanceWorld,
     stepWorld,
+    pulseActiveWorld,
     workerOuting,
+    startWorkerOuting,
+    workerDanger,
+    prepareWorkerTool,
+    setProductSale,
+    recycleProduct,
+    setProductionPolicy,
     equipWorkerTool,
     repairWorkerTools,
     publishHuntMission,
@@ -1625,6 +1930,7 @@
     toggleMission,
     craftRecipe,
     enqueueRecipe,
+    enqueueBatch,
     buildTextile,
     tanHide,
     threatBand,

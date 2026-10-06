@@ -100,6 +100,8 @@ function state({withAdventurer=true}={}){
 
   const tanned=WORLD.tanHide(s,'wolf',DESIGN);
   assert.equal(tanned.ok,true);
+  assert.equal(s.resources.tannedWolf,0,'El curtido debe esperar a la cola');
+  WORLD.advanceWorld(s,10,{COMBAT},DATA,DESIGN,fixed(.50));
   assert.equal(s.resources.tannedWolf,1);
 
   const queued=WORLD.enqueueRecipe(s,'leatherGloves',DESIGN,'wolf');
@@ -189,7 +191,7 @@ function state({withAdventurer=true}={}){
   const low=WORLD.publishEscortMission(s,{workerKind:'mine',reward:10},DESIGN);
   assert.equal(low.ok,false);
 
-  s.worldSystems.threat.presence.wolf=70;
+  s.worldSystems.threat.presence.boar=70;
   const reference=16;
   const high=WORLD.publishEscortMission(s,{workerKind:'mine',reward:reference},DESIGN);
   assert.equal(high.ok,true);

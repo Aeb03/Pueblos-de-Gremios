@@ -134,6 +134,10 @@
     const role=data.adventurerRoles[classKey];
     const level=Math.max(1,Number(npc?.level)||1);
     const stats=statsForLevel(classKey,level,data);
+    for(const eq of Object.values(npc?.equipment||{})){
+      if(!eq||eq.founder||eq.durability===0)continue;
+      for(const key of ['attack','defense','initiative','mana'])stats[key]+=Number(eq[key])||0;
+    }
     const combatStyle=combatStyleFor(classKey,npc?.combatStyle);
 
     const oldMax=Math.max(1,Number(npc?.hpMax)||Number(npc?.stats?.hp)||stats.hp);
