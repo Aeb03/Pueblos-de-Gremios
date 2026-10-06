@@ -491,6 +491,21 @@ function foundCity(){
   state.adventurers=generateFoundingAdventurers(city);
   state.smithyTraffic={nextVisitAt:Date.now()+randomVisitDelay(),activeVisitor:null};
   state.smithyBook={entries:[],unread:0,archive:{visits:0,purchases:0,noPurchase:0,revenue:0}};
+  state.worldSystems=null;
+  state.accountLedger={
+    seasonId:'era-prueba-1',
+    founderPackClaimed:true,
+    cityLineageId:city.id
+  };
+  WORLD.normalizeState(state,DATA,DESIGN);
+  state.worldSystems.chronology.events.unshift({
+    id:createActionId(),
+    atMinute:0,
+    day:1,
+    type:'foundation',
+    text:name+' fue fundada con su único Pack de Fundación de la Era.',
+    meta:{cityId:city.id}
+  });
   saveState();
   updateFoundationGate();
 
@@ -502,7 +517,7 @@ function resetTestWorld(){
   const ok=globalThis.confirm('¿Reiniciar el Reino de prueba? Se borrará el progreso local de esta prueba y volverás a fundar la ciudad.');
   if(!ok)return;
   localStorage.removeItem(SAVE_KEY);
-  state=defaultState();
+  state=WORLD.normalizeState(defaultState(),DATA,DESIGN);
   updateFoundationGate();
   const input=document.getElementById('foundationCityName');
   if(input)input.value='Villa del Roble';
