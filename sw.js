@@ -1,19 +1,22 @@
-const CACHE='pueblos-gremios-v0.9.0g4';
+const CACHE='pueblos-gremios-v0.9.1a';
 const ASSETS=[
-  './index.html?v=0.9.0g4',
-  './styles.css?v=0.9.0g4',
-  './activity.css?v=0.9.0g4',
-  './world-loop.css?v=0.9.0g4',
-  './game-data.js?v=0.9.0g4',
-  './adventurer-core.js?v=0.9.0g4',
-  './city-progression.js?v=0.9.0g4',
-  './activity-combat.js?v=0.9.0g4',
-  './world-design-data.js?v=0.9.0g4',
-  './world-loop.js?v=0.9.0g4',
-  './management-ui.js?v=0.9.0g4',
-  './app.js?v=0.9.0g4',
-  './manifest.webmanifest?v=0.9.0g4',
-  './icons/icon.svg?v=0.9.0g4'
+  './index.html?v=0.9.1a',
+  './styles.css?v=0.9.1a',
+  './activity.css?v=0.9.1a',
+  './world-loop.css?v=0.9.1a',
+  './game-data.js?v=0.9.1a',
+  './adventurer-core.js?v=0.9.1a',
+  './city-progression.js?v=0.9.1a',
+  './activity-combat.js?v=0.9.1a',
+  './world-design-data.js?v=0.9.1a',
+  './world-loop.js?v=0.9.1a',
+  './management-ui.js?v=0.9.1a',
+  './city-controls.js?v=0.9.1a',
+  './city-life.js?v=0.9.1a',
+  './city-life.css?v=0.9.1a',
+  './app.js?v=0.9.1a',
+  './manifest.webmanifest?v=0.9.1a',
+  './icons/icon.svg?v=0.9.1a'
 ];
 
 self.addEventListener('install',e=>e.waitUntil(
@@ -35,10 +38,10 @@ self.addEventListener('fetch',e=>{
       fetch(e.request,{cache:'no-store'})
         .then(r=>{
           const clone=r.clone();
-          caches.open(CACHE).then(c=>c.put('./index.html?v=0.9.0g4',clone));
+          caches.open(CACHE).then(c=>c.put('./index.html?v=0.9.1a',clone));
           return r;
         })
-        .catch(()=>caches.match('./index.html?v=0.9.0g4'))
+        .catch(()=>caches.match('./index.html?v=0.9.1a'))
     );
     return;
   }

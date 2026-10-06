@@ -30,6 +30,7 @@
   function emptyProduction(){
     return {
       stock:{
+        simpleMeal:0,travelRation:0,
         nails:0,arrowheads:0,pickaxeHead:0,axeHead:0,ironPickaxe:0,workAxe:0,
         huntingKnife:0,scissors:0,toolHandle:0,arrowBundle:0
       },
@@ -190,8 +191,8 @@
       return {
         ...makeWorkerTool(current.id,design),
         ...current,
-        durability:clamp(Number(current.durability??cfg.durability),0,cfg.durability),
-        maxDurability:cfg.durability
+        durability:clamp(Number(current.durability??cfg.durability),0,cfg.durability+Math.max(0,current.qualityBonus||0)*2),
+        maxDurability:Math.max(1,cfg.durability+(current.qualityBonus||0)*2)
       };
     }
     return makeWorkerTool(defaultKey,design);
@@ -217,6 +218,7 @@
       stock:{...emptyProduction().stock,...(ws.production?.stock||{})},
       goods:{...emptyProduction().goods,...(ws.production?.goods||{})}
     };
+    ws.production.toolItems=ws.production.toolItems||{};
     for(const key of Object.keys(ws.production.goods)){
       ws.production.goods[key]=Array.isArray(ws.production.goods[key])?ws.production.goods[key]:[];
     }
@@ -224,6 +226,8 @@
     ws.textile.tannedProduced={...emptyTextile().tannedProduced,...(ws.textile?.tannedProduced||{})};
     ws.textile.goodsProduced={...emptyTextile().goodsProduced,...(ws.textile?.goodsProduced||{})};
     ws.meson={...emptyWorldSystems().meson,...(ws.meson||{})};
+    ws.meson.kitchen={enabled:true,targets:{simpleMeal:2,travelRation:2},...(ws.meson.kitchen||{})};
+    ws.workerPlans=ws.workerPlans||{};
     ws.market={...emptyWorldSystems().market,...(ws.market||{})};
     ws.market.lootOffers=Array.isArray(ws.market.lootOffers)?ws.market.lootOffers:[];
     ws.map={...emptyWorldSystems().map,...(ws.map||{})};
@@ -232,6 +236,7 @@
     ws.townHall.alerts=Array.isArray(ws.townHall.alerts)?ws.townHall.alerts:[];
     ws.chronology={...emptyWorldSystems().chronology,...(ws.chronology||{})};
     ws.chronology.events=Array.isArray(ws.chronology.events)?ws.chronology.events.slice(0,MAX_LOG):[];
+    ws.chronology.highlights=Array.isArray(ws.chronology.highlights)?ws.chronology.highlights.slice(0,30):[];
     ws.chronology.records=ws.chronology.records&&typeof ws.chronology.records==='object'?ws.chronology.records:{};
     ws.season={...emptyWorldSystems().season,...(ws.season||{})};
     ws.schools={...emptyWorldSystems().schools,...(ws.schools||{})};
@@ -268,7 +273,9 @@
       }
     };
 
+    for(const [key,name] of Object.entries({borin:'Borin',eldon:'Eldon',nara:'Nara',mara:'Mara',logger:'Leñador',hunter:'Cazador'})){next.workers[key].name=next.workers[key].name||name;}
     migrateBusinessStorage(next,design);
+    for(const p of Object.values(ws.production.goods).flat())migrateQuality(p,design);
     next.accountLedger={
       seasonId:ws.season.id,
       founderPackClaimed:Boolean(next.city?.founded),
@@ -276,7 +283,7 @@
       ...(next.accountLedger||{})
     };
 
-    next.adventurers=Array.isArray(next.adventurers)?next.adventurers.map(npc=>{ensureAdventurer(npc);refreshCombatStats(npc,data);return npc;}):[];
+    next.adventurers=Array.isArray(next.adventurers)?next.adventurers.map(npc=>{ensureAdventurer(npc);for(const p of [...Object.values(npc.equipment||{}),...(npc.inventory||[])])migrateQuality(p,design);if(npc.equipment.weapon&&!npc.equipment.weapon.founder){const base={warrior:4,explorer:4,healer:3,mage:3}[npc.classKey]||3;npc.weaponDamage=base+(npc.equipment.weapon.attack||0);npc.equipment.weapon.damage=npc.weaponDamage;}refreshCombatStats(npc,data);return npc;}):[];
     updateUnlocks(next,design);
     updateAlerts(next,design);
     return next;
@@ -309,6 +316,7 @@
       meta
     });
     ws.chronology.events=ws.chronology.events.slice(0,MAX_LOG);
+    if(['city-level','level-up','market','special-win','special-loss','worker-injury','building','record'].includes(type))ws.chronology.highlights=[ws.chronology.events[0],...(ws.chronology.highlights||[])].slice(0,30);
   }
 
   function threatBand(value,design){
@@ -347,7 +355,7 @@
 
   function canServeFood(state,kind,design){
     const cfg=design.food[kind];
-    return (state.resources.meat||0)>=cfg.meat&&(state.resources.firewood||0)>=cfg.firewood;
+    return (state.worldSystems.production.stock[kind]||0)>0;
   }
 
   function spendNpc(npc,bucket,amount){
@@ -361,8 +369,7 @@
       state.worldSystems.meson.stockMiss++;
       return false;
     }
-    state.resources.meat-=cfg.meat;
-    state.resources.firewood-=cfg.firewood;
+    state.worldSystems.production.stock[cfg.id]--;
     spendNpc(npc,'consumable',cfg.price);
     state.resources.coins+=cfg.price;
     state.worldSystems.meson.revenue+=cfg.price;
@@ -382,8 +389,7 @@
       state.worldSystems.meson.stockMiss++;
       return false;
     }
-    state.resources.meat-=cfg.meat;
-    state.resources.firewood-=cfg.firewood;
+    state.worldSystems.production.stock[cfg.id]--;
     spendNpc(npc,'consumable',cfg.price);
     state.resources.coins+=cfg.price;
     state.worldSystems.meson.revenue+=cfg.price;
@@ -503,14 +509,16 @@
       name:item.name+(origin!=='neutral'?' · '+originCfg.label:''),
       slot:item.slot,
       founder:false,
-      durability:item.durability,
-      maxDurability:item.durability,
-      attack:item.attack||0,
-      defense:(item.defense||0)+(item.textile?(originCfg.defense||0):0),
-      initiative:(item.initiative||0)+(item.textile?(originCfg.initiative||0):0),
-      mana:item.mana||0,
+      durability:item.durability+qualityTier(quality.label)*2,
+      maxDurability:item.durability+qualityTier(quality.label)*2,
+      attack:(item.attack||0)+((item.attack||0)>0?qualityTier(quality.label):0),
+      defense:(item.defense||0)+((item.defense||0)>0?qualityTier(quality.label):0)+(item.textile?(originCfg.defense||0):0),
+      initiative:(item.initiative||0)+((item.initiative||0)>0?qualityTier(quality.label):0)+(item.textile?(originCfg.initiative||0):0),
+      mana:(item.mana||0)+((item.mana||0)>0?qualityTier(quality.label)*4:0),
       damageReduction:item.textile?(originCfg.damageReduction||0):0,
       origin,
+      qualityStatsVersion:1,
+      qualityBonus:qualityTier(quality.label),
       quality:quality.score,
       qualityLabel:quality.label,
       referencePrice:price,
@@ -576,6 +584,7 @@
     if(!recipe)return {ok:false,reason:'Receta inexistente'};
     if(recipe.id==='tannedHide')return finishTanning(state,job.origin,design);
     const quality=productQuality(rng);
+    if(recipe.shop==='meson'){state.worldSystems.production.stock[job.recipeKey]=(state.worldSystems.production.stock[job.recipeKey]||0)+1;state.workers.nara.cookingXp+=5;state.city.development=Number(((state.city.development||0)+.03).toFixed(2));logEvent(state,'kitchen','Nara terminó '+recipe.name+'.');return {ok:true};}
 
     if(design.equipment[job.recipeKey]&&Array.isArray(state.worldSystems.production.goods[job.recipeKey])){
       const product=craftEquipmentObject(job.recipeKey,job.origin||'neutral',quality,design);
@@ -604,6 +613,7 @@
       state.buildings.smithy.craftedCount=(state.buildings.smithy.craftedCount||0)+1;
     }
     if(recipe.shop==='carpenter')state.workers.eldon.carpentryXp=(state.workers.eldon.carpentryXp||0)+20;
+    if(design.workerTools[job.recipeKey]&&job.recipeKey!=='huntingBow'){const item=makeWorkerTool(job.recipeKey,design),tier=qualityTier(quality.label);item.qualityBonus=tier;item.qualityLabel=quality.label;item.maxDurability=Math.max(1,item.maxDurability+tier*2);item.durability=item.maxDurability;(state.worldSystems.production.toolItems[job.recipeKey]??=[]).push(item);}
     const currentBest=state.worldSystems.chronology.records.bestCraftedItem;
     if(!currentBest||quality.score>currentBest.score){
       state.worldSystems.chronology.records.bestCraftedItem={
@@ -631,7 +641,7 @@
     if(crafter&&(crafter.stamina||0)<10)return {ok:false,reason:'El trabajador necesita recuperar Resistencia'};
 
     const queue=state.worldSystems.production.queue;
-    const capacity=design.buildings[recipe.shop]?.queueCapacity||5;
+    const capacity=5+Math.max(0,(state.buildings[recipe.shop]?.level||1)-1);
     const activeForShop=queue.filter(job=>job.shop===recipe.shop).length;
     if(activeForShop>=capacity)return {ok:false,reason:'Cola de '+recipe.shop+' completa ('+capacity+')'};
 
@@ -640,8 +650,8 @@
     }
 
     const durationMinutes=Math.max(
-      TICK_MINUTES,
-      Math.ceil((Number(recipe.durationSec)||10)/60/TICK_MINUTES)*TICK_MINUTES
+      recipe.worldMinutes||TICK_MINUTES,
+      recipe.worldMinutes||Math.ceil((Number(recipe.durationSec)||10)/60/TICK_MINUTES)*TICK_MINUTES
     );
     const previous=queue.filter(j=>j.shop===recipe.shop).at(-1);
     const startsAt=Math.max(state.worldSystems.clockMinutes,previous?.readyAtMinute||0);
@@ -652,7 +662,8 @@
       origin,
       startedAtMinute:startsAt,
       readyAtMinute:startsAt+durationMinutes,
-      policy:state.worldSystems.production.policies?.[recipe.shop]||'store'
+      policy:state.worldSystems.production.policies?.[recipe.shop]||'store',
+      reservation:recipeReservation(recipe,origin,design)
     };
     queue.push(job);
     if(crafter)crafter.stamina-=10;
@@ -710,11 +721,11 @@
   }
 
   function activeMissionCount(state){
-    return state.worldSystems.guild.missions.filter(m=>m.status==='open'||m.status==='accepted').length;
+    return state.worldSystems.guild.missions.filter(m=>m.repeat||m.status==='open'||m.status==='accepted').length;
   }
 
   function hasMissionSlot(state,design){
-    const slots=state.buildings.guildHall?.missionSlots||design.mission.startingConcurrent;
+    const slots=2+Math.max(0,(state.buildings.guildHall?.level||1)-1)*2;
     return activeMissionCount(state)<slots;
   }
 
@@ -748,6 +759,8 @@
       reference,
       status:'open',
       active:true,
+      repeat:true,
+      cycles:0,
       acceptedBy:null,
       createdAtMinute:state.worldSystems.clockMinutes
     };
@@ -774,6 +787,8 @@
       reference,
       status:'open',
       active:true,
+      repeat:true,
+      cycles:0,
       acceptedBy:null,
       createdAtMinute:state.worldSystems.clockMinutes
     };
@@ -800,6 +815,8 @@
       reference,
       status:'open',
       active:true,
+      repeat:true,
+      cycles:0,
       acceptedBy:null,
       createdAtMinute:state.worldSystems.clockMinutes,
       completedAtMinute:null
@@ -811,7 +828,7 @@
 
   function toggleMission(state,missionId){
     const mission=state.worldSystems.guild.missions.find(m=>m.id===missionId);
-    if(!mission||mission.status!=='open')return {ok:false};
+    if(!mission)return {ok:false,reason:'Misión inexistente'};
     mission.active=!mission.active;
     return {ok:true,mission};
   }
@@ -1183,7 +1200,9 @@
       result.adventurer.preparation.bowTuning=false;
     }
 
+    const previousLevel=npc.level;
     Object.assign(npc,result.adventurer);
+    if(npc.level>previousLevel)logEvent(state,'level-up',npc.fullName+' alcanzó Nv.'+npc.level+' tras su salida.',{adventurerId:npc.id});
     npc.mood=result.won?'Animado':'Abatido';
     npc.lastActivity={enemyKey,count,won:result.won,hpLoss:result.hpLoss,manaLoss:result.manaLoss,drops:gained,atMinute:state.worldSystems.clockMinutes};
     npc.autonomy.currentActivity=null;
@@ -1333,7 +1352,8 @@
     for(const outcome of members){
       const npc=state.adventurers.find(n=>n.id===outcome.id);
       if(!npc||npc.autonomy.currentActivity?.groupId!==activity.groupId)continue;
-      Object.assign(npc,clone(outcome));
+      const previousLevel=npc.level;Object.assign(npc,clone(outcome));
+      if(npc.level>previousLevel)logEvent(state,'level-up',npc.fullName+' alcanzó Nv.'+npc.level+' en una expedición de grupo.',{adventurerId:npc.id});
       npc.autonomy.currentActivity=null;
       npc.autonomy.intent=won?'returning':'incapacitated';
       npc.lastActivity={enemyKey,count:1,won,atMinute:state.worldSystems.clockMinutes};
@@ -1381,6 +1401,7 @@
         const greed=(Number(npc.traits?.greed)||50)/100;
         const rewardRatio=mission.reward/Math.max(1,mission.reference);
         if((.48+greed*.22+rewardRatio*.18)<.62+rng()*.20)continue;
+        if(!missionNeeded(state,mission,design))continue;
         if(!reserveMission(state,mission,npc))continue;
         npc.autonomy.currentActivity={
           kind:'delivery',
@@ -1403,6 +1424,7 @@
         const proxy={...mission,enemyKey,count:1};
         const score=acceptanceScore(npc,proxy,deps,data,design);
         if(score<.58+rng()*.18)continue;
+        if(!missionNeeded(state,mission,design))continue;
         if(!reserveMission(state,mission,npc))continue;
         buyRation(state,npc,design);
         startNpcActivity(state,npc,{enemyKey,count:1,missionId:mission.id},deps,data,design,rng);
@@ -1416,7 +1438,8 @@
       if(mission.type!=='hunt'||(mission.enemyKey!=='wolf'&&mission.enemyKey!=='boar'))continue;
       const score=acceptanceScore(npc,mission,deps,data,design);
       if(score<.56+rng()*.18)continue;
-      if(!reserveMission(state,mission,npc))continue;
+      if(!missionNeeded(state,mission,design))continue;
+        if(!reserveMission(state,mission,npc))continue;
       if((mission.count>=2||mission.enemyKey!=='wolf')&&rng()<.65)buyRation(state,npc,design);
       if(mission.count>=2||mission.enemyKey==='boar'){
         if(rng()<.55)buySharpening(state,npc,design);
@@ -1612,23 +1635,25 @@
     if(worker.currentJob||worker.escortMissionId)return {ok:false,reason:'Esperá a que regrese el trabajador'};
     if(cfg.worker!==workerKey)return {ok:false,reason:'La herramienta no corresponde a ese trabajador'};
 
-    let available=false;
+    let available=false,quality=null;
     if(toolKey==='huntingBow'){
       const goods=state.worldSystems.production.goods.huntingBow||[];
       if(goods.length){
-        goods.shift();
+        quality=goods.shift();
         available=true;
       }
     }else{
       const stock=state.worldSystems.production.stock;
       if((stock[toolKey]||0)>0){
         stock[toolKey]--;
+        quality=(state.worldSystems.production.toolItems[toolKey]||[]).shift();
         available=true;
       }
     }
     if(!available)return {ok:false,reason:'No hay '+cfg.name+' disponible'};
 
-    const equipped=makeWorkerTool(toolKey,design);
+    const equipped=makeWorkerTool(toolKey,design);if(quality){equipped.qualityLabel=quality.qualityLabel;equipped.qualityBonus=quality.qualityBonus||0;equipped.maxDurability=Math.max(1,equipped.maxDurability+equipped.qualityBonus*2);equipped.durability=equipped.maxDurability;}
+    if(worker.worldTool)worker.previousTools=[...(worker.previousTools||[]),clone(toolKey==='huntingKnife'?worker.harvestTool:worker.worldTool)].filter(Boolean).slice(-12);
     if(toolKey==='huntingKnife')worker.harvestTool=equipped;
     else worker.worldTool=equipped;
     logEvent(state,'worker-tool',(worker.profession||workerKey)+' recibió '+cfg.name+'.');
@@ -1681,7 +1706,7 @@
     if((worker.stamina??100)<20)return {ok:false,reason:'El trabajador necesita recuperar Resistencia'};
     if(worker.currentJob||worker.escortMissionId)return {ok:false,reason:'El trabajador ya está ocupado'};
     if(worker.injuredUntil>state.worldSystems.clockMinutes)return {ok:false,reason:'El trabajador se está recuperando'};
-    const job={id:nowId('worker'),kind,startedAtMinute:state.worldSystems.clockMinutes,resolvesAtMinute:state.worldSystems.clockMinutes+TICK_MINUTES};
+    const job={id:nowId('worker'),kind,target:state.worldSystems.workerPlans[kind]?.target,startedAtMinute:state.worldSystems.clockMinutes,resolvesAtMinute:state.worldSystems.clockMinutes+TICK_MINUTES};
     worker.currentJob=job.id;
     worker.stamina=(worker.stamina??100)-20;
     state.worldSystems.map.workerJobs.push(job);
@@ -1690,12 +1715,14 @@
   }
 
   function resolveWorkerJobs(state,design,rng){
+    let completed=0;
     for(const job of [...state.worldSystems.map.workerJobs]){
       if(job.resolvesAtMinute>state.worldSystems.clockMinutes)continue;
       delete workerForKind(state,job.kind).currentJob;
-      workerOuting(state,job.kind,design,rng);
-      state.worldSystems.map.workerJobs=state.worldSystems.map.workerJobs.filter(j=>j.id!==job.id);
+      workerOuting(state,job.kind,design,rng,{target:job.target});
+      state.worldSystems.map.workerJobs=state.worldSystems.map.workerJobs.filter(j=>j.id!==job.id);completed++;
     }
+    return completed;
   }
 
   function workerOuting(state,kind,design,rng=Math.random,options={}){
@@ -1723,7 +1750,7 @@
     }
 
     const prepared=Boolean(worker.toolPrepared);
-    const bonus=(Number(toolCfg.resourceBonus)||0)+(prepared?1:0);
+    const bonus=(Number(toolCfg.resourceBonus)||0)+(Number(tool.qualityBonus)||0)+(prepared?1:0);
     worker.toolPrepared=false;
     if(kind==='mine'){
       result.gained.iron=randInt(rng,5,7)+bonus;
@@ -1758,6 +1785,10 @@
       state.workers.hunter.outings++;
     }else return {ok:false,reason:'Salida inexistente'};
 
+    const priority=options.target||state.worldSystems.workerPlans[kind]?.target;
+    const primary={mine:'iron',wood:'wood',hunt:'meat'}[kind];
+    if(priority&&priority!==primary&&Number.isFinite(result.gained[priority])&&result.gained[primary]>1){result.gained[priority]++;result.gained[primary]--;}
+    if(priority==='hardVein'&&toolCfg.hardVein){result.gained.iron+=2;result.special='Veta Dura';}
     if(result.injured){
       for(const key of Object.keys(result.gained))result.gained[key]=Math.max(0,Math.floor(result.gained[key]*.5));
     }
@@ -1830,6 +1861,9 @@
     syncCityProgress(state,deps,rng);
     resolveDueActivities(state,deps,data,design,rng);
     syncCityProgress(state,deps,rng);
+    renewMissions(state,design);
+    kitchenStep(state,design);
+    workerPlanStep(state,design);
     autonomyStep(state,deps,data,design,rng);
     threatStep(state,deps,data,design,rng);
     updateUnlocks(state,design);
@@ -1868,8 +1902,10 @@
     ws.day=1+Math.floor(ws.clockMinutes/(24*60));
     const jobsBefore=ws.map.workerJobs.length;
     const activitiesBefore=state.adventurers.filter(n=>n.autonomy?.currentActivity).length;
-    resolveWorkerJobs(state,design,rng);
+    const returnedWorkers=resolveWorkerJobs(state,design,rng);
     const finished=processProductionQueue(state,design,rng);
+    kitchenStep(state,design);
+    workerPlanStep(state,design);
     resolveDueActivities(state,deps,data,design,rng);
     let decisionTick=false;
     while(ws.activeMilliseconds>=30000){
@@ -1878,7 +1914,7 @@
       ws=state.worldSystems;
       decisionTick=true;
     }
-    const changed=finished||jobsBefore!==ws.map.workerJobs.length||activitiesBefore!==state.adventurers.filter(n=>n.autonomy?.currentActivity).length;
+    const changed=finished||returnedWorkers||jobsBefore!==ws.map.workerJobs.length||activitiesBefore!==state.adventurers.filter(n=>n.autonomy?.currentActivity).length;
     if(changed){syncCityProgress(state,deps,rng);updateUnlocks(state,design);updateAlerts(state,design);}
     ws.clockCheckpointMs=(ws.clockCheckpointMs||0)+elapsed;
     const checkpoint=ws.clockCheckpointMs>=5000;
@@ -1892,6 +1928,127 @@
     const current=state.worldSystems.clockMinutes;
     const percent=Math.max(0,Math.min(100,(current-start)/Math.max(.001,end-start)*100));
     return {percent,waiting:current<start,remainingSeconds:Math.max(0,Math.ceil((end-current)*3))};
+  }
+
+
+
+  function migrateQuality(p,design){
+    if(!p||p.founder||p.qualityStatsVersion||!design.equipment[p.catalogId]||p.catalogId==='legacySword')return;
+    const item=design.equipment[p.catalogId],tier=qualityTier(p.qualityLabel);p.qualityBonus=tier;p.qualityStatsVersion=1;
+    for(const key of ['attack','defense','initiative'])if((item[key]||0)>0)p[key]=(p[key]||0)+tier;
+    if((item.mana||0)>0)p.mana=(p.mana||0)+tier*4;
+    p.maxDurability=Math.max(1,(p.maxDurability||item.durability)+tier*2);p.durability=p.durability===0?0:Math.max(0,Math.min(p.maxDurability,(p.durability||0)+tier*2));
+  }
+  function withdrawMission(state,id){
+    const m=state.worldSystems.guild.missions.find(m=>m.id===id);if(!m)return {ok:false,reason:'Misión inexistente'};
+    m.active=false;m.repeat=false;if(m.status!=='accepted')m.status='archived';
+    logEvent(state,'guild','La ciudad retiró '+id+(m.status==='accepted'?'; la salida ya aceptada se completará.':'.'));
+    return {ok:true};
+  }
+
+  function qualityTier(label){return {Baja:-1,Normal:0,Buena:1,Excelente:2}[label]||0;}
+  function recipeReservation(recipe,origin,design){
+    const resources={...(recipe.materials||{})},components={...(recipe.components||{})};
+    const o=design.materialOrigins[origin]||design.materialOrigins.neutral;
+    if(recipe.rawOrigin)resources[o.raw]=(resources[o.raw]||0)+1;
+    if(recipe.tannedHide)resources[o.tanned]=(resources[o.tanned]||0)+recipe.tannedHide;
+    return {resources,components};
+  }
+  function cancelProduction(state,id,design){
+    const job=state.worldSystems.production.queue.find(j=>j.id===id);
+    if(!job)return {ok:false,reason:'Ese trabajo ya terminó o fue cancelado'};
+    const refund=state.worldSystems.clockMinutes<=job.startedAtMinute?1:0;
+    if(job.shop==='meson')state.worldSystems.meson.kitchen.enabled=false;
+    const reserved=job.reservation||recipeReservation(design.recipes[job.recipeKey],job.origin||'neutral',design);
+    if(refund){for(const [k,q] of Object.entries(reserved.resources))state.resources[k]=(state.resources[k]||0)+q;for(const [k,q] of Object.entries(reserved.components))state.worldSystems.production.stock[k]=(state.worldSystems.production.stock[k]||0)+q;}
+    state.worldSystems.production.queue=state.worldSystems.production.queue.filter(j=>j.id!==id);
+    let cursor=state.worldSystems.clockMinutes;
+    for(const next of state.worldSystems.production.queue.filter(j=>j.shop===job.shop)){if(next.startedAtMinute>cursor){const duration=next.readyAtMinute-next.startedAtMinute;next.startedAtMinute=cursor;next.readyAtMinute=cursor+duration;}cursor=next.readyAtMinute;}
+    logEvent(state,'cancel','Se canceló '+design.recipes[job.recipeKey].name+(refund?'; materiales devueltos.':'; los materiales ya usados no se recuperan.'));
+    return {ok:true,refunded:!!refund};
+  }
+  function cancelWorkerOuting(state,kind){
+    const worker=workerForKind(state,kind),job=state.worldSystems.map.workerJobs.find(j=>j.kind===kind);
+    if(!worker||!job)return {ok:false,reason:'No hay una salida de trabajo que cancelar'};
+    state.worldSystems.map.workerJobs=state.worldSystems.map.workerJobs.filter(j=>j.id!==job.id);delete worker.currentJob;
+    if(state.worldSystems.workerPlans[kind])state.worldSystems.workerPlans[kind].enabled=false;
+    logEvent(state,'cancel',(worker.name||worker.profession||'Mara')+' regresó sin recolectar; se pausó su plan.');return {ok:true};
+  }
+  function upgradeQuote(state,key,design){
+    const building=state.buildings[key];const next=(building?.level||0)+1;
+    if(!building||building.level<1)return {ok:false,reason:'Primero construí el edificio'};
+    if(next>3)return {ok:false,reason:'Máximo Nv.3 para esta partida'};
+    if(next>(state.city.level||1))return {ok:false,reason:'Requiere Ciudad Nv.'+next};
+    const cost={coins:next===2?30:60,wood:next===2?6:10,stone:next===2?4:8};
+    const benefit=key==='guildHall'?(2+(next-1)*2)+' misiones simultáneas':key==='meson'?(5+(next-1)*2)+' plazas de alojamiento':key==='townHall'?'Ayuntamiento Nv.'+next+' · obras registradas':(5+next-1)+' trabajos en cola';
+    const affordable=availableTreasury(state)>=cost.coins&&state.resources.wood>=cost.wood&&state.resources.stone>=cost.stone;
+    return {ok:affordable,next,cost,benefit,reason:affordable?'':'Faltan recursos o monedas disponibles'};
+  }
+  function upgradeBuilding(state,key,design){
+    const quote=upgradeQuote(state,key,design);if(!quote.ok)return quote;
+    for(const [k,q] of Object.entries(quote.cost))state.resources[k]-=q;
+    const b=state.buildings[key];b.level=quote.next;
+    if(key==='guildHall')b.missionSlots=2+(b.level-1)*2;
+    if(key==='meson'){b.capacity=5+(b.level-1)*2;state.worldSystems.meson.level=b.level;}
+    if(key==='textile')state.worldSystems.textile.level=b.level;
+    state.city.development=Number(((state.city.development||0)+.8).toFixed(2));
+    logEvent(state,'building',design.buildings[key].name+' mejoró a Nv.'+b.level+'. '+quote.benefit+'.');return {ok:true};
+  }
+  function setKitchen(state,enabled){state.worldSystems.meson.kitchen.enabled=!!enabled;return {ok:true};}
+  function kitchenStep(state,design){
+    const kitchen=state.worldSystems.meson.kitchen;if(!kitchen?.enabled||!state.adventurers.length&&!Object.values(state.worldSystems.workerPlans||{}).some(p=>p.enabled))return;
+    for(const key of ['simpleMeal','travelRation']){
+      const planned=(state.worldSystems.production.stock[key]||0)+state.worldSystems.production.queue.filter(j=>j.recipeKey===key).length;
+      if(planned<(kitchen.targets[key]||2))enqueueRecipe(state,key,design);
+    }
+  }
+  function setWorkerPlan(state,kind,config){
+    if(!workerForKind(state,kind))return {ok:false,reason:'Trabajador inexistente'};
+    const allowed={mine:['iron','stone','hardVein'],wood:['wood','firewood'],hunt:['meat','skin','tendon']}[kind];
+    const old=state.worldSystems.workerPlans[kind]||{};
+    if(config.target&&!allowed.includes(config.target))return {ok:false,reason:'Objetivo no disponible'};
+    state.worldSystems.workerPlans[kind]={enabled:false,target:allowed[0],autoRepair:true,meal:true,sharpen:false,...old,...config};
+    return {ok:true};
+  }
+  function workerPlanStep(state,design){
+    for(const [kind,plan] of Object.entries(state.worldSystems.workerPlans||{})){
+      if(!plan.enabled)continue;const w=workerForKind(state,kind);if(!w||w.currentJob||w.escortMissionId)continue;
+      const stop=reason=>{plan.reason=reason;};
+      if(w.injuredUntil>state.worldSystems.clockMinutes){stop('Recuperándose de una herida');continue;}
+      if(workerDanger(state,kind,design)>=2){stop('Ruta peligrosa: necesita escolta');continue;}
+      if(plan.target==='hardVein'&&!design.workerTools[w.worldTool.id]?.hardVein){stop('La Veta Dura requiere Pico de hierro');continue;}
+      if(w.worldTool.durability<=0){if(plan.autoRepair&&availableTreasury(state)>=57)repairWorkerTools(state,design,kind==='mine'?'mara':kind==='wood'?'logger':'hunter');if(w.worldTool.durability<=0){stop('Herramienta rota: falta reparación');continue;}}
+      if(w.restingAtInn&&w.stamina<80){stop('Descansando en el Mesón');continue;}
+      if(w.stamina<20){w.restingAtInn=true;if(plan.meal&&(state.worldSystems.production.stock.simpleMeal||0)>0){state.worldSystems.production.stock.simpleMeal--;w.stamina=Math.min(100,w.stamina+20);state.worldSystems.meson.workerMeals=(state.worldSystems.meson.workerMeals||0)+1;logEvent(state,'worker-meal',(w.name||w.profession||'Mara')+' recibió un plato de trabajo financiado por la ciudad.');}stop('Descansando en el Mesón');continue;}
+      w.restingAtInn=false;
+      if(plan.sharpen&&!w.toolPrepared&&availableTreasury(state)>=57)prepareWorkerTool(state,kind==='mine'?'mara':kind==='wood'?'logger':'hunter',design);
+      const result=startWorkerOuting(state,kind,design);stop(result.ok?'Trabajando · prioridad '+plan.target:result.reason);
+    }
+  }
+  function prepareComponents(state,recipeKey,design){
+    const r=design.recipes[recipeKey];if(!r)return {ok:false,reason:'Receta inexistente'};
+    const temp=clone(state);let count=0;
+    for(const [k,q] of Object.entries(r.components||{})){
+      const queued=temp.worldSystems.production.queue.filter(j=>j.recipeKey===k).length;
+      const missing=Math.max(0,q-(temp.worldSystems.production.stock[k]||0)-queued);
+      for(let i=0;i<missing;i++){const result=enqueueRecipe(temp,k,design);if(!result.ok)return result;count++;}
+    }
+    if(!count)return {ok:false,reason:'Los componentes ya están disponibles o en preparación'};
+    state.resources=temp.resources;state.workers=temp.workers;state.worldSystems.production=temp.worldSystems.production;state.worldSystems.chronology=temp.worldSystems.chronology;
+    return {ok:true,reason:'Componentes en cola. Fabricá el objeto cuando terminen.'};
+  }
+  function missionNeeded(state,m,design){
+    if(m.type==='delivery')return stockTarget(state,m.resourceKey,design)-(state.resources[m.resourceKey]||0)>=m.qty;
+    if(m.type==='escort')return workerDanger(state,m.workerKind,design)>=2;
+    return (state.worldSystems.threat.presence[m.enemyKey]||0)>=design.enemies[m.enemyKey].presenceDrop*m.count;
+  }
+  function renewMissions(state,design){
+    for(const m of state.worldSystems.guild.missions){
+      if(!m.repeat||!m.active||!['completed','failed'].includes(m.status))continue;
+      if(state.worldSystems.clockMinutes<((m.completedAtMinute??m.acceptedAtMinute)||0)+TICK_MINUTES)continue;
+      if(!missionNeeded(state,m,design))continue;
+      m.cycles=(m.cycles||0)+1;m.status='open';m.acceptedBy=null;m.acceptedAtMinute=null;
+    }
   }
 
   function townHallSnapshot(state,design){
@@ -1943,6 +2100,16 @@
     advanceWorld,
     stepWorld,
     pulseActiveWorld,
+    recipeReservation,
+    cancelProduction,
+    cancelWorkerOuting,
+    upgradeQuote,
+    upgradeBuilding,
+    withdrawMission,
+    setWorkerPlan,
+    setKitchen,
+    prepareComponents,
+    qualityTier,
     activityProgress,
     workerOuting,
     startWorkerOuting,

@@ -2,15 +2,17 @@
 
 PWA de gestión fantástica desarrollada paso a paso.
 
-## Integración actual — v0.9.0g4 (EN PRUEBA)
+## Integración actual — v0.9.1a (EN PRUEBA)
 
-Checkpoint `fix/v0.9.0g3-coherent-city-loop`, recuperado desde el HEAD real de `main` y la integración d–g. Preserva la ciudad como centro del juego y limita la validación a Nv.1–3.
+Checkpoint `feature/v0.9.1-city-life`, construido sobre v0.9.0g4. Preserva la ciudad como centro del juego y limita la validación a Nv.1–3.
 
 El reloj avanza continuamente durante la sesión activa (3 segundos reales por minuto del mundo, ritmo de prueba). Las colas y salidas muestran barras y tiempo restante; se resuelven al cumplir su plazo. No requiere controles de combate o avance manual. La suspensión pausa el reloj; no se simulan ataques durante la ausencia.
 
 La partida de revisión `?prueba=nv1-3` usa un guardado separado y persistente; no borra la ciudad anterior. Los negocios vuelven a tener pestañas, colas y productos almacenados hasta que el jugador los pone a la venta. Aventureros, botín, servicios, equipo, misiones, trabajadores, mapa, amenaza y Textilería utilizan el mismo bucle.
 
-Validación: módulos automáticos, 10 escenarios del bucle, 15 regresiones, 500 simulaciones de 720 minutos y una partida automatizada en Chromium con viewport móvil 390×844 desde fundación hasta Ciudad Nv.3. **Android real todavía no validado.** Balance de gastos recurrentes pendiente. Corrección g4: [reloj continuo y barras](docs/partes/v0.9.0g4-continuous-progress.md). Ver [auditoría y parte de integración](docs/partes/v0.9.0g3-coherent-city-loop.md).
+Mapa principal con desplazamiento con un dedo, zoom con dos y controles fijos. Cocina real, cancelación, planes de trabajadores, mejoras Nv.1–3, misiones recurrentes y estadísticas por calidad. Ver [parte v0.9.1a](docs/partes/v0.9.1a-city-life.md).
+
+Validación: módulos automáticos, 10 escenarios del bucle, 15 regresiones, 10 escenarios de gestión, 1.000 simulaciones de 720 minutos (500 por política de trabajo) y una partida automatizada en Chromium con viewport móvil 390×844 desde fundación hasta Ciudad Nv.3. Gestos táctiles probados mediante eventos reales de Chromium. **Android real todavía no validado.** Balance de gastos recurrentes pendiente. Corrección g4: [reloj continuo y barras](docs/partes/v0.9.0g4-continuous-progress.md). Ver [auditoría y parte de integración](docs/partes/v0.9.0g3-coherent-city-loop.md).
 
 ## Estado actual
 
