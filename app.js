@@ -582,7 +582,7 @@ function markSmithyBookRead(){
 
 function showScreen(name){
   screens.forEach(s=>s.classList.toggle('is-active',s.dataset.screen===name));
-  const navTarget=['smithy','carpenter','inn'].includes(name)?'city':name;
+  const navTarget=['smithy','carpenter','inn','townHall','guildHall','textile'].includes(name)?'city':name;
   nav.forEach(b=>b.classList.toggle('is-active',b.dataset.target===navTarget));
   title.textContent=name==='city'&&state.city.founded
     ?state.city.name
@@ -656,6 +656,21 @@ document.querySelectorAll('[data-building]').forEach(b=>b.addEventListener('clic
 
   if(n==='Mesón'){
     showScreen('inn');
+    return;
+  }
+
+  if(n==='Ayuntamiento'){
+    showScreen('townHall');
+    return;
+  }
+
+  if(n==='Sede del Gremio'){
+    showScreen('guildHall');
+    return;
+  }
+
+  if(n==='Textilería'){
+    showScreen('textile');
     return;
   }
 
