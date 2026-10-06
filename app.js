@@ -764,6 +764,13 @@ const els={
   advanceWorld120:document.getElementById('advanceWorld120'),
   simulationFeedback:document.getElementById('simulationFeedback'),
 
+  smithyWorldQueue:document.getElementById('smithyWorldQueue'),
+  smithyWorldFeedback:document.getElementById('smithyWorldFeedback'),
+  carpenterWorldQueue:document.getElementById('carpenterWorldQueue'),
+  carpenterWorldFeedback:document.getElementById('carpenterWorldFeedback'),
+  worldResourceGrid:document.getElementById('worldResourceGrid'),
+  worldProductionStock:document.getElementById('worldProductionStock'),
+
   smithyLevelCity:document.getElementById('smithyLevelCity'),
   smithyVisitBadge:document.getElementById('smithyVisitBadge'),
 
