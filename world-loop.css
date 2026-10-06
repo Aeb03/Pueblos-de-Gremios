@@ -1,0 +1,38 @@
+/* v0.9.0g1 — bucle integrado */
+.production-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.production-grid .small-action,.production-grid button{min-height:42px}
+.world-event-list{display:grid;gap:8px}
+.world-event-row{display:flex;justify-content:space-between;gap:12px;padding:9px 10px;border:1px solid #433526;border-radius:10px;background:#17130f}
+.world-event-row>span{display:grid;gap:2px;min-width:0}
+.world-event-row small{font-size:.68rem;color:#b8aa93}
+.world-event-row strong{font-size:.82rem}
+.world-event-row .event-right{text-align:right}
+.world-event-row.is-warning{border-color:#7a552c}
+.world-event-row.is-danger{border-color:#8a3c32}
+.world-event-row.is-good{border-color:#4f6b39}
+.threat-row{display:flex;justify-content:space-between;gap:10px;margin:8px 0 5px}
+.threat-row strong{text-align:right}
+.screen[data-screen="map"] progress{width:100%}
+.activity-field input{width:100%;min-height:44px;border:1px solid #55432e;border-radius:10px;background:#15110e;color:#eee4d2;padding:0 10px;font:inherit}
+.building.textile{left:51%;top:64%;transform:translate(-50%,-50%);z-index:3}
+.building.textile[hidden]{display:none}
+#textileBuildPanel[hidden],#textileProductionPanel[hidden]{display:none}
+.resource-mini-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.resource-mini-grid>div{display:flex;justify-content:space-between;gap:8px;padding:7px 8px;border:1px solid #433526;border-radius:9px;background:#17130f}
+.mission-status{font-size:.68rem;padding:3px 7px;border:1px solid #5a4935;border-radius:999px;white-space:nowrap}
+.mission-status.is-open{color:#d8c49a}
+.mission-status.is-accepted{color:#9fc9ed}
+.mission-status.is-completed{color:#a9d892}
+.mission-status.is-failed{color:#e8a49a}
+.origin-chip{display:inline-flex;align-items:center;padding:2px 6px;border:1px solid #4b3c2c;border-radius:999px;font-size:.66rem;color:#d6c49f}
+.world-summary-strip{display:flex;gap:7px;overflow:auto;padding-bottom:2px}
+.world-summary-strip>span{white-space:nowrap;padding:6px 8px;border:1px solid #443626;border-radius:999px;background:#17130f;font-size:.72rem}
+#manualCombatLab[hidden]{display:none!important}
+@media(max-width:390px){.production-grid{grid-template-columns:1fr}}
+
+/* El prototipo viejo queda en DOM sólo por compatibilidad con la migración;
+   la experiencia v0.9.0g1 usa el catálogo aprobado integrado. */
+.screen[data-screen="smithy"]>.smithy-tabs,
+.screen[data-screen="smithy"]>.smithy-tab-panel,
+.screen[data-screen="carpenter"]>.recipe-card{display:none!important}
+.approved-production-panel{display:grid;gap:10px}

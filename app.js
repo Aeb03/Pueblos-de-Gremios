@@ -1,6 +1,18 @@
-const APP_VERSION='0.8.1';
+const APP_VERSION='0.9.0g2';
 const SAVE_KEY='pueblos-gremios-save-v0.8.0';
+const FOUNDER_LEDGER_KEY='pueblos-gremios-founder-ledger-v1';
 const DATA=globalThis.PG_DATA;
+const ADV=globalThis.PG_ADVENTURER_CORE;
+const CITY=globalThis.PG_CITY_PROGRESSION;
+const COMBAT=globalThis.PG_ACTIVITY_COMBAT;
+const DESIGN=globalThis.PG_WORLD_DESIGN;
+const WORLD=globalThis.PG_WORLD_LOOP;
+
+if(!ADV)throw new Error('PG_ADVENTURER_CORE no está disponible.');
+if(!CITY)throw new Error('PG_CITY_PROGRESSION no está disponible.');
+if(!COMBAT)throw new Error('PG_ACTIVITY_COMBAT no está disponible.');
+if(!DESIGN)throw new Error('PG_WORLD_DESIGN no está disponible.');
+if(!WORLD)throw new Error('PG_WORLD_LOOP no está disponible.');
 
 const EXPEDITION_DURATION_MS=30_000;
 const CRAFT_DURATION_MS=DATA.recipes.pickaxeHead.durationMs;
@@ -48,15 +60,20 @@ const SMITHY_VISIT_MAX_MS=90_000;
 const SMITHY_VISIT_DURATION_MS=15_000;
 const SMITHY_BOOK_DETAIL_LIMIT=20;
 const SMITHY_OFFLINE_VISIT_CAP=6;
+const LEGACY_SMITHY_TRAFFIC_ENABLED=false;
 
 const titles={
   city:'Ciudad',
   workers:'Trabajadores',
   carpenter:'Carpintería',
   smithy:'Herrería',
-  inn:'Posada',
+  inn:'Mesón',
   expedition:'Expedición',
   kingdom:'Reino de Ardel',
+  townHall:'Ayuntamiento',
+  guildHall:'Sede del Gremio',
+  textile:'Textilería',
+  map:'Mapa local',
   inventory:'Inventario',
   menu:'Menú'
 };
@@ -67,6 +84,7 @@ const title=document.getElementById('screenTitle');
 
 const defaultState=()=>({
   version:APP_VERSION,
+  adventurerSchemaVersion:ADV.ADVENTURER_SCHEMA_VERSION,
   world:{
     id:DATA.world.id,
     name:DATA.world.name,
@@ -77,6 +95,11 @@ const defaultState=()=>({
     name:'',
     tier:DATA.founding.startingTier,
     prestige:DATA.founding.startingPrestige,
+    level:1,
+    development:0,
+    cityProgressionSchemaVersion:CITY.CITY_PROGRESSION_SCHEMA_VERSION,
+    populationMilestones:{level2Arrival:false,level3Arrival:false},
+    levelReachedAt:{},
     founded:false,
     foundedAt:null,
     foundingPackGenerated:false
@@ -122,7 +145,8 @@ const defaultState=()=>({
     }
   },
   buildings:{
-    smithy:{level:DATA.shops.smithy.startingLevel,craftedCount:0}
+    smithy:{level:DATA.shops.smithy.startingLevel,craftedCount:0},
+    meson:{level:DATA.shops.meson.startingLevel,capacity:CITY.mesonCapacity(DATA.shops.meson.startingLevel)}
   },
   adventurers:[],
   smithyTraffic:{
@@ -137,10 +161,13 @@ const defaultState=()=>({
   activeExpedition:null,
   activeCraft:null,
   activeCarpentry:null,
+  activityLog:[],
   lastMessage:'',
   lastSmithyMessage:'',
   lastCarpentryMessage:'',
-  lastInnMessage:''
+  lastInnMessage:'',
+  lastCityMessage:'',
+  lastActivityMessage:''
 });
 
 function loadState(){
@@ -193,9 +220,12 @@ function loadState(){
       buildings:{
         ...base.buildings,
         ...(saved.buildings||{}),
-        smithy:{...base.buildings.smithy,...(saved.buildings?.smithy||{})}
+        smithy:{...base.buildings.smithy,...(saved.buildings?.smithy||{})},
+        meson:{...base.buildings.meson,...(saved.buildings?.meson||{})}
       },
-      adventurers:Array.isArray(saved.adventurers)?saved.adventurers:[],
+      adventurers:Array.isArray(saved.adventurers)
+        ?saved.adventurers.map(npc=>ADV.normalizeAdventurer(npc,DATA))
+        :[],
       smithyTraffic:{...base.smithyTraffic,...(saved.smithyTraffic||{})},
       smithyBook:{
         ...base.smithyBook,
@@ -230,17 +260,29 @@ function loadState(){
 
     merged.smithyBook.entries=Array.isArray(merged.smithyBook.entries)?merged.smithyBook.entries:[];
     merged.smithyBook.unread=merged.smithyBook.entries.filter(entry=>entry.unread).length;
-    return merged;
+    merged.activityLog=Array.isArray(merged.activityLog)?merged.activityLog.slice(0,12):[];
+    merged.adventurerSchemaVersion=ADV.ADVENTURER_SCHEMA_VERSION;
+    merged.city=CITY.normalizeCityProgress(merged.city);
+    merged.buildings.meson.level=Math.max(1,Number(merged.buildings.meson.level)||1);
+    merged.buildings.meson.capacity=CITY.mesonCapacity(merged.buildings.meson.level);
+    return WORLD.normalizeState(merged,DATA,DESIGN);
   }catch{
     return defaultState();
   }
 }
 
-let state=loadState();
+let state=WORLD.normalizeState(loadState(),DATA,DESIGN);
 
 function saveState(){
   state.version=APP_VERSION;
+  state.adventurerSchemaVersion=ADV.ADVENTURER_SCHEMA_VERSION;
+  WORLD.normalizeState(state,DATA,DESIGN);
   localStorage.setItem(SAVE_KEY,JSON.stringify(state));
+}
+
+if(state.city.founded){
+  reconcileCityPopulation();
+  saveState();
 }
 
 
@@ -295,84 +337,118 @@ function uniqueAdventurerName(existingFullNames){
   return {firstName:'Viajero',lastName:fallback.split(' ')[1],fullName:fallback};
 }
 
-function rollAdventurerStats(role){
-  const variationBudget=2;
-  const stats={...role.baseStats};
-  const keys=['attack','defense','speed','support'];
-  for(let i=0;i<variationBudget;i++){
-    const up=randomChoice(keys);
-    const down=randomChoice(keys.filter(key=>key!==up&&stats[key]>2));
-    stats[up]+=1;
-    stats[down]-=1;
-  }
-  stats.hp+=randomInt(-4,4);
-  return stats;
-}
-
-function generateAdventurer({city,roleKey,existingFullNames}){
+function generateAdventurer({city,roleKey,existingFullNames,combatStyle=null,populationMilestone=null}){
   const role=DATA.adventurerRoles[roleKey];
   const personality=randomChoice(Object.values(DATA.personalities));
   const name=uniqueAdventurerName(existingFullNames);
   existingFullNames.add(name.fullName);
-  const stats=rollAdventurerStats(role);
-  const weaponQuality=randomInt(45,58);
 
-  return {
+  const [coinMin,coinMax]=DATA.founding.adventurerCoinRange||[55,75];
+  const selectedStyle=roleKey==='explorer'
+    ?(combatStyle||randomChoice(['bow','daggers']))
+    :combatStyle;
+
+  const npc=ADV.createAdventurer(DATA,{
     id:createActionId(),
     firstName:name.firstName,
     lastName:name.lastName,
     fullName:name.fullName,
-    originCityId:city.id,
-    originCityName:city.name,
-    originTier:city.tier,
-    currentCityId:city.id,
-    currentCityName:city.name,
-    level:1,
-    xp:0,
-    roleKey:role.id,
-    role:role.label,
+    city,
+    classKey:roleKey,
+    combatStyle:selectedStyle,
     personalityKey:personality.id,
-    personality:personality.label,
-    traits:{...personality.traits},
-    stats,
-    hpMax:stats.hp,
-    hpCurrent:stats.hp,
-    coins:randomInt(150,260),
-    weaponDamage:role.weaponDamage,
-    weaponQuality,
-    visits:0,
-    purchases:0,
-    active:true,
-    status:'Disponible',
-    equipment:{
-      weapon:{
-        id:'starter-weapon',
-        name:'Equipo inicial',
-        damage:role.weaponDamage,
-        quality:weaponQuality
-      }
-    },
-    inventory:[],
-    createdAt:Date.now(),
-    purchaseProfile:{
-      affinity:role.smithyAffinity,
-      needRange:[...personality.needRange],
-      weights:{...personality.purchaseWeights}
-    }
-  };
+    coins:randomInt(coinMin,coinMax),
+    createdAt:Date.now()
+  });
+
+  if(populationMilestone)npc.populationMilestone=populationMilestone;
+  return npc;
 }
 
 function generateFoundingAdventurers(city,count=DATA.founding.adventurerCount){
   const existingNames=new Set(state.adventurers.map(npc=>npc.fullName));
-  const roleKeys=shuffled(Object.keys(DATA.adventurerRoles));
+  const founderClasses=DATA.founding.founderClassKeys||['warrior','explorer','healer'];
   const result=[];
 
   for(let i=0;i<count;i++){
-    const roleKey=roleKeys[i%roleKeys.length];
+    const roleKey=founderClasses[i%founderClasses.length];
     result.push(generateAdventurer({city,roleKey,existingFullNames:existingNames}));
   }
 
   return result;
+}
+function activeAdventurerCount(){
+  return state.adventurers.filter(npc=>npc.active!==false).length;
+}
+
+function reconcileCityPopulation(){
+  if(!state.city.founded)return [];
+
+  state.city=CITY.normalizeCityProgress(state.city);
+  state.buildings.meson={
+    ...(state.buildings.meson||{}),
+    level:Math.max(1,Number(state.buildings.meson?.level)||1)
+  };
+  state.buildings.meson.capacity=CITY.mesonCapacity(state.buildings.meson.level);
+
+  const plan=CITY.arrivalPlan(state.city,state.adventurers,Math.random);
+  state.city=plan.city;
+
+  const arrivals=[];
+  const existingNames=new Set(state.adventurers.map(npc=>npc.fullName));
+  const levelSlots=CITY.slotsForLevel(state.city.level);
+  const capacity=Math.min(levelSlots,state.buildings.meson.capacity);
+
+  for(const arrival of plan.arrivals){
+    if(activeAdventurerCount()>=capacity)break;
+    if(CITY.hasMilestoneAdventurer(state.adventurers,arrival.level)){
+      state.city=CITY.markArrival(state.city,arrival.level);
+      continue;
+    }
+
+    const npc=generateAdventurer({
+      city:state.city,
+      roleKey:arrival.classKey,
+      existingFullNames:existingNames,
+      populationMilestone:arrival.marker
+    });
+    npc.arrivalLevel=arrival.level;
+    npc.arrivalReason=arrival.level===2
+      ?'Primer recién llegado por crecimiento de la ciudad'
+      :'Nuevo residente atraído por el desarrollo de la ciudad';
+
+    state.adventurers.push(npc);
+    state.city=CITY.markArrival(state.city,arrival.level);
+    arrivals.push(npc);
+  }
+
+  return arrivals;
+}
+
+function cityProgressNote(reached=[],arrivals=[]){
+  const parts=[];
+  if(reached.length){
+    for(const level of reached)parts.push(`🏘️ Ciudad Nv. ${level} alcanzada.`);
+  }
+  for(const npc of arrivals){
+    parts.push(`🧭 ${npc.fullName}, ${npc.role}, llegó como nuevo residente.`);
+  }
+  return parts.length?` ${parts.join(' ')}`:'';
+}
+
+function addCityDevelopment(amount,source='actividad'){
+  if(!state.city.founded)return {reached:[],arrivals:[],note:''};
+
+  const result=CITY.addDevelopment(state.city,amount,Date.now());
+  state.city=result.city;
+  state.city.lastDevelopmentSource=source;
+  const arrivals=reconcileCityPopulation();
+
+  return {
+    ...result,
+    arrivals,
+    note:cityProgressNote(result.reached,arrivals)
+  };
 }
 
 function getAdventurer(id){
@@ -390,6 +466,21 @@ function updateFoundationGate(){
   gate.hidden=Boolean(state.city.founded);
 }
 
+function loadFounderLedger(){
+  try{
+    const raw=localStorage.getItem(FOUNDER_LEDGER_KEY);
+    return raw?JSON.parse(raw):null;
+  }catch{return null;}
+}
+
+function persistFounderLedger(ledger){
+  localStorage.setItem(FOUNDER_LEDGER_KEY,JSON.stringify(ledger));
+}
+
+function cloneJson(value){
+  return JSON.parse(JSON.stringify(value));
+}
+
 function foundCity(){
   if(state.city.founded)return;
 
@@ -402,6 +493,11 @@ function foundCity(){
     name,
     tier:DATA.founding.startingTier,
     prestige:DATA.founding.startingPrestige,
+    level:1,
+    development:0,
+    cityProgressionSchemaVersion:CITY.CITY_PROGRESSION_SCHEMA_VERSION,
+    populationMilestones:{level2Arrival:false,level3Arrival:false},
+    levelReachedAt:{},
     founded:true,
     foundedAt:Date.now(),
     foundingPackGenerated:true
@@ -409,9 +505,54 @@ function foundCity(){
 
   state.city=city;
   state.resources={...DATA.founding.resources};
-  state.adventurers=generateFoundingAdventurers(city);
-  state.smithyTraffic={nextVisitAt:Date.now()+randomVisitDelay(),activeVisitor:null};
+
+  const previousLedger=loadFounderLedger();
+  const reusable=previousLedger&&
+    previousLedger.seasonId==='era-prueba-1'&&
+    previousLedger.claimed&&
+    Array.isArray(previousLedger.founders)&&
+    previousLedger.founders.length===DATA.founding.adventurerCount&&
+    !isLocalTestHost();
+
+  if(reusable){
+    state.adventurers=cloneJson(previousLedger.founders).map(npc=>{
+      npc.currentCityId=city.id;
+      npc.currentCityName=city.name;
+      npc.status='Disponible';
+      npc.active=true;
+      return ADV.normalizeAdventurer(npc,DATA);
+    });
+  }else{
+    state.adventurers=generateFoundingAdventurers(city);
+  }
+  state.smithyTraffic={nextVisitAt:null,activeVisitor:null};
   state.smithyBook={entries:[],unread:0,archive:{visits:0,purchases:0,noPurchase:0,revenue:0}};
+  state.worldSystems=null;
+  state.accountLedger={
+    seasonId:'era-prueba-1',
+    founderPackClaimed:true,
+    cityLineageId:previousLedger?.cityLineageId||city.id
+  };
+  WORLD.normalizeState(state,DATA,DESIGN);
+  state.worldSystems.chronology.events.unshift({
+    id:createActionId(),
+    atMinute:0,
+    day:1,
+    type:'foundation',
+    text:name+(reusable?' fue refundada reutilizando el Pack de Fundación de la Era.':' fue fundada con su único Pack de Fundación de la Era.'),
+    meta:{cityId:city.id,reusedFounderPack:reusable}
+  });
+
+  if(!reusable||!previousLedger){
+    persistFounderLedger({
+      seasonId:'era-prueba-1',
+      claimed:true,
+      cityLineageId:city.id,
+      founders:cloneJson(state.adventurers),
+      foundationResources:cloneJson(DATA.founding.resources),
+      claimedAt:Date.now()
+    });
+  }
   saveState();
   updateFoundationGate();
 
@@ -420,13 +561,51 @@ function foundCity(){
 }
 
 function resetTestWorld(){
-  const ok=globalThis.confirm('¿Reiniciar el Reino de prueba? Se borrará el progreso local de v0.8.0 y volverás a fundar la ciudad.');
+  const ok=globalThis.confirm('¿Reiniciar el Reino de prueba? Se borrará el progreso local de esta prueba y volverás a fundar la ciudad.');
   if(!ok)return;
   localStorage.removeItem(SAVE_KEY);
-  state=defaultState();
+  if(isLocalTestHost())localStorage.removeItem(FOUNDER_LEDGER_KEY);
+  state=WORLD.normalizeState(defaultState(),DATA,DESIGN);
   updateFoundationGate();
   const input=document.getElementById('foundationCityName');
   if(input)input.value='Villa del Roble';
+  render();
+}
+
+function isLocalTestHost(){
+  const params=new URLSearchParams(location.search);
+  if(params.get('test')==='1')return true;
+  return location.hostname==='127.0.0.1'||location.hostname==='localhost';
+}
+
+function reachNextCityLevelForLocalTest(){
+  if(!isLocalTestHost())return;
+  if(!state.city.founded){
+    if(els.testProgressFeedback)els.testProgressFeedback.textContent='Primero fundá la ciudad.';
+    return;
+  }
+
+  const next=CITY.nextLevelInfo(state.city);
+  if(next.maxed){
+    if(els.testProgressFeedback)els.testProgressFeedback.textContent='Ciudad Nv. 3 ya alcanzada.';
+    return;
+  }
+
+  const result=addCityDevelopment(next.remaining,'herramienta local de prueba');
+  if(els.testProgressFeedback){
+    const names=result.arrivals.map(npc=>npc.fullName).join(', ');
+    els.testProgressFeedback.textContent=`Ciudad Nv. ${state.city.level} alcanzada.${names?` Nuevo residente: ${names}.`:''}`;
+  }
+  saveState();
+  render();
+}
+
+function recoverAdventurersForLocalTest(){
+  if(!isLocalTestHost())return;
+  state.adventurers=state.adventurers.map(npc=>COMBAT.recoverForTest(npc));
+  state.lastActivityMessage='Recuperación local aplicada: Vida y Maná completos para continuar la prueba.';
+  if(els.testProgressFeedback)els.testProgressFeedback.textContent=state.lastActivityMessage;
+  saveState();
   render();
 }
 
@@ -451,7 +630,7 @@ function markSmithyBookRead(){
 
 function showScreen(name){
   screens.forEach(s=>s.classList.toggle('is-active',s.dataset.screen===name));
-  const navTarget=['smithy','carpenter','inn'].includes(name)?'city':name;
+  const navTarget=['smithy','carpenter','inn','townHall','guildHall','textile'].includes(name)?'city':name;
   nav.forEach(b=>b.classList.toggle('is-active',b.dataset.target===navTarget));
   title.textContent=name==='city'&&state.city.founded
     ?state.city.name
@@ -472,19 +651,19 @@ let currentBuilding='';
 
 const buildingInfo={
   Ayuntamiento:{
-    copy:'Centro administrativo del asentamiento. Aquí se gestionará el crecimiento y el prestigio.',
+    copy:'Centro administrativo del asentamiento. El desarrollo real de la ciudad determina su nivel y nuevos residentes.',
     resources:[],
-    empty:'No usa materiales productivos directos.'
+    empty:'Las actividades productivas y mejoras aportan Desarrollo.'
   },
-  Taberna:{
-    copy:'Atención de aventureros, cocina, comida, bebida y rumores.',
+  Mesón:{
+    copy:'Nara reúne comida, alojamiento, descanso y vida social en un solo negocio. Su capacidad sostiene la población aventurera.',
     resources:[],
-    empty:'Los alimentos, bebidas e ingredientes aparecerán aquí cuando incorporemos la producción de Taberna.'
+    empty:'Mesón Nv. 1: capacidad para 5 aventureros residentes.'
   },
-  Posada:{
-    copy:'Alojamiento para aventureros, descanso y servicios de hospedaje.',
+  'Sede del Gremio':{
+    copy:'Centro de encargos, registro de aventureros y futura coordinación de misiones.',
     resources:[],
-    empty:'Los trabajadores pueden descansar aquí para recuperar Resistencia más rápido.'
+    empty:'La gestión de misiones se incorporará en el bloque correspondiente.'
   }
 };
 
@@ -523,8 +702,23 @@ document.querySelectorAll('[data-building]').forEach(b=>b.addEventListener('clic
     return;
   }
 
-  if(n==='Posada'){
+  if(n==='Mesón'){
     showScreen('inn');
+    return;
+  }
+
+  if(n==='Ayuntamiento'){
+    showScreen('townHall');
+    return;
+  }
+
+  if(n==='Sede del Gremio'){
+    showScreen('guildHall');
+    return;
+  }
+
+  if(n==='Textilería'){
+    showScreen('textile');
     return;
   }
 
@@ -538,13 +732,111 @@ document.querySelectorAll('[data-building]').forEach(b=>b.addEventListener('clic
 const els={
   coins:document.getElementById('coinsValue'),
 
-  cityPrestige:document.getElementById('cityPrestige'),
-  cityPrestigeProgress:document.getElementById('cityPrestigeProgress'),
-  cityTierBadge:document.getElementById('cityTierBadge'),
+  cityLevelBadge:document.getElementById('cityLevelBadge'),
+  cityDevelopment:document.getElementById('cityDevelopment'),
+  cityDevelopmentTarget:document.getElementById('cityDevelopmentTarget'),
+  cityDevelopmentProgress:document.getElementById('cityDevelopmentProgress'),
+  cityPopulationSummary:document.getElementById('cityPopulationSummary'),
+  cityProgressHint:document.getElementById('cityProgressHint'),
   kingdomCityName:document.getElementById('kingdomCityName'),
   kingdomFoundingMeta:document.getElementById('kingdomFoundingMeta'),
   kingdomAdventurerCount:document.getElementById('kingdomAdventurerCount'),
   kingdomAdventurerList:document.getElementById('kingdomAdventurerList'),
+  activityState:document.getElementById('activityState'),
+  activityAdventurerSelect:document.getElementById('activityAdventurerSelect'),
+  activityEnemySelect:document.getElementById('activityEnemySelect'),
+  activityEnemyCount:document.getElementById('activityEnemyCount'),
+  activityPreview:document.getElementById('activityPreview'),
+  resolveAdventurerActivity:document.getElementById('resolveAdventurerActivity'),
+  activityResult:document.getElementById('activityResult'),
+  activityLogList:document.getElementById('activityLogList'),
+  localTestTools:document.getElementById('localTestTools'),
+  manualCombatLab:document.getElementById('manualCombatLab'),
+  testReachNextCityLevel:document.getElementById('testReachNextCityLevel'),
+  testRecoverAdventurers:document.getElementById('testRecoverAdventurers'),
+  testProgressFeedback:document.getElementById('testProgressFeedback'),
+
+  cityTextileButton:document.getElementById('cityTextileButton'),
+  cityTextileLevel:document.getElementById('cityTextileLevel'),
+  loggerState:document.getElementById('loggerState'),
+  hunterState:document.getElementById('hunterState'),
+
+  worldClockKingdom:document.getElementById('worldClockKingdom'),
+  worldEventList:document.getElementById('worldEventList'),
+  mesonServiceSummary:document.getElementById('mesonServiceSummary'),
+  mesonAdventurerList:document.getElementById('mesonAdventurerList'),
+
+  townHallCityLevel:document.getElementById('townHallCityLevel'),
+  townHallCoins:document.getElementById('townHallCoins'),
+  townHallReserved:document.getElementById('townHallReserved'),
+  townHallAvailable:document.getElementById('townHallAvailable'),
+  townHallDevelopment:document.getElementById('townHallDevelopment'),
+  townHallAlerts:document.getElementById('townHallAlerts'),
+  townHallEra:document.getElementById('townHallEra'),
+  townHallDiamonds:document.getElementById('townHallDiamonds'),
+
+  guildEnemySelect:document.getElementById('guildEnemySelect'),
+  guildEnemyCount:document.getElementById('guildEnemyCount'),
+  guildRewardInput:document.getElementById('guildRewardInput'),
+  guildRewardHint:document.getElementById('guildRewardHint'),
+  publishGuildMission:document.getElementById('publishGuildMission'),
+  guildFeedback:document.getElementById('guildFeedback'),
+  deliveryResourceSelect:document.getElementById('deliveryResourceSelect'),
+  deliveryQtyInput:document.getElementById('deliveryQtyInput'),
+  deliveryRewardInput:document.getElementById('deliveryRewardInput'),
+  deliveryHint:document.getElementById('deliveryHint'),
+  publishDeliveryMission:document.getElementById('publishDeliveryMission'),
+  deliveryFeedback:document.getElementById('deliveryFeedback'),
+  escortWorkerSelect:document.getElementById('escortWorkerSelect'),
+  escortRewardInput:document.getElementById('escortRewardInput'),
+  escortHint:document.getElementById('escortHint'),
+  publishEscortMission:document.getElementById('publishEscortMission'),
+  escortFeedback:document.getElementById('escortFeedback'),
+  guildMissionCount:document.getElementById('guildMissionCount'),
+  guildMissionList:document.getElementById('guildMissionList'),
+
+  textileBadge:document.getElementById('textileBadge'),
+  textileBuildPanel:document.getElementById('textileBuildPanel'),
+  textileProductionPanel:document.getElementById('textileProductionPanel'),
+  buildTextile:document.getElementById('buildTextile'),
+  textileFeedback:document.getElementById('textileFeedback'),
+  tannedStockSummary:document.getElementById('tannedStockSummary'),
+  tanningActions:document.getElementById('tanningActions'),
+  textileOriginSelect:document.getElementById('textileOriginSelect'),
+  textileStockList:document.getElementById('textileStockList'),
+
+  mapWorldTime:document.getElementById('mapWorldTime'),
+  wolfPresence:document.getElementById('wolfPresence'),
+  wolfPresenceProgress:document.getElementById('wolfPresenceProgress'),
+  boarPresence:document.getElementById('boarPresence'),
+  boarPresenceProgress:document.getElementById('boarPresenceProgress'),
+  mapMineOuting:document.getElementById('mapMineOuting'),
+  mapWoodOuting:document.getElementById('mapWoodOuting'),
+  mapHuntOuting:document.getElementById('mapHuntOuting'),
+  mapOutingFeedback:document.getElementById('mapOutingFeedback'),
+  mapWorkerToolsSummary:document.getElementById('mapWorkerToolsSummary'),
+  repairWorkerTools:document.getElementById('repairWorkerTools'),
+  equipMaraPickaxe:document.getElementById('equipMaraPickaxe'),
+  equipLoggerAxe:document.getElementById('equipLoggerAxe'),
+  equipHunterBow:document.getElementById('equipHunterBow'),
+  equipHunterKnife:document.getElementById('equipHunterKnife'),
+  mapZoneList:document.getElementById('mapZoneList'),
+  mapActiveAdventurers:document.getElementById('mapActiveAdventurers'),
+
+  simulationClock:document.getElementById('simulationClock'),
+  simulationEventCount:document.getElementById('simulationEventCount'),
+  advanceWorld10:document.getElementById('advanceWorld10'),
+  advanceWorld30:document.getElementById('advanceWorld30'),
+  advanceWorld120:document.getElementById('advanceWorld120'),
+  simulationFeedback:document.getElementById('simulationFeedback'),
+
+  smithyWorldQueue:document.getElementById('smithyWorldQueue'),
+  smithyWorldFeedback:document.getElementById('smithyWorldFeedback'),
+  carpenterWorldQueue:document.getElementById('carpenterWorldQueue'),
+  carpenterWorldFeedback:document.getElementById('carpenterWorldFeedback'),
+  worldResourceGrid:document.getElementById('worldResourceGrid'),
+  worldProductionStock:document.getElementById('worldProductionStock'),
+
   smithyLevelCity:document.getElementById('smithyLevelCity'),
   smithyVisitBadge:document.getElementById('smithyVisitBadge'),
 
@@ -897,6 +1189,16 @@ function resolveSmithyVisitor(visitor,nextBase=Date.now()){
       npc.coins-=price;
       npc.weaponDamage=best.sword.damage;
       npc.weaponQuality=best.sword.qualityScore;
+      npc.equipment.weapon={
+        id:best.sword.id,
+        name:best.sword.name,
+        slot:'weapon',
+        founder:false,
+        damage:best.sword.damage,
+        quality:best.sword.qualityScore,
+        durability:null,
+        maxDurability:null
+      };
       npc.purchases+=1;
       smithyStorage().ironSwords=smithyStorage().ironSwords.filter(item=>item.id!==best.sword.id);
       swordInventorySignature='';
@@ -1063,7 +1365,7 @@ function syncWorkerStamina(workerKey){
 
     if(leftInn){
       worker.restingAtInn=false;
-      state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de la Posada.`;
+      state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de el Mesón.`;
       saveState();
       return true;
     }
@@ -1085,7 +1387,7 @@ function syncWorkerStamina(workerKey){
 
   if(worker.stamina>=STAMINA_MAX&&wasResting){
     worker.restingAtInn=false;
-    state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de la Posada.`;
+    state.lastInnMessage=`${name} terminó de descansar, recuperó 100/100 de Resistencia y salió automáticamente de el Mesón.`;
   }
 
   if(worker.stamina!==previous||worker.restingAtInn!==wasResting){
@@ -1120,7 +1422,7 @@ function toggleInnRest(workerKey){
   if(worker.restingAtInn){
     worker.restingAtInn=false;
     worker.staminaUpdatedAt=Date.now();
-    state.lastInnMessage=`${name} dejó la Posada. Seguirá recuperando Resistencia lentamente mientras esté libre.`;
+    state.lastInnMessage=`${name} dejó el Mesón. Seguirá recuperando Resistencia lentamente mientras esté libre.`;
   }else{
     if(worker.stamina>=STAMINA_MAX){
       state.lastInnMessage=`${name} ya tiene la Resistencia completa.`;
@@ -1130,7 +1432,7 @@ function toggleInnRest(workerKey){
 
     worker.restingAtInn=true;
     worker.staminaUpdatedAt=Date.now();
-    state.lastInnMessage=`${name} está descansando en la Posada. Su recuperación está acelerada.`;
+    state.lastInnMessage=`${name} está descansando en el Mesón. Su recuperación está acelerada.`;
   }
 
   saveState();
@@ -1145,7 +1447,7 @@ function startExpedition(){
   const mara=state.workers.mara;
 
   if(mara.restingAtInn){
-    state.lastMessage='Mara está descansando en la Posada. Terminá su descanso antes de enviarla.';
+    state.lastMessage='Mara está descansando en el Mesón. Terminá su descanso antes de enviarla.';
     render();
     return;
   }
@@ -1193,7 +1495,8 @@ function completeExpedition(expedition){
     ?` ¡Veta dura encontrada! +${extraIron} hierro adicional.`
     :'';
 
-  state.lastMessage=`Expedición completada: +${baseIron} hierro, +${stone} piedra y +${miningXp} XP de Minería.${special}`;
+  const cityProgress=addCityDevelopment(CITY.DEVELOPMENT_REWARDS.workerOuting,'expedición de trabajador');
+  state.lastMessage=`Expedición completada: +${baseIron} hierro, +${stone} piedra y +${miningXp} XP de Minería.${special}${cityProgress.note}`;
   saveState();
 }
 
@@ -1243,7 +1546,7 @@ function startHandleCraft(){
   const eldon=state.workers.eldon;
 
   if(eldon.restingAtInn){
-    state.lastCarpentryMessage='Eldon está descansando en la Posada.';
+    state.lastCarpentryMessage='Eldon está descansando en el Mesón.';
     render();
     return;
   }
@@ -1288,7 +1591,8 @@ function completeCarpentry(job){
   state.workers.eldon.carpentryXp+=xp;
   state.activeCarpentry=null;
   state.workers.eldon.staminaUpdatedAt=job.endsAt||Date.now();
-  state.lastCarpentryMessage=`Carpintería completada: +${handles} mango de pico y +${xp} XP de Carpintería.`;
+  const cityProgress=addCityDevelopment(CITY.DEVELOPMENT_REWARDS.craft,'producción de Carpintería');
+  state.lastCarpentryMessage=`Carpintería completada: +${handles} mango de pico y +${xp} XP de Carpintería.${cityProgress.note}`;
   saveState();
 }
 
@@ -1314,7 +1618,7 @@ function startSmithyCraft(recipe){
   const borin=state.workers.borin;
 
   if(borin.restingAtInn){
-    state.lastSmithyMessage='Borin está descansando en la Posada. Terminá su descanso antes de ponerlo a trabajar.';
+    state.lastSmithyMessage='Borin está descansando en el Mesón. Terminá su descanso antes de ponerlo a trabajar.';
     render();
     return;
   }
@@ -1453,13 +1757,15 @@ function completeCraft(craft){
   state.activeCraft=null;
   state.workers.borin.staminaUpdatedAt=craft.endsAt||Date.now();
 
+  const cityProgress=addCityDevelopment(CITY.DEVELOPMENT_REWARDS.craft,'producción de Herrería');
+
   if(swords.length>0){
     const sword=swords[0];
-    state.lastSmithyMessage=`Espada terminada: calidad ${sword.qualityLabel} (${sword.qualityScore}), daño ${sword.damage}, durabilidad ${sword.durability}. +${xp} XP de Herrería.`;
+    state.lastSmithyMessage=`Espada terminada: calidad ${sword.qualityLabel} (${sword.qualityScore}), daño ${sword.damage}, durabilidad ${sword.durability}. +${xp} XP de Herrería.${cityProgress.note}`;
   }else if(pickaxes>0){
-    state.lastSmithyMessage=`Ensamblaje completado: +${pickaxes} Pico de hierro y +${xp} XP de Herrería.`;
+    state.lastSmithyMessage=`Ensamblaje completado: +${pickaxes} Pico de hierro y +${xp} XP de Herrería.${cityProgress.note}`;
   }else{
-    state.lastSmithyMessage=`Fabricación completada: +${heads} cabeza de pico y +${xp} XP de Herrería.`;
+    state.lastSmithyMessage=`Fabricación completada: +${heads} cabeza de pico y +${xp} XP de Herrería.${cityProgress.note}`;
   }
 
   saveState();
@@ -1514,7 +1820,8 @@ function upgradeSmithy(){
   state.resources.stone-=SMITHY_UPGRADE_STONE_COST;
   state.buildings.smithy.level=2;
   state.city.prestige+=SMITHY_UPGRADE_PRESTIGE_REWARD;
-  state.lastSmithyMessage=`Herrería mejorada a Nv. 2. La ciudad ganó +${SMITHY_UPGRADE_PRESTIGE_REWARD} Prestigio.`;
+  const cityProgress=addCityDevelopment(CITY.DEVELOPMENT_REWARDS.businessUpgrade,'mejora de negocio');
+  state.lastSmithyMessage=`Herrería mejorada a Nv. 2. +${CITY.DEVELOPMENT_REWARDS.businessUpgrade} Desarrollo de ciudad.${cityProgress.note}`;
   saveState();
   render();
 }
@@ -1559,10 +1866,10 @@ function renderInnWorker(workerKey,stateEl,buttonEl,feedbackEl){
     buttonEl.disabled=worker.stamina>=STAMINA_MAX;
     buttonEl.textContent=worker.stamina>=STAMINA_MAX
       ?'Resistencia completa'
-      :'Descansar en Posada';
+      :'Descansar en Mesón';
   }
 
-  feedbackEl.textContent=state.lastInnMessage||'Libre: +1 cada 10 s. En Posada: +5 cada 10 s.';
+  feedbackEl.textContent=state.lastInnMessage||'Libre: +1 cada 10 s. En Mesón: +5 cada 10 s.';
 }
 
 let swordInventorySignature='';
@@ -1722,13 +2029,19 @@ function renderSmithyBook(force=false){
 function renderFoundingAdventurers(){
   if(!els.kingdomAdventurerList)return;
 
+  const activeCount=activeAdventurerCount();
+  const levelSlots=CITY.slotsForLevel(state.city.level||1);
+  const mesonCapacity=state.buildings.meson?.capacity||CITY.mesonCapacity(1);
+  const residentLimit=Math.min(levelSlots,mesonCapacity);
+  const next=CITY.nextLevelInfo(state.city);
+
   els.kingdomCityName.textContent=state.city.founded
-    ?`${state.city.name} · ${state.city.tier}`
+    ?`${state.city.name} · Ciudad Nv. ${state.city.level}`
     :'Sin fundar';
   els.kingdomFoundingMeta.textContent=state.city.founded
-    ?`Fundada en ${state.world.kingdom.name}. Pack inicial generado: ${state.adventurers.length} aventureros.`
+    ?`Fundada en ${state.world.kingdom.name}. Desarrollo ${state.city.development.toFixed(2)}${next.maxed?' · nivel máximo de esta prueba':` / ${next.threshold}`}. Mesón Nv. ${state.buildings.meson.level}: ${activeCount}/${mesonCapacity} residentes.`
     :'El Pack inicial se genera al fundar la ciudad.';
-  els.kingdomAdventurerCount.textContent=`${state.adventurers.filter(n=>n.active).length} activos`;
+  els.kingdomAdventurerCount.textContent=`${activeCount}/${residentLimit} plazas activas`;
 
   els.kingdomAdventurerList.replaceChildren();
 
@@ -1748,38 +2061,795 @@ function renderFoundingAdventurers(){
         <div class="avatar">${npc.firstName.slice(0,1)}${npc.lastName.slice(0,1)}</div>
         <div>
           <strong>${npc.fullName}</strong>
-          <span>${npc.role} · Nv. ${npc.level} · ${npc.personality}</span>
+          <span>${npc.role} · Nv. ${npc.level} · ${npc.personality} · ${npc.status}</span>
         </div>
       </div>
       <div class="founding-adventurer-stats">
         <span>❤️ ${npc.hpCurrent}/${npc.hpMax}</span>
         <span>⚔️ ${npc.stats.attack}</span>
         <span>🛡️ ${npc.stats.defense}</span>
-        <span>💨 ${npc.stats.speed}</span>
-        <span>✨ ${npc.stats.support}</span>
+        <span>⚡ ${npc.stats.initiative}</span>
+        <span>🔷 ${npc.manaCurrent}/${npc.manaMax}</span>
       </div>
-      <small>Originario de ${npc.originTier} ${npc.originCityName} · 🪙 ${formatNumber(npc.coins)}</small>
+      <small>${DATA.adventurerRoles[npc.classKey]?.identity||npc.role} · Evasión ${Math.round((npc.evasion||0)*100)}%</small>
+      <small>Originario de ${npc.originTier} ${npc.originCityName} · 🪙 ${formatNumber(npc.coins)} · XP ${npc.xp}/${DATA.adventurerProgression.xpToNext[npc.level]||'—'}</small>
+      ${npc.populationMilestone?'<small class="arrival-note">🧭 '+(npc.populationMilestone==='city-level-2'?'Llegó al alcanzar Ciudad Nv. 2':'Llegó al alcanzar Ciudad Nv. 3')+'</small>':''}
     `;
     els.kingdomAdventurerList.append(card);
   });
 }
 
+const WORLD_DEPS={COMBAT,CITY,onCityProgress:syncCityFromIntegratedWorld};
+
+function addWorldEvent(type,text,meta={}){
+  if(!state.worldSystems?.chronology)return;
+  state.worldSystems.chronology.events.unshift({
+    id:createActionId(),
+    atMinute:state.worldSystems.clockMinutes||0,
+    day:state.worldSystems.day||1,
+    type,
+    text,
+    meta
+  });
+  state.worldSystems.chronology.events=state.worldSystems.chronology.events.slice(0,80);
+}
+
+function syncCityFromIntegratedWorld(){
+  const previousLevel=Number(state.city.level)||1;
+  state.city=CITY.normalizeCityProgress(state.city);
+  const currentLevel=Number(state.city.level)||1;
+
+  if(currentLevel>previousLevel){
+    for(let level=previousLevel+1;level<=currentLevel;level++){
+      state.city.levelReachedAt[level]=state.city.levelReachedAt[level]||Date.now();
+      addWorldEvent('city-level','La ciudad alcanzó Nv. '+level+'.');
+    }
+  }
+
+  const arrivals=reconcileCityPopulation();
+  for(const npc of arrivals){
+    addWorldEvent('arrival',npc.fullName+' llegó a la ciudad como '+npc.role+'.',{adventurerId:npc.id});
+  }
+}
+
+function worldEventClass(type){
+  if(['combat-loss','city-attack','threat','special-loss'].includes(type))return 'is-danger';
+  if(['mission-accept','queue','worker-outing','escort'].includes(type))return 'is-warning';
+  if(['combat-win','special-win','craft','loot','meson','repair','building','arrival','city-level'].includes(type))return 'is-good';
+  return '';
+}
+
+function appendWorldRow(container,{title,subtitle='',right='',className='',button=null}){
+  if(!container)return null;
+  const row=document.createElement('div');
+  row.className='world-event-row '+className;
+
+  const left=document.createElement('span');
+  const strong=document.createElement('strong');
+  strong.textContent=title;
+  left.append(strong);
+  if(subtitle){
+    const small=document.createElement('small');
+    small.textContent=subtitle;
+    left.append(small);
+  }
+
+  const rightWrap=document.createElement('span');
+  rightWrap.className='event-right';
+  if(right){
+    const r=document.createElement('strong');
+    r.textContent=right;
+    rightWrap.append(r);
+  }
+  if(button){
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='small-action';
+    b.textContent=button.label;
+    if(button.dataset){
+      for(const [key,value] of Object.entries(button.dataset))b.dataset[key]=value;
+    }
+    rightWrap.append(b);
+  }
+
+  row.append(left,rightWrap);
+  container.append(row);
+  return row;
+}
+
+function renderWorldEvents(){
+  if(!els.worldEventList)return;
+  els.worldEventList.replaceChildren();
+  const events=state.worldSystems.chronology.events.slice(0,12);
+  if(!events.length){
+    appendWorldRow(els.worldEventList,{title:'Todavía no hay acontecimientos',subtitle:'Avanzá el mundo desde Menú para iniciar la simulación.'});
+    return;
+  }
+  for(const event of events){
+    appendWorldRow(els.worldEventList,{
+      title:event.text,
+      subtitle:WORLD.formatWorldTime(event.atMinute),
+      right:event.type,
+      className:worldEventClass(event.type)
+    });
+  }
+}
+
+function renderMesonIntegrated(){
+  if(!els.mesonAdventurerList)return;
+  const meson=state.worldSystems.meson;
+  const total=meson.platesSold+meson.rationsSold+meson.restsSold+meson.lodgingSold;
+  els.mesonServiceSummary.textContent=total+' servicios';
+  els.mesonAdventurerList.replaceChildren();
+
+  for(const npc of state.adventurers){
+    const need=WORLD.recoveryNeed(npc,DESIGN);
+    const reason=npc.hpCurrent<=0
+      ?'Incapacitado'
+      :(need.needsRest?'Necesita recuperación':(need.moderate?'Desgaste moderado':'Preparado'));
+    appendWorldRow(els.mesonAdventurerList,{
+      title:npc.fullName+' · '+reason,
+      subtitle:'PV '+npc.hpCurrent+'/'+npc.hpMax+' · Maná '+npc.manaCurrent+'/'+npc.manaMax+
+        (npc.rationPrepared?' · Ración preparada':''),
+      right:'🪙 '+formatNumber(npc.coins)
+    });
+  }
+}
+
+function renderTownHallIntegrated(){
+  if(!els.townHallCoins)return;
+  const snap=WORLD.townHallSnapshot(state,DESIGN);
+  els.townHallCityLevel.textContent='Ciudad Nv. '+snap.cityLevel;
+  els.townHallCoins.textContent=formatNumber(snap.coins);
+  els.townHallReserved.textContent=formatNumber(snap.reserved);
+  els.townHallAvailable.textContent=formatNumber(snap.available);
+  els.townHallDevelopment.textContent=Number(snap.development).toFixed(2);
+  els.townHallEra.textContent=snap.season.id;
+  els.townHallDiamonds.textContent=formatNumber(snap.season.diamonds||0);
+
+  els.townHallAlerts.replaceChildren();
+  if(!snap.alerts.length){
+    appendWorldRow(els.townHallAlerts,{title:'Sin alertas críticas',subtitle:'La ciudad funciona dentro de parámetros normales.',className:'is-good'});
+  }else{
+    for(const alert of snap.alerts){
+      appendWorldRow(els.townHallAlerts,{
+        title:alert.text,
+        subtitle:alert.type,
+        className:alert.severity==='critical'||alert.severity==='imminent'?'is-danger':'is-warning'
+      });
+    }
+  }
+}
+
+function missionStatusLabel(status){
+  return {
+    open:'Publicada',
+    accepted:'Aceptada',
+    completed:'Completada',
+    failed:'Fallida'
+  }[status]||status;
+}
+
+function updateGuildRewardHint(){
+  if(!els.guildEnemySelect||!els.guildRewardInput)return;
+  const enemyKey=els.guildEnemySelect.value||'wolf';
+  const maxCount=enemyKey==='wolf'?3:2;
+  let count=Math.max(1,Math.floor(Number(els.guildEnemyCount.value)||1));
+  count=Math.min(count,maxCount);
+  els.guildEnemyCount.value=String(count);
+  Array.from(els.guildEnemyCount.options).forEach(option=>{
+    option.disabled=Number(option.value)>maxCount;
+  });
+  const reference=(DESIGN.mission.baseRewards[enemyKey]||6)*count;
+  const min=Math.ceil(reference*DESIGN.mission.manualValueRange[0]);
+  const max=Math.floor(reference*DESIGN.mission.manualValueRange[1]);
+  els.guildRewardHint.textContent='Recomendado '+reference+' · permitido '+min+'–'+max+' monedas.';
+  if(document.activeElement!==els.guildRewardInput){
+    els.guildRewardInput.value=String(reference);
+  }
+}
+
+function updateDeliveryHint(){
+  if(!els.deliveryResourceSelect)return;
+  const key=els.deliveryResourceSelect.value||'meat';
+  const qty=Math.max(1,Math.floor(Number(els.deliveryQtyInput.value)||1));
+  const cfg=DESIGN.resources[key];
+  const level=Math.max(1,Math.min(3,Number(state.city.level)||1));
+  const target=Number(DESIGN.market.targets[level]?.[key])||0;
+  const have=Number(state.resources[key])||0;
+  const need=Math.max(0,target-have);
+  const reference=Math.max(1,(cfg?.price||1)*qty);
+  const min=Math.ceil(reference*DESIGN.mission.manualValueRange[0]);
+  const max=Math.floor(reference*DESIGN.mission.manualValueRange[1]);
+  els.deliveryHint.textContent='Demanda '+Math.round(need*100)/100+' · recomendado '+reference+' · permitido '+min+'–'+max+'.';
+  els.publishDeliveryMission.disabled=need<qty;
+  if(document.activeElement!==els.deliveryRewardInput)els.deliveryRewardInput.value=String(reference);
+}
+
+function updateEscortHint(){
+  if(!els.escortHint)return;
+  const bands=['wolf','boar'].map(species=>WORLD.threatBand(state.worldSystems.threat.presence[species],DESIGN));
+  const danger=Math.max(...bands.map(b=>DESIGN.threat.bands.findIndex(x=>x.id===b.id)));
+  const enabled=danger>=2;
+  const reference=10+Math.max(0,danger)*3;
+  els.escortHint.textContent=enabled
+    ?'Amenaza suficiente para escolta · recomendado '+reference+' monedas.'
+    :'Amenaza baja: todavía no hace falta pagar una escolta.';
+  els.publishEscortMission.disabled=!enabled;
+  if(document.activeElement!==els.escortRewardInput)els.escortRewardInput.value=String(reference);
+}
+
+function renderGuildIntegrated(){
+  if(!els.guildMissionList)return;
+  updateGuildRewardHint();
+  updateDeliveryHint();
+  updateEscortHint();
+  const missions=state.worldSystems.guild.missions;
+  const active=missions.filter(m=>m.status==='open'||m.status==='accepted');
+  const slots=state.buildings.guildHall?.missionSlots||DESIGN.mission.startingConcurrent;
+  els.guildMissionCount.textContent=active.length+'/'+slots;
+  els.guildMissionList.replaceChildren();
+
+  if(!missions.length){
+    appendWorldRow(els.guildMissionList,{title:'Tablón vacío',subtitle:'Publicá una misión de control para crear una oportunidad real.'});
+    return;
+  }
+
+  for(const mission of missions.slice(0,12)){
+    const npc=mission.acceptedBy?getAdventurer(mission.acceptedBy):null;
+    let objective='';
+    if(mission.type==='delivery'){
+      objective=mission.qty+'× '+(DESIGN.resources[mission.resourceKey]?.name||mission.resourceKey);
+    }else if(mission.type==='escort'){
+      objective='Escolta · '+mission.workerKind;
+    }else{
+      const enemy=DESIGN.enemies[mission.enemyKey];
+      objective=mission.count+'× '+(enemy?.name||mission.enemyKey);
+    }
+    const subtitle=[
+      objective,
+      '🪙 '+mission.reward,
+      npc?'Aceptada por '+npc.fullName:''
+    ].filter(Boolean).join(' · ');
+
+    appendWorldRow(els.guildMissionList,{
+      title:mission.id+' · '+missionStatusLabel(mission.status),
+      subtitle,
+      right:mission.status==='open'?(mission.active?'Activa':'Pausada'):'',
+      className:mission.status==='completed'?'is-good':mission.status==='failed'?'is-danger':'',
+      button:mission.status==='open'
+        ?{label:mission.active?'Pausar':'Activar',dataset:{missionToggle:mission.id}}
+        :null
+    });
+  }
+}
+
+function rawOriginQty(origin){
+  const cfg=DESIGN.materialOrigins[origin];
+  return cfg?Number(state.resources[cfg.raw]||0):0;
+}
+
+function tannedOriginQty(origin){
+  const cfg=DESIGN.materialOrigins[origin];
+  return cfg?Number(state.resources[cfg.tanned]||0):0;
+}
+
+function renderTextileIntegrated(){
+  if(!els.textileBadge)return;
+  const textile=state.worldSystems.textile;
+  const unlocked=(state.city.level||1)>=DESIGN.buildings.textile.unlockCityLevel;
+  els.cityTextileButton.hidden=!unlocked&&!textile.built;
+  els.cityTextileLevel.textContent=textile.built?'Nv. 1':(unlocked?'Construir':'Bloqueada');
+
+  els.textileBadge.textContent=textile.built
+    ?'Textilería · Nv. 1'
+    :(unlocked?'Textilería · Disponible':'Textilería · Requiere Ciudad Nv. 2');
+  els.textileBuildPanel.hidden=textile.built;
+  els.textileProductionPanel.hidden=!textile.built;
+
+  if(!textile.built){
+    const stock=state.worldSystems.production.stock;
+    const cost=DESIGN.buildings.textile.buildCost;
+    const ready=WORLD.availableTreasury(state)>=cost.coins&&
+      (state.resources.wood||0)>=cost.wood&&
+      (state.resources.stone||0)>=cost.stone&&
+      (stock.nails||0)>=cost.nails&&
+      (stock.scissors||0)>=cost.scissors&&unlocked;
+    els.buildTextile.disabled=!ready;
+  }
+
+  if(!textile.built)return;
+
+  els.tanningActions.replaceChildren();
+  const origins=Object.keys(DESIGN.materialOrigins);
+  for(const origin of origins){
+    const cfg=DESIGN.materialOrigins[origin];
+    const raw=rawOriginQty(origin);
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='small-action';
+    b.dataset.tanOrigin=origin;
+    b.disabled=raw<1;
+    b.textContent=cfg.label+' · piel '+raw;
+    els.tanningActions.append(b);
+  }
+
+  const totalTanned=origins.reduce((sum,o)=>sum+tannedOriginQty(o),0);
+  els.tannedStockSummary.textContent=totalTanned+' cueros';
+
+  const previous=els.textileOriginSelect.value;
+  els.textileOriginSelect.replaceChildren();
+  for(const origin of origins){
+    const qty=tannedOriginQty(origin);
+    if(qty<=0)continue;
+    const option=document.createElement('option');
+    option.value=origin;
+    option.textContent=DESIGN.materialOrigins[origin].label+' · '+qty+' cuero';
+    els.textileOriginSelect.append(option);
+  }
+  if(Array.from(els.textileOriginSelect.options).some(o=>o.value===previous)){
+    els.textileOriginSelect.value=previous;
+  }
+
+  els.textileStockList.replaceChildren();
+  const goods=state.worldSystems.production.goods;
+  let any=false;
+  for(const key of ['leatherProtection','leatherGloves','leatherBoots']){
+    for(const product of goods[key]||[]){
+      any=true;
+      appendWorldRow(els.textileStockList,{
+        title:product.name,
+        subtitle:product.qualityLabel+' · Dur. '+product.durability+'/'+product.maxDurability,
+        right:'🪙 '+product.salePrice
+      });
+    }
+  }
+  if(!any)appendWorldRow(els.textileStockList,{title:'Sin productos terminados',subtitle:'Curtí pieles y poné trabajos en cola.'});
+}
+
+function renderMapIntegrated(){
+  if(!els.mapWorldTime)return;
+  const snap=WORLD.mapSnapshot(state,DESIGN);
+  els.mapWorldTime.textContent=WORLD.formatWorldTime(state.worldSystems.clockMinutes);
+  els.wolfPresence.textContent=Math.round(snap.presence.wolf.value)+'/100 · '+snap.presence.wolf.band.label;
+  els.wolfPresenceProgress.value=snap.presence.wolf.value;
+  els.boarPresence.textContent=Math.round(snap.presence.boar.value)+'/100 · '+snap.presence.boar.band.label;
+  els.boarPresenceProgress.value=snap.presence.boar.value;
+
+  els.mapZoneList.replaceChildren();
+  for(const zone of snap.zones){
+    appendWorldRow(els.mapZoneList,{
+      title:zone.name,
+      subtitle:zone.kind+' · distancia '+zone.distance+(zone.requires?' · requiere '+zone.requires:''),
+      right:zone.enemy?(DESIGN.enemies[zone.enemy]?.name||zone.enemy):''
+    });
+  }
+
+  els.mapActiveAdventurers.replaceChildren();
+  if(!snap.activeAdventurers.length){
+    appendWorldRow(els.mapActiveAdventurers,{title:'Todos en la ciudad',subtitle:'Nadie está resolviendo una salida ahora mismo.'});
+  }else{
+    for(const entry of snap.activeAdventurers){
+      const enemy=DESIGN.enemies[entry.activity.enemyKey];
+      appendWorldRow(els.mapActiveAdventurers,{
+        title:entry.name,
+        subtitle:entry.activity.kind+' · '+entry.activity.count+'× '+(enemy?.name||entry.activity.enemyKey),
+        right:'regresa '+WORLD.formatWorldTime(entry.activity.resolvesAtMinute)
+      });
+    }
+  }
+
+  if(els.mapWorkerToolsSummary){
+    els.mapWorkerToolsSummary.replaceChildren();
+    const workerTools=[
+      ['Mara',state.workers.mara.worldTool],
+      ['Leñador',state.workers.logger.worldTool],
+      ['Cazador',state.workers.hunter.worldTool],
+      ['Cazador · cosecha',state.workers.hunter.harvestTool]
+    ];
+    for(const [name,tool] of workerTools){
+      if(!tool)continue;
+      appendWorldRow(els.mapWorkerToolsSummary,{
+        title:name+' · '+tool.name,
+        subtitle:tool.tier==='improved'?'Herramienta mejorada':'Herramienta fundadora',
+        right:'Dur. '+tool.durability+'/'+tool.maxDurability,
+        className:tool.durability<=0?'is-danger':(tool.durability<=tool.maxDurability*.35?'is-warning':'')
+      });
+    }
+
+    const stock=state.worldSystems.production.stock;
+    els.equipMaraPickaxe.disabled=(stock.ironPickaxe||0)<1;
+    els.equipLoggerAxe.disabled=(stock.workAxe||0)<1;
+    els.equipHunterKnife.disabled=(stock.huntingKnife||0)<1;
+    els.equipHunterBow.disabled=(state.worldSystems.production.goods.huntingBow||[]).length<1;
+
+    const damaged=workerTools.some(([,tool])=>tool&&tool.durability<tool.maxDurability);
+    els.repairWorkerTools.disabled=!damaged||WORLD.availableTreasury(state)<2;
+  }
+}
+
+function renderProductionIntegrated(){
+  if(els.smithyWorldQueue){
+    const queue=state.worldSystems.production.queue;
+    els.smithyWorldQueue.textContent='Cola '+queue.filter(j=>j.shop==='smithy').length+'/5';
+    els.carpenterWorldQueue.textContent='Cola '+queue.filter(j=>j.shop==='carpenter').length+'/5';
+  }
+
+  if(els.worldResourceGrid){
+    els.worldResourceGrid.replaceChildren();
+    const keys=['firewood','meat','skin','tendon','wolfSkin','boarSkin','alphaWolfSkin','greatBoarSkin'];
+    for(const key of keys){
+      const item=DESIGN.resources[key];
+      const div=document.createElement('div');
+      const label=document.createElement('span');
+      const value=document.createElement('strong');
+      label.textContent=item?.name||key;
+      value.textContent=String(Math.round((state.resources[key]||0)*100)/100);
+      div.append(label,value);
+      els.worldResourceGrid.append(div);
+    }
+  }
+
+  if(els.worldProductionStock){
+    els.worldProductionStock.replaceChildren();
+    const stock=state.worldSystems.production.stock;
+    for(const key of ['nails','arrowheads','pickaxeHead','axeHead','ironPickaxe','workAxe','huntingKnife','scissors','toolHandle','arrowBundle']){
+      const qty=stock[key]||0;
+      const div=document.createElement('div');
+      const label=document.createElement('span');
+      const value=document.createElement('strong');
+      label.textContent=DESIGN.recipes[key]?.name||key;
+      value.textContent=String(qty);
+      div.append(label,value);
+      els.worldProductionStock.append(div);
+    }
+  }
+}
+
+function renderSimulationIntegrated(){
+  if(!els.simulationClock)return;
+  els.simulationClock.textContent=WORLD.formatWorldTime(state.worldSystems.clockMinutes);
+  els.simulationEventCount.textContent=state.worldSystems.chronology.events.length+' eventos';
+  els.worldClockKingdom.textContent=WORLD.formatWorldTime(state.worldSystems.clockMinutes);
+}
+
+function renderIntegratedWorld(){
+  WORLD.normalizeState(state,DATA,DESIGN);
+  renderWorldEvents();
+  renderMesonIntegrated();
+  renderTownHallIntegrated();
+  renderGuildIntegrated();
+  renderTextileIntegrated();
+  renderMapIntegrated();
+  renderProductionIntegrated();
+  renderSimulationIntegrated();
+}
+
+function advanceIntegratedWorld(minutes){
+  if(!state.city.founded){
+    if(els.simulationFeedback)els.simulationFeedback.textContent='Primero fundá la ciudad.';
+    return;
+  }
+  const result=WORLD.advanceWorld(state,minutes,WORLD_DEPS,DATA,DESIGN,Math.random);
+  syncCityFromIntegratedWorld();
+  saveState();
+  if(els.simulationFeedback){
+    const last=result.events[0]?.text||'El mundo avanzó sin novedades importantes.';
+    els.simulationFeedback.textContent='Avanzaron '+result.minutes+' min. '+last;
+  }
+  render();
+}
+
+function publishGuildMissionAction(){
+  const enemyKey=els.guildEnemySelect.value||'wolf';
+  const count=Math.max(1,Math.floor(Number(els.guildEnemyCount.value)||1));
+  const reward=Math.max(1,Math.round(Number(els.guildRewardInput.value)||1));
+  const result=WORLD.publishHuntMission(state,{enemyKey,count,reward},DESIGN);
+  els.guildFeedback.textContent=result.ok?'Misión publicada. Los aventureros decidirán si la aceptan.':result.reason;
+  if(result.ok)saveState();
+  render();
+}
+
+function publishDeliveryMissionAction(){
+  const resourceKey=els.deliveryResourceSelect.value||'meat';
+  const qty=Math.max(1,Math.floor(Number(els.deliveryQtyInput.value)||1));
+  const reward=Math.max(1,Math.round(Number(els.deliveryRewardInput.value)||1));
+  const result=WORLD.publishDeliveryMission(state,{resourceKey,qty,reward},DESIGN);
+  els.deliveryFeedback.textContent=result.ok
+    ?'Entrega publicada. Sólo la aceptará quien tenga ese material.'
+    :result.reason;
+  if(result.ok)saveState();
+  render();
+}
+
+function publishEscortMissionAction(){
+  const workerKind=els.escortWorkerSelect.value||'mine';
+  const reward=Math.max(1,Math.round(Number(els.escortRewardInput.value)||1));
+  const result=WORLD.publishEscortMission(state,{workerKind,reward},DESIGN);
+  els.escortFeedback.textContent=result.ok
+    ?'Escolta publicada. Un aventurero decidirá si toma el riesgo.'
+    :result.reason;
+  if(result.ok)saveState();
+  render();
+}
+
+function buildTextileAction(){
+  const result=WORLD.buildTextile(state,DESIGN);
+  els.textileFeedback.textContent=result.ok?'Textilería construida.':result.reason;
+  if(result.ok){
+    syncCityFromIntegratedWorld();
+    saveState();
+  }
+  render();
+}
+
+function enqueueApprovedRecipe(recipeKey){
+  const recipe=DESIGN.recipes[recipeKey];
+  if(!recipe)return;
+  let origin='neutral';
+  if(recipe.shop==='textile'){
+    origin=els.textileOriginSelect?.value||'neutral';
+    if(!els.textileOriginSelect?.options.length){
+      els.textileFeedback.textContent='No hay cuero curtido disponible.';
+      return;
+    }
+  }
+  const result=WORLD.enqueueRecipe(state,recipeKey,DESIGN,origin);
+  const feedback=recipe.shop==='smithy'
+    ?els.smithyWorldFeedback
+    :(recipe.shop==='carpenter'?els.carpenterWorldFeedback:els.textileFeedback);
+  if(feedback)feedback.textContent=result.ok
+    ?recipe.name+' agregado a la cola. Materiales reservados.'
+    :result.reason;
+  if(result.ok)saveState();
+  render();
+}
+
+function integratedWorkerOuting(kind){
+  const result=WORLD.workerOuting(state,kind,DESIGN,Math.random);
+  if(result.ok){
+    syncCityFromIntegratedWorld();
+    const gained=Object.entries(result.gained).map(([k,v])=>(DESIGN.resources[k]?.name||k)+' +'+v).join(' · ');
+    els.mapOutingFeedback.textContent=gained+
+      (result.special?' · '+result.special:'')+
+      (result.escort?' · salida escoltada':'')+
+      (result.injured?' · trabajador herido':'');
+    saveState();
+  }else{
+    els.mapOutingFeedback.textContent=result.reason||'No se pudo realizar la salida.';
+  }
+  render();
+}
+
+function equipIntegratedWorkerTool(workerKey,toolKey){
+  const result=WORLD.equipWorkerTool(state,workerKey,toolKey,DESIGN);
+  els.mapOutingFeedback.textContent=result.ok
+    ?result.tool.name+' equipado.'
+    :result.reason;
+  if(result.ok)saveState();
+  render();
+}
+
+function repairIntegratedWorkerTools(){
+  const result=WORLD.repairWorkerTools(state,DESIGN);
+  els.mapOutingFeedback.textContent=result.ok
+    ?'Herramientas reparadas: '+result.repaired.join(', ')+'.'
+    :result.reason;
+  if(result.ok)saveState();
+  render();
+}
+
+let activityAdventurerSignature='';
+
+function selectedActivityAdventurer(){
+  const selectedId=els.activityAdventurerSelect?.value;
+  return getAdventurer(selectedId)||state.adventurers.find(npc=>npc.active!==false)||null;
+}
+
+function appendActivityPreviewRow(labelText,valueText){
+  const row=document.createElement('div');
+  const label=document.createElement('span');
+  const value=document.createElement('strong');
+  label.textContent=labelText;
+  value.textContent=valueText;
+  row.append(label,value);
+  els.activityPreview.append(row);
+}
+
+function renderActivityLog(){
+  if(!els.activityLogList)return;
+  els.activityLogList.replaceChildren();
+
+  if(!state.activityLog.length){
+    const empty=document.createElement('p');
+    empty.className='muted';
+    empty.textContent='Todavía no hay salidas resueltas.';
+    els.activityLogList.append(empty);
+    return;
+  }
+
+  state.activityLog.forEach(entry=>{
+    const row=document.createElement('div');
+    row.className='activity-log-row '+(entry.won?'is-win':'is-loss');
+
+    const left=document.createElement('span');
+    const leftStrong=document.createElement('strong');
+    const leftSmall=document.createElement('small');
+    leftStrong.textContent=(entry.won?'✅ ':'⚠️ ')+entry.adventurerName;
+    leftSmall.textContent=entry.enemyCount+'× '+entry.enemyName+' · Nv. '+entry.levelAfter;
+    left.append(leftStrong,leftSmall);
+
+    const right=document.createElement('span');
+    const rightStrong=document.createElement('b');
+    const rightSmall=document.createElement('small');
+    rightStrong.textContent=entry.won?('+'+entry.xpGained+' XP'):('-'+entry.xpLost+' XP');
+    rightSmall.textContent='-'+entry.hpLoss+' PV · -'+entry.manaLoss+' Maná';
+    right.append(rightStrong,rightSmall);
+
+    row.append(left,right);
+    els.activityLogList.append(row);
+  });
+}
+
+function renderAdventurerActivity(){
+  if(!els.activityAdventurerSelect)return;
+
+  const active=state.adventurers.filter(npc=>npc.active!==false);
+  const signature=active.map(npc=>[
+    npc.id,npc.level,npc.hpCurrent,npc.manaCurrent,npc.status
+  ].join(':')).join('|');
+  const previous=els.activityAdventurerSelect.value;
+
+  if(signature!==activityAdventurerSignature){
+    activityAdventurerSignature=signature;
+    els.activityAdventurerSelect.replaceChildren();
+
+    active.forEach(npc=>{
+      const option=document.createElement('option');
+      option.value=npc.id;
+      option.textContent=npc.fullName+' · '+npc.role+' Nv. '+npc.level+' · '+npc.hpCurrent+'/'+npc.hpMax+' PV';
+      els.activityAdventurerSelect.append(option);
+    });
+
+    if(active.some(npc=>npc.id===previous))els.activityAdventurerSelect.value=previous;
+  }
+
+  const npc=selectedActivityAdventurer();
+  els.activityPreview.replaceChildren();
+
+  if(!npc){
+    const empty=document.createElement('p');
+    empty.className='muted';
+    empty.textContent='No hay aventureros disponibles.';
+    els.activityPreview.append(empty);
+    els.resolveAdventurerActivity.disabled=true;
+    renderActivityLog();
+    return;
+  }
+
+  const enemyKey=els.activityEnemySelect.value||'wolf';
+  const enemy=DATA.activityCombat.enemies[enemyKey];
+  let count=Math.max(1,Math.floor(Number(els.activityEnemyCount.value)||1));
+  count=Math.min(count,enemy.maxCount);
+  els.activityEnemyCount.value=String(count);
+
+  Array.from(els.activityEnemyCount.options).forEach(option=>{
+    option.disabled=Number(option.value)>enemy.maxCount;
+  });
+
+  const preview=COMBAT.previewEncounter(npc,enemyKey,count,DATA);
+  const hpExpected=Math.ceil(npc.hpMax*preview.meanHpLossRate);
+  const manaExpected=Math.ceil(npc.manaMax*preview.meanManaUseRate);
+  const chance=Math.round(preview.winChance*1000)/10;
+
+  appendActivityPreviewRow('Victoria estimada',chance+'%');
+  appendActivityPreviewRow('Desgaste medio','~'+hpExpected+' PV · ~'+manaExpected+' Maná');
+  appendActivityPreviewRow('Recompensa','+'+preview.xpReward+' XP');
+  appendActivityPreviewRow(
+    'Enemigo',
+    'PV '+preview.enemySnapshot.hp+' · ATQ '+preview.enemySnapshot.attack+' · DEF '+preview.enemySnapshot.defense
+  );
+
+  const incapacitated=npc.hpCurrent<=0||npc.status==='Incapacitado';
+  els.resolveAdventurerActivity.disabled=incapacitated;
+  els.resolveAdventurerActivity.textContent=incapacitated?'Aventurero incapacitado':'Resolver salida';
+  els.activityState.textContent=incapacitated?'Incapacitado':'Lista';
+  els.activityState.classList.toggle('is-busy',incapacitated);
+  els.activityResult.textContent=state.lastActivityMessage||'Elegí aventurero y objetivo. La resolución es instantánea.';
+  renderActivityLog();
+}
+
+function resolveAdventurerActivity(){
+  const npc=selectedActivityAdventurer();
+  if(!npc)return;
+
+  if(npc.hpCurrent<=0||npc.status==='Incapacitado'){
+    state.lastActivityMessage=npc.fullName+' está incapacitado. La recuperación real llegará en v0.9.0d.';
+    render();
+    return;
+  }
+
+  const enemyKey=els.activityEnemySelect.value||'wolf';
+  const enemy=DATA.activityCombat.enemies[enemyKey];
+  const count=Math.min(
+    Math.max(1,Math.floor(Number(els.activityEnemyCount.value)||1)),
+    enemy.maxCount
+  );
+  const result=COMBAT.resolveEncounter(npc,enemyKey,count,DATA,Math.random);
+  const index=state.adventurers.findIndex(item=>item.id===npc.id);
+  if(index<0)return;
+
+  state.adventurers[index]=result.adventurer;
+  state.activityLog.unshift({
+    id:createActionId(),
+    at:Date.now(),
+    adventurerId:npc.id,
+    adventurerName:npc.fullName,
+    enemyKey,
+    enemyName:result.preview.enemyName,
+    enemyCount:result.preview.count,
+    won:result.won,
+    hpLoss:result.hpLoss,
+    manaLoss:result.manaLoss,
+    xpGained:result.xpGained,
+    xpLost:result.xpLost,
+    levelAfter:result.adventurer.level
+  });
+  state.activityLog=state.activityLog.slice(0,12);
+
+  if(result.won){
+    const levelText=result.levelsGained.length
+      ?' Subió a Nv. '+result.adventurer.level+'.'
+      :'';
+    state.lastActivityMessage='✅ '+npc.fullName+' venció '+result.preview.count+'× '+result.preview.enemyName+
+      ': -'+result.hpLoss+' PV, -'+result.manaLoss+' Maná, +'+result.xpGained+' XP.'+levelText;
+  }else{
+    state.lastActivityMessage='⚠️ '+npc.fullName+' fue incapacitado por '+result.preview.count+'× '+
+      result.preview.enemyName+'. Perdió '+result.xpLost+' XP del nivel actual, pero conserva su nivel.';
+  }
+
+  activityAdventurerSignature='';
+  saveState();
+  render();
+}
+
 function render(){
   updateFoundationGate();
+  if(els.localTestTools)els.localTestTools.hidden=!isLocalTestHost();
+  if(els.manualCombatLab)els.manualCombatLab.hidden=!isLocalTestHost();
+  const resetButton=document.getElementById('resetWorldBtn');
+  if(resetButton)resetButton.hidden=!isLocalTestHost();
+  WORLD.normalizeState(state,DATA,DESIGN);
   resolveExpiredExpedition();
   resolveExpiredCraft();
   resolveExpiredCarpentry();
   syncAllWorkerStamina();
-  tickSmithyTraffic();
+  if(LEGACY_SMITHY_TRAFFIC_ENABLED)tickSmithyTraffic();
 
   els.coins.textContent=formatNumber(state.resources.coins);
 
-  els.cityPrestige.textContent=formatNumber(state.city.prestige);
-  els.cityPrestigeProgress.value=state.city.prestige;
-  if(els.cityTierBadge)els.cityTierBadge.textContent=state.city.tier;
+  const cityNext=CITY.nextLevelInfo(state.city);
+  const activeResidents=activeAdventurerCount();
+  const citySlots=CITY.slotsForLevel(state.city.level);
+  const mesonCapacity=state.buildings.meson.capacity;
+  const residentLimit=Math.min(citySlots,mesonCapacity);
+
+  els.cityLevelBadge.textContent=`Ciudad Nv. ${state.city.level}`;
+  els.cityDevelopment.textContent=state.city.development.toFixed(2);
+  els.cityDevelopmentTarget.textContent=cityNext.maxed?'MAX':cityNext.threshold;
+  els.cityDevelopmentProgress.max=cityNext.maxed
+    ?CITY.thresholdForLevel(CITY.MAX_CITY_LEVEL)
+    :cityNext.threshold;
+  els.cityDevelopmentProgress.value=Math.min(state.city.development,els.cityDevelopmentProgress.max);
+  els.cityPopulationSummary.textContent=`Aventureros ${activeResidents}/${residentLimit} · Mesón ${activeResidents}/${mesonCapacity}`;
+  els.cityProgressHint.textContent=cityNext.maxed
+    ?'Nivel máximo disponible en v0.9.0g2. La población queda limitada a 5 residentes.'
+    :`Faltan ${cityNext.remaining.toFixed(2)} de Desarrollo para Ciudad Nv. ${cityNext.level}. Expediciones, producción y mejoras hacen crecer la ciudad.`;
   els.smithyLevelCity.textContent=state.buildings.smithy.level;
   if(currentScreen()==='city')title.textContent=state.city.founded?state.city.name:'Nueva ciudad';
   renderFoundingAdventurers();
+  renderAdventurerActivity();
+  renderIntegratedWorld();
 
   els.inventoryCoins.textContent=formatNumber(state.resources.coins);
   els.inventoryWood.textContent=formatNumber(state.resources.wood);
@@ -1871,7 +2941,7 @@ function render(){
 
     els.maraState.textContent=resting?'Descansando':'Disponible';
     els.maraState.classList.toggle('is-busy',resting);
-    els.expeditionStatus.textContent=resting?'En la Posada':'Lista para partir';
+    els.expeditionStatus.textContent=resting?'En el Mesón':'Lista para partir';
     els.expeditionProgress.value=0;
     els.expeditionCountdown.textContent='';
 
@@ -1935,7 +3005,7 @@ function render(){
 
     els.eldonState.textContent=resting?'Descansando':'Disponible';
     els.eldonState.classList.toggle('is-busy',resting);
-    els.carpenterEldonState.textContent=resting?'En la Posada':'Disponible';
+    els.carpenterEldonState.textContent=resting?'En el Mesón':'Disponible';
     els.carpenterEldonState.classList.toggle('is-busy',resting);
     els.carpentryStatus.textContent=resting?'Eldon descansando':'Lista para fabricar';
     els.carpentryProgress.value=0;
@@ -2009,7 +3079,7 @@ function render(){
 
     els.borinState.textContent=resting?'Descansando':'Disponible';
     els.borinState.classList.toggle('is-busy',resting);
-    els.smithyBorinState.textContent=resting?'En la Posada':'Disponible';
+    els.smithyBorinState.textContent=resting?'En el Mesón':'Disponible';
     els.smithyBorinState.classList.toggle('is-busy',resting);
     els.craftStatus.textContent=resting?'Borin descansando':'Lista para trabajar';
     els.craftProgress.value=0;
@@ -2125,6 +3195,60 @@ els.toggleMaraInnRest.addEventListener('click',()=>toggleInnRest('mara'));
 els.toggleBorinInnRest.addEventListener('click',()=>toggleInnRest('borin'));
 els.toggleEldonInnRest.addEventListener('click',()=>toggleInnRest('eldon'));
 els.upgradeSmithy.addEventListener('click',upgradeSmithy);
+if(els.testReachNextCityLevel)els.testReachNextCityLevel.addEventListener('click',reachNextCityLevelForLocalTest);
+if(els.testRecoverAdventurers)els.testRecoverAdventurers.addEventListener('click',recoverAdventurersForLocalTest);
+if(els.resolveAdventurerActivity)els.resolveAdventurerActivity.addEventListener('click',resolveAdventurerActivity);
+if(els.activityAdventurerSelect)els.activityAdventurerSelect.addEventListener('change',render);
+if(els.activityEnemySelect)els.activityEnemySelect.addEventListener('change',render);
+if(els.activityEnemyCount)els.activityEnemyCount.addEventListener('change',render);
+
+if(els.advanceWorld10)els.advanceWorld10.addEventListener('click',()=>advanceIntegratedWorld(10));
+if(els.advanceWorld30)els.advanceWorld30.addEventListener('click',()=>advanceIntegratedWorld(30));
+if(els.advanceWorld120)els.advanceWorld120.addEventListener('click',()=>advanceIntegratedWorld(120));
+
+if(els.publishGuildMission)els.publishGuildMission.addEventListener('click',publishGuildMissionAction);
+if(els.guildEnemySelect)els.guildEnemySelect.addEventListener('change',updateGuildRewardHint);
+if(els.guildEnemyCount)els.guildEnemyCount.addEventListener('change',updateGuildRewardHint);
+if(els.publishDeliveryMission)els.publishDeliveryMission.addEventListener('click',publishDeliveryMissionAction);
+if(els.deliveryResourceSelect)els.deliveryResourceSelect.addEventListener('change',updateDeliveryHint);
+if(els.deliveryQtyInput)els.deliveryQtyInput.addEventListener('input',updateDeliveryHint);
+if(els.publishEscortMission)els.publishEscortMission.addEventListener('click',publishEscortMissionAction);
+if(els.escortWorkerSelect)els.escortWorkerSelect.addEventListener('change',updateEscortHint);
+if(els.guildMissionList)els.guildMissionList.addEventListener('click',event=>{
+  const button=event.target.closest('[data-mission-toggle]');
+  if(!button)return;
+  const result=WORLD.toggleMission(state,button.dataset.missionToggle);
+  if(result.ok){
+    saveState();
+    render();
+  }
+});
+
+if(els.buildTextile)els.buildTextile.addEventListener('click',buildTextileAction);
+if(els.tanningActions)els.tanningActions.addEventListener('click',event=>{
+  const button=event.target.closest('[data-tan-origin]');
+  if(!button)return;
+  const result=WORLD.tanHide(state,button.dataset.tanOrigin,DESIGN);
+  els.textileFeedback.textContent=result.ok?'Piel curtida conservando su origen.':result.reason;
+  if(result.ok){
+    syncCityFromIntegratedWorld();
+    saveState();
+  }
+  render();
+});
+
+document.querySelectorAll('[data-world-recipe]').forEach(button=>{
+  button.addEventListener('click',()=>enqueueApprovedRecipe(button.dataset.worldRecipe));
+});
+
+if(els.mapMineOuting)els.mapMineOuting.addEventListener('click',()=>integratedWorkerOuting('mine'));
+if(els.mapWoodOuting)els.mapWoodOuting.addEventListener('click',()=>integratedWorkerOuting('wood'));
+if(els.mapHuntOuting)els.mapHuntOuting.addEventListener('click',()=>integratedWorkerOuting('hunt'));
+if(els.equipMaraPickaxe)els.equipMaraPickaxe.addEventListener('click',()=>equipIntegratedWorkerTool('mara','ironPickaxe'));
+if(els.equipLoggerAxe)els.equipLoggerAxe.addEventListener('click',()=>equipIntegratedWorkerTool('logger','workAxe'));
+if(els.equipHunterBow)els.equipHunterBow.addEventListener('click',()=>equipIntegratedWorkerTool('hunter','huntingBow'));
+if(els.equipHunterKnife)els.equipHunterKnife.addEventListener('click',()=>equipIntegratedWorkerTool('hunter','huntingKnife'));
+if(els.repairWorkerTools)els.repairWorkerTools.addEventListener('click',repairIntegratedWorkerTools);
 
 els.swordInventoryList.addEventListener('change',event=>{
   const input=event.target.closest('[data-sword-price]');
@@ -2164,7 +3288,7 @@ els.swordInventoryList.addEventListener('click',event=>{
 
 els.clearSmithyBook.addEventListener('click',clearReadSmithyBook);
 
-catchUpSmithyTraffic();
+if(LEGACY_SMITHY_TRAFFIC_ENABLED)catchUpSmithyTraffic();
 document.getElementById('foundCityBtn')?.addEventListener('click',foundCity);
 document.getElementById('foundationCityName')?.addEventListener('keydown',event=>{
   if(event.key==='Enter')foundCity();
@@ -2174,12 +3298,12 @@ document.getElementById('resetWorldBtn')?.addEventListener('click',resetTestWorl
 setInterval(render,500);
 document.addEventListener('visibilitychange',()=>{
   if(!document.hidden){
-    catchUpSmithyTraffic();
+    if(LEGACY_SMITHY_TRAFFIC_ENABLED)catchUpSmithyTraffic();
     render();
   }
 });
 window.addEventListener('focus',()=>{
-  catchUpSmithyTraffic();
+  if(LEGACY_SMITHY_TRAFFIC_ENABLED)catchUpSmithyTraffic();
   render();
 });
 
@@ -2210,20 +3334,35 @@ if(isStandalone){
 }
 
 if('serviceWorker' in navigator){
-  let refreshing=false;
+  if(isLocalTestHost()){
+    // En localhost priorizamos siempre los archivos reales del branch de prueba.
+    // Evita que un Service Worker de una versión anterior oculte cambios de desarrollo.
+    window.addEventListener('load',async()=>{
+      try{
+        const regs=await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(reg=>reg.unregister()));
+        if('caches' in globalThis){
+          const keys=await caches.keys();
+          await Promise.all(keys.map(key=>caches.delete(key)));
+        }
+      }catch{}
+    });
+  }else{
+    let refreshing=false;
 
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{
-    if(refreshing)return;
-    refreshing=true;
-    window.location.reload();
-  });
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      if(refreshing)return;
+      refreshing=true;
+      window.location.reload();
+    });
 
-  window.addEventListener('load',async()=>{
-    try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=0.8.1',{updateViaCache:'none'});
-      await reg.update();
-    }catch{}
-  });
+    window.addEventListener('load',async()=>{
+      try{
+        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0g2',{updateViaCache:'none'});
+        await reg.update();
+      }catch{}
+    });
+  }
 }
 
 render();

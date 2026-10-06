@@ -1,11 +1,18 @@
-const CACHE='pueblos-gremios-v0.8.1';
+const CACHE='pueblos-gremios-v0.9.0g2';
 const ASSETS=[
-  './index.html?v=0.8.0',
-  './styles.css?v=0.8.0',
-  './game-data.js?v=0.8.0',
-  './app.js?v=0.8.0',
-  './manifest.webmanifest?v=0.8.0',
-  './icons/icon.svg?v=0.8.0'
+  './index.html?v=0.9.0g2',
+  './styles.css?v=0.9.0g2',
+  './activity.css?v=0.9.0g2',
+  './world-loop.css?v=0.9.0g2',
+  './game-data.js?v=0.9.0g2',
+  './adventurer-core.js?v=0.9.0g2',
+  './city-progression.js?v=0.9.0g2',
+  './activity-combat.js?v=0.9.0g2',
+  './world-design-data.js?v=0.9.0g2',
+  './world-loop.js?v=0.9.0g2',
+  './app.js?v=0.9.0g2',
+  './manifest.webmanifest?v=0.9.0g2',
+  './icons/icon.svg?v=0.9.0g2'
 ];
 
 self.addEventListener('install',e=>e.waitUntil(
@@ -27,10 +34,10 @@ self.addEventListener('fetch',e=>{
       fetch(e.request,{cache:'no-store'})
         .then(r=>{
           const clone=r.clone();
-          caches.open(CACHE).then(c=>c.put('./index.html?v=0.8.0',clone));
+          caches.open(CACHE).then(c=>c.put('./index.html?v=0.9.0g2',clone));
           return r;
         })
-        .catch(()=>caches.match('./index.html?v=0.8.0'))
+        .catch(()=>caches.match('./index.html?v=0.9.0g2'))
     );
     return;
   }

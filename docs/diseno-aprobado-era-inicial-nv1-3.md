@@ -450,7 +450,10 @@ La **Comida abundante** queda para niveles posteriores.
 
 - No habrá una barra de Hambre obligatoria que genere micromanejo.
 - Comer debe ser una ventaja/preparación, no una obligación tediosa.
-- Los efectos exactos de Plato, Ración, Descanso y Alojamiento se definirán al detallar objetos/servicios.
+- **Plato sencillo — BALANCE EN PRUEBA:** recuperación ligera de Vida/Maná cuando el aventurero todavía no necesita un Descanso completo.
+- **Ración de viaje — BALANCE EN PRUEBA:** preparación consumible para una salida; reduce ligeramente desgaste de Vida y consumo de Maná.
+- Los números exactos siguen sujetos al simulador y al playtest.
+- Descanso y Alojamiento continúan como servicios separados.
 
 ### 10.1. Función social
 
@@ -543,7 +546,25 @@ Ejemplo:
 
 > Aventurero X ofrece 4 Pieles de Lobo por Y monedas.
 
-El jugador decide si compra.
+El botín sigue siendo propiedad del aventurero hasta que exista una transacción.
+
+La ciudad **no compra todo automáticamente**. La decisión debe considerar:
+
+- necesidad real del material;
+- stock deseado;
+- tesorería disponible;
+- precio;
+- rareza/origen;
+- prioridades del jugador.
+
+La versión final puede permitir:
+
+- aceptar/rechazar manualmente;
+- órdenes de compra;
+- límites de stock;
+- políticas automáticas configurables.
+
+En el simulador de balance se usa una política automática con límite de demanda y reserva de tesorería para representar esta decisión sin intervención humana.
 
 ---
 
@@ -736,7 +757,28 @@ La idea es separar:
 
 Las herramientas y equipo utilizan una sola variable de desgaste: **Durabilidad**.
 
-Para trabajadores:
+### Aventureros y equipo fundador
+
+Los aventureros llegan con equipo rudimentario funcional, pero **también se desgasta**.
+
+Reglas:
+
+- arma/foco fundador: alrededor de **8 Durabilidad**;
+- ropa/protección fundadora: alrededor de **10 Durabilidad**;
+- es personal del aventurero;
+- no puede venderse ni transferirse a la ciudad;
+- puede repararse;
+- puede ser sustituido por equipo comercial mejor;
+- a Durabilidad 0 deja de aportar su función hasta repararse o reemplazarse.
+
+El objetivo es evitar dos extremos:
+
+- equipo fundador eterno que elimina demanda;
+- equipo fundador tan frágil que obliga a comprar inmediatamente.
+
+En simulación Normal aparecen ~1,9 reparaciones de equipo fundador por ciudad durante 90 min, pero las roturas completas son raras (~0,06 por ciudad).
+
+### Trabajadores:
 
 - el desgaste se consume por salida;
 - no por golpe individual;
@@ -1523,6 +1565,18 @@ Al procesar:
 
 No debe perderse la identidad del material.
 
+Primera traducción numérica **BALANCE EN PRUEBA**:
+
+- Cuero común → sin modificador.
+- Cuero de Lobo → **+1 Iniciativa**.
+- Cuero de Jabalí → **+1 Defensa**.
+- Cuero de Lobo Alfa → **+2 Iniciativa**.
+- Cuero de Gran Jabalí → **+2 Defensa** + propiedad de **Robustez** (~5 % menos daño esperado).
+
+La rama Lobo representa rapidez/ritmo y la rama Jabalí representa resistencia física.
+
+Estos valores son de simulación y pueden ajustarse sin romper la regla de identidad.
+
 Esta lógica podrá extenderse a:
 
 - pieles;
@@ -1565,11 +1619,23 @@ Las telas se incorporarán más adelante cuando exista una fuente lógica:
 - **Correas de cuero**
 - **Reparación básica de equipo de cuero**
 
-Las recetas concretas podrán usar combinaciones de:
+El curtido inicial conserva la especie **1:1**:
 
-- piel;
-- cuero curtido;
-- tendones.
+- Piel común → Cuero curtido común.
+- Piel de Lobo → Cuero curtido de Lobo.
+- Piel de Jabalí → Cuero curtido de Jabalí.
+- Piel de Lobo Alfa → Cuero curtido de Lobo Alfa.
+- Piel de Gran Jabalí → Cuero curtido de Gran Jabalí.
+
+Las piezas terminadas consumen cuero curtido manteniendo un único origen dominante para aplicar la identidad de la especie.
+
+BALANCE EN PRUEBA para el simulador:
+
+- Protección ligera: 3 Cuero curtido + 1 Tendón.
+- Guantes: 1 Cuero curtido.
+- Botas: 1 Cuero curtido.
+
+Esto permite que un material Raro/Boss único pueda utilizarse en una pieza pequeña sin obligar a esperar tres derrotas del mismo Raro/Boss.
 
 ### Herramienta
 
@@ -1962,6 +2028,20 @@ Los costes exactos de Maná y probabilidades se fijan en la hoja de balance téc
 
 Los Estados son modificadores del cálculo probabilístico del encuentro. No requieren una ejecución turno por turno persistente.
 
+**Afinidad potencial por clase:**
+
+- **Guerrero:** Herida + Aturdido.
+- **Explorador:** Herida + Veneno + Parálisis.
+- **Sanador:** no necesita Estado ofensivo base; su especialidad es curar/limpiar Estados.
+- **Mago:** Quemadura + Parálisis.
+
+Esto evita convertir al Mago en “la clase de todos los Estados”. Cada Estado refuerza una identidad distinta.
+
+**Importante:** esta lista indica qué Estados pertenecen naturalmente al desarrollo de cada clase, **no qué habilidades posee en Nv.1**. Los Estados se irán incorporando mediante habilidades aprendidas al subir de nivel. Los niveles exactos de desbloqueo quedan pendientes de diseño y simulación.
+
+La distribución tampoco es una restricción absoluta para todo el juego: futuras especializaciones, materiales o equipamiento pueden permitir combinaciones nuevas.
+
+
 **Herida**
 - aumenta el daño/desgaste esperado;
 - eleva la probabilidad de terminar el encuentro con una lesión persistente;
@@ -2154,9 +2234,9 @@ Objetivo temprano:
 
 Primera curva para simulación:
 
-- Nv.1 → 2: **60 XP**.
-- Nv.2 → 3: **100 XP**.
-- Nv.3 → 4: **160 XP**.
+- Nv.1 → 2: **45 XP**.
+- Nv.2 → 3: **90 XP**.
+- Nv.3 → 4: **150 XP**.
 
 Estos valores son de balance inicial y se ajustarán mediante simulación/playtest antes de extender la curva hasta el final de temporada.
 

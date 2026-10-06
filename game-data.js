@@ -9,16 +9,64 @@ globalThis.PG_DATA={
     startingTier:'Pueblo',
     startingPrestige:0,
     adventurerCount:3,
-    resources:{coins:900,wood:50,iron:24,stone:8}
+    founderClassKeys:['warrior','explorer','healer'],
+    adventurerCoinRange:[55,75],
+    resources:{coins:240,iron:8,stone:6,wood:10,firewood:6,meat:4,skin:1,tendon:1}
+  },
+
+  cityProgression:{
+    schemaVersion:1,
+    maxLevel:3,
+    thresholds:{1:0,2:9.5,3:25.5},
+    populationSlots:{1:3,2:4,3:5},
+    meson:{startingLevel:1,capacityByLevel:{1:5}},
+    developmentRewards:{workerOuting:1,craft:.45,businessUpgrade:2.5}
+  },
+
+  adventurerProgression:{
+    schemaVersion:1,
+    xpToNext:{1:45,2:90,3:150},
+    maxPlayableLevel:4,
+    zeroHpXpLossRate:.20,
+    mainStats:['hp','attack','defense','initiative','mana'],
+    statGrowth:{
+      warrior:{hp:6,attack:1,attackEvery:2,mana:1},
+      explorer:{hp:4,attack:1,mana:2},
+      healer:{hp:3,attack:1,attackEvery:2,mana:4},
+      mage:{hp:3,attack:1,mana:4}
+    }
+  },
+
+  activityCombat:{
+    schemaVersion:1,
+    manaUse:{warrior:.10,explorer:.22,healer:.26,mage:.30},
+    enemies:{
+      wolf:{
+        id:'wolf',
+        name:'Lobo',
+        type:'animal',
+        hp:34,attack:9,defense:2,initiative:7,
+        xp:10,
+        maxCount:3
+      },
+      boar:{
+        id:'boar',
+        name:'Jabalí',
+        type:'animal',
+        hp:55,attack:12,defense:5,initiative:3,
+        xp:14,
+        maxCount:2
+      }
+    }
   },
 
   shops:{
     townHall:{id:'townHall',name:'Ayuntamiento',type:'administration',startingLevel:1},
-    tavern:{id:'tavern',name:'Taberna',type:'service',startingLevel:1},
+    meson:{id:'meson',name:'Mesón',type:'service',startingLevel:1,capacity:5},
     smithy:{id:'smithy',name:'Herrería',type:'production',startingLevel:1},
     carpenter:{id:'carpenter',name:'Carpintería',type:'production',startingLevel:1},
-    inn:{id:'inn',name:'Posada',type:'service',startingLevel:1},
-    guildHall:{id:'guildHall',name:'Sede del Gremio',type:'adventurer-market',startingLevel:1,implemented:false}
+    guildHall:{id:'guildHall',name:'Sede del Gremio',type:'adventurer-market',startingLevel:1,implemented:true},
+    textile:{id:'textile',name:'Textilería',type:'production',startingLevel:0,unlockCityLevel:2,implemented:true}
   },
 
   items:{
@@ -106,26 +154,46 @@ globalThis.PG_DATA={
     warrior:{
       id:'warrior',
       label:'Guerrero',
-      baseStats:{hp:108,attack:8,defense:8,speed:4,support:1},
-      weaponDamage:7,
-      smithyAffinity:.96
+      identity:'Protector',
+      baseStats:{hp:120,attack:10,defense:7,initiative:4,mana:18},
+      evasion:.02,
+      weaponDamage:4,
+      smithyAffinity:.92,
+      stateAffinity:['wound','stun']
     },
     explorer:{
       id:'explorer',
       label:'Explorador',
-      baseStats:{hp:92,attack:7,defense:5,speed:8,support:3},
-      weaponDamage:7,
-      smithyAffinity:.78
+      identity:'Daño físico / Evasión',
+      baseStats:{hp:90,attack:14,defense:3,initiative:8,mana:32},
+      evasion:.14,
+      weaponDamage:4,
+      smithyAffinity:.82,
+      combatStyles:['bow','daggers'],
+      stateAffinity:['wound','poison','paralysis']
     },
     healer:{
       id:'healer',
       label:'Sanador',
-      baseStats:{hp:88,attack:4,defense:5,speed:5,support:10},
-      weaponDamage:5,
-      smithyAffinity:.54
+      identity:'Soporte sagrado',
+      baseStats:{hp:80,attack:9,defense:5,initiative:5,mana:58},
+      evasion:.03,
+      weaponDamage:3,
+      smithyAffinity:.56,
+      stateAffinity:[]
+    },
+    mage:{
+      id:'mage',
+      label:'Mago',
+      identity:'Daño arcano / elemental',
+      baseStats:{hp:72,attack:16,defense:3,initiative:6,mana:64},
+      evasion:.03,
+      weaponDamage:3,
+      smithyAffinity:.48,
+      stateAffinity:['burn','paralysis'],
+      founder:false
     }
   },
-
   personalities:{
     prudent:{
       id:'prudent',

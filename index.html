@@ -5,26 +5,28 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17130f">
 <meta name="description" content="Pueblos de Gremios - gestión de un pueblo fantástico y su reino.">
-<link rel="manifest" href="./manifest.webmanifest?v=0.8.1">
-<link rel="icon" href="./icons/icon.svg?v=0.8.1" type="image/svg+xml">
-<link rel="stylesheet" href="./styles.css?v=0.8.1">
+<link rel="manifest" href="./manifest.webmanifest?v=0.9.0g2">
+<link rel="icon" href="./icons/icon.svg?v=0.9.0g2" type="image/svg+xml">
+<link rel="stylesheet" href="./styles.css?v=0.9.0g2">
+<link rel="stylesheet" href="./activity.css?v=0.9.0g2">
+<link rel="stylesheet" href="./world-loop.css?v=0.9.0g2">
 <title>Pueblos de Gremios</title>
 </head>
 <body>
 <section class="foundation-gate" id="foundationGate">
   <div class="foundation-card">
-    <p class="eyebrow">Nuevo ciclo de prueba · v0.8.1</p>
+    <p class="eyebrow">Bucle integrado Nv. 1–3 · v0.9.0g2</p>
     <h1>Fundar una ciudad</h1>
-    <p>Reiniciamos el Reino de prueba para validar desde cero el nacimiento de una ciudad, sus trabajadores y su primer grupo de aventureros persistentes.</p>
+    <p>Esta prueba integra economía, necesidades, equipo, Textilería, Gremio, amenazas y decisiones autónomas de los aventureros.</p>
     <label class="foundation-field">
       <span>Nombre de la ciudad</span>
       <input id="foundationCityName" maxlength="28" value="Villa del Roble" autocomplete="off">
     </label>
     <div class="foundation-pack">
       <strong>Pack de Fundación</strong>
-      <span>👥 Borin, Mara, Eldon y Nara</span>
+      <span>👥 Borin, Mara, Eldon, Nara, Leñador y Cazador</span>
       <span>🧭 3 aventureros Nv. 1 generados</span>
-      <span>🏘️ 5 edificios base + Sede del Gremio preparada</span>
+      <span>🏘️ Ayuntamiento, Herrería, Carpintería, Mesón y Sede del Gremio</span>
       <span>🪙 Recursos iniciales controlados</span>
     </div>
     <button class="primary" id="foundCityBtn">Fundar ciudad</button>
@@ -44,21 +46,23 @@
   <div class="city-stage">
     <div class="city-sky"></div>
     <button class="building hall" data-building="Ayuntamiento"><span>🏰</span><b>Ayuntamiento</b><small>Nv. 1</small></button>
-    <button class="building tavern" data-building="Taberna"><span>🍺</span><b>Taberna</b><small>Nv. 1</small></button>
+    <button class="building tavern" data-building="Mesón"><span>🍲</span><b>Mesón</b><small>Nv. 1 · Cap. 5</small></button>
     <button class="building smithy" data-building="Herrería"><span>⚒️</span><b>Herrería</b><small>Nv. <span id="smithyLevelCity">1</span></small><em class="building-notice" id="smithyVisitBadge" hidden>📖 0 nuevas</em></button>
     <button class="building carpenter" data-building="Carpintería"><span>🪚</span><b>Carpintería</b><small>Nv. 1</small></button>
-    <button class="building store" data-building="Posada"><span>🛏️</span><b>Posada</b><small>Nv. 1</small></button>
+    <button class="building store" data-building="Sede del Gremio"><span>📜</span><b>Sede del Gremio</b><small>Nv. 1</small></button>
+    <button class="building textile" id="cityTextileButton" data-building="Textilería" hidden><span>🧵</span><b>Textilería</b><small id="cityTextileLevel">Disponible</small></button>
     <div class="road"></div>
   </div>
-  <article class="status-card">
-    <div><span class="badge" id="cityTierBadge">Pueblo</span><strong>Prestigio <span id="cityPrestige">0</span> / 500</strong></div>
-    <progress id="cityPrestigeProgress" value="0" max="500">0/500</progress>
-    <p>Mejorar negocios y servicios aumenta el prestigio del asentamiento.</p>
+  <article class="status-card city-growth-card">
+    <div><span class="badge" id="cityLevelBadge">Ciudad Nv. 1</span><strong>Desarrollo <span id="cityDevelopment">0.00</span> / <span id="cityDevelopmentTarget">9.5</span></strong></div>
+    <progress id="cityDevelopmentProgress" value="0" max="9.5">0/9.5</progress>
+    <p class="city-population-summary" id="cityPopulationSummary">Aventureros 3/3 · Mesón 3/5</p>
+    <p id="cityProgressHint">Expediciones, producción y mejoras hacen crecer la ciudad.</p>
   </article>
 </section>
 
 <section class="screen" data-screen="workers">
-  <div class="section-head"><h2>Trabajadores</h2><span>4 / 4</span></div>
+  <div class="section-head"><h2>Trabajadores</h2><span>6 / 6</span></div>
   <div class="worker-list">
     <article class="worker worker-borin">
       <div class="avatar">B</div>
@@ -96,7 +100,9 @@
       </div>
       <span class="state" id="eldonState">Disponible</span>
     </article>
-    <article class="worker"><div class="avatar">N</div><div><h3>Nara</h3><p>Tabernera · Nv. 1</p><small>Cocina 1 · Hospitalidad 1</small></div><span class="state">Disponible</span></article>
+    <article class="worker"><div class="avatar">N</div><div><h3>Nara</h3><p>Mesonera · Nv. 1</p><small>Cocina 1 · Hospitalidad 1</small></div><span class="state">Disponible</span></article>
+    <article class="worker"><div class="avatar">L</div><div><h3>Leñador</h3><p>Recolección · Nv. 1</p><small>Madera y Leña · salidas desde el Mapa</small></div><span class="state" id="loggerState">Disponible</span></article>
+    <article class="worker"><div class="avatar">C</div><div><h3>Cazador</h3><p>Caza · Nv. 1</p><small>Carne, Piel y Tendón · salidas desde el Mapa</small></div><span class="state" id="hunterState">Disponible</span></article>
   </div>
 </section>
 
@@ -149,6 +155,17 @@
     </div>
     <button class="primary" id="startHandleCraft">Fabricar mango</button>
     <p class="feedback" id="carpentryFeedback" aria-live="polite"></p>
+  </article>
+  <article class="panel approved-production-panel">
+    <div class="section-head compact"><div><p class="eyebrow">Catálogo aprobado</p><h3>Producción Nv. 1</h3></div><span id="carpenterWorldQueue">Cola 0/5</span></div>
+    <div class="production-grid">
+      <button class="small-action" data-world-recipe="toolHandle">Mango de herramienta</button>
+      <button class="small-action" data-world-recipe="huntingBow">Arco de caza</button>
+      <button class="small-action" data-world-recipe="arrowBundle">Haz de 12 flechas</button>
+      <button class="small-action" data-world-recipe="simpleStaff">Bastón simple</button>
+      <button class="small-action" data-world-recipe="woodenShield">Escudo de madera</button>
+    </div>
+    <p class="feedback" id="carpenterWorldFeedback"></p>
   </article>
 </section>
 
@@ -340,15 +357,30 @@
       <p class="feedback" id="upgradeFeedback" aria-live="polite"></p>
     </article>
   </section>
+  <article class="panel approved-production-panel">
+    <div class="section-head compact"><div><p class="eyebrow">Catálogo aprobado</p><h3>Producción Nv. 1</h3></div><span id="smithyWorldQueue">Cola 0/5</span></div>
+    <div class="production-grid">
+      <button class="small-action" data-world-recipe="nails">Clavos ×8</button>
+      <button class="small-action" data-world-recipe="arrowheads">Puntas ×6</button>
+      <button class="small-action" data-world-recipe="pickaxeHead">Cabeza de pico</button>
+      <button class="small-action" data-world-recipe="axeHead">Cabeza de hacha</button>
+      <button class="small-action" data-world-recipe="ironPickaxe">Pico de hierro</button>
+      <button class="small-action" data-world-recipe="workAxe">Hacha de trabajo</button>
+      <button class="small-action" data-world-recipe="dagger">Daga de hierro</button>
+      <button class="small-action" data-world-recipe="huntingKnife">Cuchillo de caza</button>
+      <button class="small-action" data-world-recipe="scissors">Tijeras</button>
+    </div>
+    <p class="feedback" id="smithyWorldFeedback"></p>
+  </article>
 </section>
 
 <section class="screen" data-screen="inn">
   <button class="back-link" data-go="city">← Volver a la ciudad</button>
 
   <div class="hero-card inn-art">
-    <span class="badge">Posada · Nv. 1</span>
+    <span class="badge">Mesón · Nv. 1</span>
     <h2>Descanso de trabajadores</h2>
-    <p>Los trabajadores recuperan Resistencia lentamente mientras están libres. La Posada acelera mucho el descanso.</p>
+    <p>Los trabajadores recuperan Resistencia lentamente mientras están libres. La Mesón acelera mucho el descanso.</p>
   </div>
 
   <article class="panel inn-worker-card">
@@ -365,10 +397,10 @@
       <div class="kv"><span>Resistencia</span><strong><span id="innMaraStamina">100</span>/100</strong></div>
       <progress class="stamina-progress" id="innMaraStaminaProgress" value="100" max="100"></progress>
       <div class="kv"><span>Recuperación normal</span><strong>+1 cada 10 s</strong></div>
-      <div class="kv"><span>Descansando en Posada</span><strong>+5 cada 10 s</strong></div>
+      <div class="kv"><span>Descansando en Mesón</span><strong>+5 cada 10 s</strong></div>
     </div>
 
-    <button class="primary" id="toggleMaraInnRest">Descansar en Posada</button>
+    <button class="primary" id="toggleMaraInnRest">Descansar en Mesón</button>
     <p class="feedback" id="maraInnFeedback" aria-live="polite"></p>
   </article>
 
@@ -386,10 +418,10 @@
       <div class="kv"><span>Resistencia</span><strong><span id="innBorinStamina">100</span>/100</strong></div>
       <progress class="stamina-progress" id="innBorinStaminaProgress" value="100" max="100"></progress>
       <div class="kv"><span>Recuperación normal</span><strong>+1 cada 10 s</strong></div>
-      <div class="kv"><span>Descansando en Posada</span><strong>+5 cada 10 s</strong></div>
+      <div class="kv"><span>Descansando en Mesón</span><strong>+5 cada 10 s</strong></div>
     </div>
 
-    <button class="primary" id="toggleBorinInnRest">Descansar en Posada</button>
+    <button class="primary" id="toggleBorinInnRest">Descansar en Mesón</button>
     <p class="feedback" id="borinInnFeedback" aria-live="polite"></p>
   </article>
 
@@ -407,13 +439,18 @@
       <div class="kv"><span>Resistencia</span><strong><span id="innEldonStamina">100</span>/100</strong></div>
       <progress class="stamina-progress" id="innEldonStaminaProgress" value="100" max="100"></progress>
       <div class="kv"><span>Recuperación normal</span><strong>+1 cada 10 s</strong></div>
-      <div class="kv"><span>Descansando en Posada</span><strong>+5 cada 10 s</strong></div>
+      <div class="kv"><span>Descansando en Mesón</span><strong>+5 cada 10 s</strong></div>
     </div>
 
-    <button class="primary" id="toggleEldonInnRest">Descansar en Posada</button>
+    <button class="primary" id="toggleEldonInnRest">Descansar en Mesón</button>
     <p class="feedback" id="eldonInnFeedback" aria-live="polite"></p>
   </article>
 
+  <article class="panel">
+    <div class="section-head compact"><div><p class="eyebrow">Aventureros</p><h3>Servicios del Mesón</h3></div><span id="mesonServiceSummary">0 servicios</span></div>
+    <p class="muted">Nara atiende necesidades reales: Plato sencillo, Ración de viaje y Descanso. No existe una barra obligatoria de hambre.</p>
+    <div class="world-event-list" id="mesonAdventurerList"></div>
+  </article>
   <article class="panel">
     <p class="eyebrow">Regla de prueba</p>
     <p class="muted">La recuperación usa tiempo real y continúa con la PWA cerrada. La velocidad está acelerada para poder probarla; después ajustaremos el balance definitivo.</p>
@@ -452,19 +489,194 @@
 </section>
 
 <section class="screen" data-screen="kingdom">
-  <div class="hero-card kingdom-art"><span class="badge">SIMULACIÓN LOCAL</span><h2>Reino de Ardel</h2><p>Primer paso del futuro mundo persistente: una ciudad recién fundada y sus aventureros de origen.</p></div>
+  <div class="hero-card kingdom-art"><span class="badge">POBLACIÓN PERSISTENTE</span><h2>Reino de Ardel</h2><p>La ciudad crece de Nv. 1 a Nv. 3 y abre plazas para nuevos aventureros sin duplicarlos al recargar.</p></div>
   <article class="panel">
     <p class="eyebrow">Ciudad fundada</p>
     <h3 id="kingdomCityName">Sin fundar</h3>
     <p class="muted" id="kingdomFoundingMeta">El Pack inicial se genera al fundar la ciudad.</p>
   </article>
   <article class="panel">
-    <div class="section-head compact"><div><p class="eyebrow">Población inicial</p><h3>Aventureros</h3></div><span id="kingdomAdventurerCount">0 activos</span></div>
+    <div class="section-head compact"><div><p class="eyebrow">Población de aventureros</p><h3>Residentes</h3></div><span id="kingdomAdventurerCount">0/3 plazas activas</span></div>
     <div class="founding-adventurer-list" id="kingdomAdventurerList"></div>
   </article>
+  <article class="panel adventure-activity-panel" id="manualCombatLab" hidden>
+    <div class="section-head compact">
+      <div><p class="eyebrow">LABORATORIO LOCAL</p><h3>Forzar salida de combate</h3></div>
+      <span class="state" id="activityState">Lista</span>
+    </div>
+    <p class="muted">Herramienta de QA. En el juego normal los aventureros deciden sus salidas o aceptan misiones de forma autónoma.</p>
+
+    <label class="activity-field">
+      <span>Aventurero</span>
+      <select id="activityAdventurerSelect"></select>
+    </label>
+
+    <div class="activity-grid">
+      <label class="activity-field">
+        <span>Objetivo</span>
+        <select id="activityEnemySelect">
+          <option value="wolf">Lobo</option>
+          <option value="boar">Jabalí</option>
+        </select>
+      </label>
+      <label class="activity-field">
+        <span>Cantidad</span>
+        <select id="activityEnemyCount">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="activity-preview" id="activityPreview"></div>
+    <button class="primary" id="resolveAdventurerActivity">Resolver salida</button>
+    <p class="feedback" id="activityResult" aria-live="polite"></p>
+  </article>
+
   <article class="panel">
-    <p class="eyebrow">Motor en construcción</p>
-    <p class="muted">Estos NPC conservan identidad, ciudad de origen, clase, estadísticas, personalidad, dinero y equipo. En los siguientes pasos conectaremos salud, misiones, drops, recuperación y migración.</p>
+    <div class="section-head compact"><div><p class="eyebrow">Historial breve</p><h3>Últimas salidas</h3></div></div>
+    <div class="activity-log" id="activityLogList"></div>
+  </article>
+
+  <article class="panel">
+    <div class="section-head compact"><div><p class="eyebrow">Vida del mundo</p><h3>Últimos acontecimientos</h3></div><span id="worldClockKingdom">Día 1 · 00:00</span></div>
+    <div class="world-event-list" id="worldEventList"></div>
+  </article>
+  <article class="panel">
+    <p class="eyebrow">Regla v0.9.0g2</p>
+    <p class="muted">El jugador administra la ciudad. Los aventureros evalúan necesidades, compran, descansan, aceptan misiones y realizan salidas por decisión propia. El combate sigue siendo una resolución instantánea y sólo persisten sus consecuencias.</p>
+  </article>
+</section>
+
+
+<section class="screen" data-screen="townHall">
+  <button class="back-link" data-go="city">← Volver a la ciudad</button>
+  <div class="hero-card"><span class="badge">Ayuntamiento · Nv. 1</span><h2>Administración de la ciudad</h2><p>Tesorería, desarrollo, alertas y estado general.</p></div>
+  <article class="panel">
+    <div class="section-head compact"><div><p class="eyebrow">Tesorería</p><h3>Fondos</h3></div><span id="townHallCityLevel">Ciudad Nv. 1</span></div>
+    <div class="kv"><span>Total</span><strong id="townHallCoins">0</strong></div>
+    <div class="kv"><span>Reservado para misiones</span><strong id="townHallReserved">0</strong></div>
+    <div class="kv"><span>Disponible</span><strong id="townHallAvailable">0</strong></div>
+    <div class="kv"><span>Desarrollo</span><strong id="townHallDevelopment">0</strong></div>
+  </article>
+  <article class="panel">
+    <p class="eyebrow">Alertas reales</p>
+    <div class="world-event-list" id="townHallAlerts"></div>
+  </article>
+  <article class="panel">
+    <p class="eyebrow">Era actual</p>
+    <div class="kv"><span>Era</span><strong id="townHallEra">era-prueba-1</strong></div>
+    <div class="kv"><span>Diamantes persistentes</span><strong id="townHallDiamonds">0</strong></div>
+    <p class="muted">Récords, Crónicas, títulos, cosméticos y Diamantes forman el legado entre Eras. El reset material de temporada se activará cuando exista contenido completo de Era.</p>
+  </article>
+</section>
+
+<section class="screen" data-screen="guildHall">
+  <button class="back-link" data-go="city">← Volver a la ciudad</button>
+  <div class="hero-card"><span class="badge">Sede del Gremio · Nv. 1</span><h2>Tablón de misiones</h2><p>La ciudad publica oportunidades; los aventureros deciden si aceptarlas.</p></div>
+  <article class="panel">
+    <p class="eyebrow">Publicar misión de control</p>
+    <div class="activity-grid">
+      <label class="activity-field"><span>Objetivo</span><select id="guildEnemySelect"><option value="wolf">Lobo</option><option value="boar">Jabalí</option></select></label>
+      <label class="activity-field"><span>Cantidad</span><select id="guildEnemyCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+    </div>
+    <label class="activity-field"><span>Recompensa en monedas</span><input id="guildRewardInput" type="number" min="1" value="6"></label>
+    <p class="muted" id="guildRewardHint">El valor debe mantenerse entre 70% y 130% del recomendado.</p>
+    <button class="primary" id="publishGuildMission">Publicar misión</button>
+    <p class="feedback" id="guildFeedback"></p>
+  </article>
+  <article class="panel">
+    <p class="eyebrow">Entrega por demanda real</p>
+    <div class="activity-grid">
+      <label class="activity-field"><span>Recurso</span><select id="deliveryResourceSelect">
+        <option value="meat">Carne</option><option value="tendon">Tendón</option>
+        <option value="wolfSkin">Piel de Lobo</option><option value="boarSkin">Piel de Jabalí</option>
+      </select></label>
+      <label class="activity-field"><span>Cantidad</span><input id="deliveryQtyInput" type="number" min="1" max="10" value="1"></label>
+    </div>
+    <label class="activity-field"><span>Recompensa</span><input id="deliveryRewardInput" type="number" min="1" value="2"></label>
+    <p class="muted" id="deliveryHint">Sólo se permite publicar si la ciudad realmente necesita ese recurso.</p>
+    <button class="primary" id="publishDeliveryMission">Publicar entrega</button>
+    <p class="feedback" id="deliveryFeedback"></p>
+  </article>
+
+  <article class="panel">
+    <p class="eyebrow">Escolta por amenaza</p>
+    <div class="activity-grid">
+      <label class="activity-field"><span>Salida</span><select id="escortWorkerSelect">
+        <option value="mine">Mina</option><option value="wood">Bosque</option><option value="hunt">Caza</option>
+      </select></label>
+      <label class="activity-field"><span>Recompensa</span><input id="escortRewardInput" type="number" min="1" value="16"></label>
+    </div>
+    <p class="muted" id="escortHint">Sólo se habilita cuando la Amenaza recomienda una escolta.</p>
+    <button class="primary" id="publishEscortMission">Publicar escolta</button>
+    <p class="feedback" id="escortFeedback"></p>
+  </article>
+  <article class="panel">
+    <div class="section-head compact"><div><p class="eyebrow">Misiones</p><h3>Tablón activo</h3></div><span id="guildMissionCount">0/2</span></div>
+    <div class="world-event-list" id="guildMissionList"></div>
+  </article>
+</section>
+
+<section class="screen" data-screen="textile">
+  <button class="back-link" data-go="city">← Volver a la ciudad</button>
+  <div class="hero-card"><span class="badge" id="textileBadge">Textilería · Bloqueada</span><h2>Taller textil</h2><p>La piel conserva su especie al convertirse en cuero y luego en equipamiento.</p></div>
+  <article class="panel" id="textileBuildPanel">
+    <p class="eyebrow">Construcción</p>
+    <p class="muted">Requiere Ciudad Nv. 2, 40 monedas, 10 madera, 8 piedra, 1 lote de clavos y Tijeras.</p>
+    <button class="primary" id="buildTextile">Construir Textilería</button>
+    <p class="feedback" id="textileFeedback"></p>
+  </article>
+  <article class="panel" id="textileProductionPanel" hidden>
+    <div class="section-head compact"><div><p class="eyebrow">Curtido</p><h3>Piel → Cuero</h3></div><span id="tannedStockSummary">0 cueros</span></div>
+    <div class="production-grid" id="tanningActions"></div>
+    <div class="section-head compact"><div><p class="eyebrow">Productos</p><h3>Fabricación</h3></div></div>
+    <label class="activity-field"><span>Origen del cuero</span><select id="textileOriginSelect"></select></label>
+    <div class="production-grid">
+      <button class="small-action" data-world-recipe="leatherProtection">Protección ligera</button>
+      <button class="small-action" data-world-recipe="leatherGloves">Guantes</button>
+      <button class="small-action" data-world-recipe="leatherBoots">Botas</button>
+    </div>
+    <div class="world-event-list" id="textileStockList"></div>
+  </article>
+</section>
+
+<section class="screen" data-screen="map">
+  <div class="hero-card"><span class="badge">Territorio local · Nv. 1–10</span><h2>Mapa de la ciudad</h2><p>Zonas, recursos, presencia enemiga, trabajadores y rutas.</p></div>
+  <article class="panel">
+    <div class="section-head compact"><div><p class="eyebrow">Amenaza</p><h3>Presencia</h3></div><span id="mapWorldTime">Día 1 · 00:00</span></div>
+    <div class="threat-row"><span>🐺 Lobos</span><strong id="wolfPresence">25/100 · Controlado</strong></div>
+    <progress id="wolfPresenceProgress" value="25" max="100"></progress>
+    <div class="threat-row"><span>🐗 Jabalíes</span><strong id="boarPresence">20/100 · Controlado</strong></div>
+    <progress id="boarPresenceProgress" value="20" max="100"></progress>
+  </article>
+  <article class="panel">
+    <p class="eyebrow">Salidas de trabajadores</p>
+    <div class="production-grid">
+      <button class="small-action" id="mapMineOuting">⛏️ Mara · Mina</button>
+      <button class="small-action" id="mapWoodOuting">🪵 Leñador · Bosque</button>
+      <button class="small-action" id="mapHuntOuting">🏹 Cazador · Caza</button>
+    </div>
+    <p class="feedback" id="mapOutingFeedback"></p>
+  </article>
+  <article class="panel">
+    <div class="section-head compact"><div><p class="eyebrow">Herramientas</p><h3>Equipo de trabajadores</h3></div><button class="small-action" id="repairWorkerTools">Reparar</button></div>
+    <div class="world-event-list" id="mapWorkerToolsSummary"></div>
+    <div class="production-grid">
+      <button class="small-action" id="equipMaraPickaxe">Equipar Pico de hierro</button>
+      <button class="small-action" id="equipLoggerAxe">Equipar Hacha de trabajo</button>
+      <button class="small-action" id="equipHunterBow">Equipar Arco de caza</button>
+      <button class="small-action" id="equipHunterKnife">Equipar Cuchillo de caza</button>
+    </div>
+  </article>
+  <article class="panel">
+    <p class="eyebrow">Zonas</p>
+    <div class="world-event-list" id="mapZoneList"></div>
+  </article>
+  <article class="panel">
+    <p class="eyebrow">Aventureros fuera de la ciudad</p>
+    <div class="world-event-list" id="mapActiveAdventurers"></div>
   </article>
 </section>
 
@@ -485,6 +697,14 @@
       <p class="eyebrow">Equipamiento asignado</p>
       <div class="inventory-row"><span>⛏️ Herramienta de Mara</span><strong id="inventoryMaraTool">Sin equipar</strong></div>
     </article>
+    <article class="panel inventory-group">
+      <p class="eyebrow">Recursos del bucle integrado</p>
+      <div class="resource-mini-grid" id="worldResourceGrid"></div>
+    </article>
+    <article class="panel inventory-group">
+      <p class="eyebrow">Stock de producción</p>
+      <div class="resource-mini-grid" id="worldProductionStock"></div>
+    </article>
     <p class="muted inventory-note">Los productos terminados ya no viven acá: cada negocio administra su propio Almacén.</p>
   </div>
 </section>
@@ -492,22 +712,42 @@
 <section class="screen" data-screen="menu">
   <div class="menu-grid">
     <button data-go="workers">👥<span>Trabajadores</span></button>
-    <button data-go="expedition">🗺️<span>Expediciones</span></button>
+    <button data-go="map">🗺️<span>Mapa</span></button>
     <button data-go="inventory">🎒<span>Inventario</span></button>
     <button data-go="kingdom">👑<span>Reino</span></button>
+    <button data-go="guildHall">📜<span>Gremio</span></button>
+    <button data-go="townHall">🏰<span>Ayuntamiento</span></button>
     <button id="installBtn">📲<span id="installLabel">Instalar PWA</span></button>
     <button id="resetWorldBtn">♻️<span>Reiniciar Reino de prueba</span></button>
   </div>
   <div class="panel">
-    <p><strong>Versión:</strong> v0.8.1 — Herrería</p>
-    <p class="muted">Herrería reorganizada por secciones, fabricación compacta y almacén propio del negocio.</p>
+    <p><strong>Versión:</strong> v0.9.0g2 — Bucle integrado Nv. 1–3</p>
+    <p class="muted">Necesidades, Mesón, equipo, producción, Textilería, Gremio, botín, Amenaza, Mapa y autonomía conectados en una misma simulación.</p>
+  </div>
+  <div class="panel">
+    <div class="section-head compact"><div><p class="eyebrow">Simulación de juego</p><h3 id="simulationClock">Día 1 · 00:00</h3></div><span id="simulationEventCount">0 eventos</span></div>
+    <p class="muted">Avanza el mundo para observar decisiones autónomas, consumo, misiones, amenaza y economía. Estos botones aceleran el tiempo sólo para QA.</p>
+    <div class="production-grid">
+      <button class="small-action" id="advanceWorld10">+10 min</button>
+      <button class="small-action" id="advanceWorld30">+30 min</button>
+      <button class="small-action" id="advanceWorld120">+2 h</button>
+    </div>
+    <p class="feedback" id="simulationFeedback"></p>
+  </div>
+  <div class="panel local-test-tools" id="localTestTools" hidden>
+    <p class="eyebrow">Herramienta local de prueba</p>
+    <h3>Progresión rápida</h3>
+    <p class="muted">Sólo aparece en localhost. Completa exactamente el Desarrollo que falta para el próximo nivel sin cambiar los valores de balance reales.</p>
+    <button class="primary" id="testReachNextCityLevel">Alcanzar próximo nivel</button>
+    <button class="small-action local-recover-action" id="testRecoverAdventurers">Recuperar aventureros para seguir probando</button>
+    <p class="feedback" id="testProgressFeedback"></p>
   </div>
 </section>
 
 <nav class="bottom-nav" aria-label="Navegación principal">
   <button class="nav-btn is-active" data-target="city">🏘️<span>Ciudad</span></button>
   <button class="nav-btn" data-target="workers">👥<span>Trabajadores</span></button>
-  <button class="nav-btn" data-target="expedition">⛏️<span>Expedición</span></button>
+  <button class="nav-btn" data-target="map">🗺️<span>Mapa</span></button>
   <button class="nav-btn" data-target="kingdom">👑<span>Reino</span></button>
   <button class="nav-btn" data-target="menu">☰<span>Menú</span></button>
 </nav>
@@ -526,7 +766,12 @@
   </form>
 </dialog>
 </main>
-<script src="./game-data.js?v=0.8.1" defer></script>
-<script src="./app.js?v=0.8.1" defer></script>
+<script src="./game-data.js?v=0.9.0g2" defer></script>
+<script src="./adventurer-core.js?v=0.9.0g2" defer></script>
+<script src="./city-progression.js?v=0.9.0g2" defer></script>
+<script src="./activity-combat.js?v=0.9.0g2" defer></script>
+<script src="./world-design-data.js?v=0.9.0g2" defer></script>
+<script src="./world-loop.js?v=0.9.0g2" defer></script>
+<script src="./app.js?v=0.9.0g2" defer></script>
 </body>
 </html>

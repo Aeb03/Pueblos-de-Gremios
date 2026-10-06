@@ -1,0 +1,18 @@
+/* v0.9.0c — actividad y combate snapshot */
+.adventure-activity-panel{display:grid;gap:10px}
+.activity-field{display:grid;gap:5px;color:#b9aa91;font-size:.78rem}
+.activity-field select{width:100%;min-height:44px;border:1px solid #55432e;border-radius:10px;background:#15110e;color:#eee4d2;padding:0 10px;font:inherit}
+.activity-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.activity-preview{display:grid;gap:6px;padding:10px;border:1px solid #443626;border-radius:11px;background:#17130f}
+.activity-preview>div{display:flex;justify-content:space-between;gap:12px;font-size:.76rem}
+.activity-preview span{color:#b9aa91}
+.activity-preview strong{text-align:right;color:#d8c49a}
+.activity-log{display:grid;gap:7px}
+.activity-log-row{display:flex;justify-content:space-between;gap:10px;padding:9px;border:1px solid #443626;border-radius:10px;background:#17130f}
+.activity-log-row>span{display:grid;gap:2px}
+.activity-log-row>span:last-child{text-align:right}
+.activity-log-row small{color:#b9aa91;font-size:.68rem}
+.activity-log-row.is-win b{color:#b9e19b}
+.activity-log-row.is-loss b{color:#ffad9c}
+.local-recover-action{width:100%;margin-top:8px}
+@media (max-width:390px){.activity-grid{grid-template-columns:1fr}}
