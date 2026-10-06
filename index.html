@@ -156,6 +156,17 @@
     <button class="primary" id="startHandleCraft">Fabricar mango</button>
     <p class="feedback" id="carpentryFeedback" aria-live="polite"></p>
   </article>
+  <article class="panel approved-production-panel">
+    <div class="section-head compact"><div><p class="eyebrow">Catálogo aprobado</p><h3>Producción Nv. 1</h3></div><span id="carpenterWorldQueue">Cola 0/5</span></div>
+    <div class="production-grid">
+      <button class="small-action" data-world-recipe="toolHandle">Mango de herramienta</button>
+      <button class="small-action" data-world-recipe="huntingBow">Arco de caza</button>
+      <button class="small-action" data-world-recipe="arrowBundle">Haz de 12 flechas</button>
+      <button class="small-action" data-world-recipe="simpleStaff">Bastón simple</button>
+      <button class="small-action" data-world-recipe="woodenShield">Escudo de madera</button>
+    </div>
+    <p class="feedback" id="carpenterWorldFeedback"></p>
+  </article>
 </section>
 
 <section class="screen" data-screen="smithy">
@@ -346,6 +357,21 @@
       <p class="feedback" id="upgradeFeedback" aria-live="polite"></p>
     </article>
   </section>
+  <article class="panel approved-production-panel">
+    <div class="section-head compact"><div><p class="eyebrow">Catálogo aprobado</p><h3>Producción Nv. 1</h3></div><span id="smithyWorldQueue">Cola 0/5</span></div>
+    <div class="production-grid">
+      <button class="small-action" data-world-recipe="nails">Clavos ×8</button>
+      <button class="small-action" data-world-recipe="arrowheads">Puntas ×6</button>
+      <button class="small-action" data-world-recipe="pickaxeHead">Cabeza de pico</button>
+      <button class="small-action" data-world-recipe="axeHead">Cabeza de hacha</button>
+      <button class="small-action" data-world-recipe="ironPickaxe">Pico de hierro</button>
+      <button class="small-action" data-world-recipe="workAxe">Hacha de trabajo</button>
+      <button class="small-action" data-world-recipe="dagger">Daga de hierro</button>
+      <button class="small-action" data-world-recipe="huntingKnife">Cuchillo de caza</button>
+      <button class="small-action" data-world-recipe="scissors">Tijeras</button>
+    </div>
+    <p class="feedback" id="smithyWorldFeedback"></p>
+  </article>
 </section>
 
 <section class="screen" data-screen="inn">
@@ -632,6 +658,14 @@
     <article class="panel inventory-group">
       <p class="eyebrow">Equipamiento asignado</p>
       <div class="inventory-row"><span>⛏️ Herramienta de Mara</span><strong id="inventoryMaraTool">Sin equipar</strong></div>
+    </article>
+    <article class="panel inventory-group">
+      <p class="eyebrow">Recursos del bucle integrado</p>
+      <div class="resource-mini-grid" id="worldResourceGrid"></div>
+    </article>
+    <article class="panel inventory-group">
+      <p class="eyebrow">Stock de producción</p>
+      <div class="resource-mini-grid" id="worldProductionStock"></div>
     </article>
     <p class="muted inventory-note">Los productos terminados ya no viven acá: cada negocio administra su propio Almacén.</p>
   </div>
