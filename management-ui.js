@@ -3,8 +3,8 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const labels={smithy:'Herrería',carpenter:'Carpintería',textile:'Textilería'};
   const tabs={smithy:'summary',carpenter:'summary',textile:'summary',inn:'summary',guildHall:'board',townHall:'summary',map:'territory'};
-  const panels={smithy:['summary','production','store','storage','services','activity'],carpenter:['summary','production','store','storage','services','activity'],textile:['summary','tanning','production','store','storage','activity'],inn:['summary','services','guests','activity'],guildHall:['board','missions','adventurers','rewards'],townHall:['summary','treasury','development','buildings','workers','alerts'],map:['territory','workers','outings']};
-  for(const key of Object.keys(panels))if(key!=='map')panels[key].push('upgrades');panels.inn.splice(1,0,'production');panels.guildHall.push('groups');
+  const panels={smithy:['summary','upgrades','production','store','storage','services','activity'],carpenter:['summary','upgrades','production','store','storage','services','activity'],textile:['summary','tanning','production','store','storage','activity'],inn:['summary','services','guests','activity'],guildHall:['board','missions','adventurers','rewards'],townHall:['summary','treasury','development','buildings','workers','alerts'],map:['territory','workers','outings']};
+  for(const key of Object.keys(panels))if(key!=='map'&&!panels[key].includes('upgrades'))panels[key].push('upgrades');panels.inn.splice(1,0,'production');panels.guildHall.push('groups');
   const titles={upgrades:'Mejoras',groups:'Grupos',summary:'Resumen',production:'Producción',store:'Tienda',storage:'Almacén',services:'Servicios',activity:'Actividad',tanning:'Curtido',guests:'Huéspedes',board:'Tablón',missions:'Misiones',adventurers:'Aventureros',rewards:'Recompensas',treasury:'Tesorería',development:'Desarrollo',buildings:'Edificios',workers:'Trabajadores',alerts:'Alertas',territory:'Territorio',outings:'Salidas'};
   const signatures=new Map();
   let callbacks=null;
