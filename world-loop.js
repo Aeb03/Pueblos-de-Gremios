@@ -1681,7 +1681,7 @@
     if((worker.stamina??100)<20)return {ok:false,reason:'El trabajador necesita recuperar Resistencia'};
     if(worker.currentJob||worker.escortMissionId)return {ok:false,reason:'El trabajador ya está ocupado'};
     if(worker.injuredUntil>state.worldSystems.clockMinutes)return {ok:false,reason:'El trabajador se está recuperando'};
-    const job={id:nowId('worker'),kind,resolvesAtMinute:state.worldSystems.clockMinutes+TICK_MINUTES};
+    const job={id:nowId('worker'),kind,startedAtMinute:state.worldSystems.clockMinutes,resolvesAtMinute:state.worldSystems.clockMinutes+TICK_MINUTES};
     worker.currentJob=job.id;
     worker.stamina=(worker.stamina??100)-20;
     state.worldSystems.map.workerJobs.push(job);
@@ -1815,9 +1815,9 @@
     if(deps.onCityProgress)deps.onCityProgress(state,rng);
   }
 
-  function stepWorld(state,deps,data,design,rng=Math.random){
+  function stepWorld(state,deps,data,design,rng=Math.random,minutes=TICK_MINUTES){
     normalizeState(state,data,design);
-    state.worldSystems.clockMinutes+=TICK_MINUTES;
+    state.worldSystems.clockMinutes+=minutes;
     for(const [key,worker] of Object.entries(state.workers)){
       const busy=worker.currentJob||worker.escortMissionId||state.worldSystems.production.queue.some(j=>(key==='borin'&&j.shop==='smithy')||(key==='eldon'&&j.shop==='carpenter'));
       if(busy)continue;
@@ -1852,18 +1852,46 @@
   }
 
   function pulseActiveWorld(state,now,active,deps,data,design,rng=Math.random){
-    const ws=state.worldSystems;
+    let ws=state.worldSystems;
+    if(!ws.continuousClock){
+      ws.clockMinutes+=(ws.activeMilliseconds||0)/3000;
+      ws.continuousClock=true;
+    }
     const last=ws.lastPulseAt;
     ws.lastPulseAt=now;
     if(!active||!state.city.founded||!Number.isFinite(last))return {advanced:false};
     const elapsed=now-last;
-    // No convertir una app suspendida o una sesión cerrada en ataques offline.
-    if(elapsed<0||elapsed>5000)return {advanced:false};
+    // La suspensión no convierte la ausencia en ataques ni trabajo offline.
+    if(elapsed<=0||elapsed>5000)return {advanced:false};
+    ws.clockMinutes=(Math.round(ws.clockMinutes*3000)+elapsed)/3000;
     ws.activeMilliseconds=(ws.activeMilliseconds||0)+elapsed;
-    if(ws.activeMilliseconds<30000)return {advanced:false};
-    ws.activeMilliseconds-=30000;
-    advanceWorld(state,TICK_MINUTES,deps,data,design,rng);
-    return {advanced:true};
+    ws.day=1+Math.floor(ws.clockMinutes/(24*60));
+    const jobsBefore=ws.map.workerJobs.length;
+    const activitiesBefore=state.adventurers.filter(n=>n.autonomy?.currentActivity).length;
+    resolveWorkerJobs(state,design,rng);
+    const finished=processProductionQueue(state,design,rng);
+    resolveDueActivities(state,deps,data,design,rng);
+    let decisionTick=false;
+    while(ws.activeMilliseconds>=30000){
+      ws.activeMilliseconds-=30000;
+      stepWorld(state,deps,data,design,rng,0);
+      ws=state.worldSystems;
+      decisionTick=true;
+    }
+    const changed=finished||jobsBefore!==ws.map.workerJobs.length||activitiesBefore!==state.adventurers.filter(n=>n.autonomy?.currentActivity).length;
+    if(changed){syncCityProgress(state,deps,rng);updateUnlocks(state,design);updateAlerts(state,design);}
+    ws.clockCheckpointMs=(ws.clockCheckpointMs||0)+elapsed;
+    const checkpoint=ws.clockCheckpointMs>=5000;
+    if(checkpoint)ws.clockCheckpointMs%=5000;
+    return {advanced:!!(changed||decisionTick||checkpoint)};
+  }
+
+  function activityProgress(state,activity){
+    const end=Number(activity.readyAtMinute??activity.resolvesAtMinute);
+    const start=Number(activity.startedAtMinute??end-TICK_MINUTES);
+    const current=state.worldSystems.clockMinutes;
+    const percent=Math.max(0,Math.min(100,(current-start)/Math.max(.001,end-start)*100));
+    return {percent,waiting:current<start,remainingSeconds:Math.max(0,Math.ceil((end-current)*3))};
   }
 
   function townHallSnapshot(state,design){
@@ -1899,13 +1927,13 @@
     };
   }
 
-  function formatWorldTime(minutes){
+  function formatWorldTime(minutes,showSeconds=false){
     const total=Math.max(0,Math.floor(Number(minutes)||0));
     const day=1+Math.floor(total/(24*60));
     const local=total%(24*60);
     const h=Math.floor(local/60);
     const m=local%60;
-    return 'Día '+day+' · '+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+    return 'Día '+day+' · '+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+(showSeconds?':'+String(Math.floor((Number(minutes)||0)*60)%60).padStart(2,'0'):'');
   }
 
   return {
@@ -1915,6 +1943,7 @@
     advanceWorld,
     stepWorld,
     pulseActiveWorld,
+    activityProgress,
     workerOuting,
     startWorkerOuting,
     workerDanger,

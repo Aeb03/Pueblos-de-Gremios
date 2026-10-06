@@ -19,4 +19,16 @@ test('tiempo activo avanza solo; suspensión y ausencia no simulan ataques',()=>
 test('Lobo Alfa forma grupo, regresa y registra resultado único',()=>{const s=fixture();s.city.development=9.5;let i=0;const rng=()=>{i++;return [10,14].includes(i)?0:.999;};WORLD.advanceWorld(s,10,deps,DATA,DESIGN,rng);assert.equal(s.worldSystems.threat.alphaSeen,1);assert.ok(s.adventurers.every(n=>n.autonomy.currentActivity?.kind==='group'));assert.ok(s.adventurers.every(n=>n.history.activities===0));const restored=WORLD.normalizeState(JSON.parse(JSON.stringify(s)),DATA,DESIGN);WORLD.advanceWorld(restored,20,deps,DATA,DESIGN,fixed(.999));assert.equal(restored.worldSystems.threat.alphaDefeated,1);assert.ok(restored.adventurers.every(n=>n.history.activities===1));assert.equal(restored.worldSystems.chronology.events.filter(e=>e.type==='special-win').length,1);});
 test('Gran Jabalí requiere grupo y conserva resultado y botín al recargar',()=>{const s=fixture();s.city.development=25.5;let i=0;const rng=()=>{i++;return [11,15].includes(i)?0:.999;};WORLD.advanceWorld(s,10,deps,DATA,DESIGN,rng);assert.equal(s.worldSystems.threat.bossSeen,1);assert.ok(s.adventurers.every(n=>n.autonomy.currentActivity?.kind==='group'));const restored=WORLD.normalizeState(JSON.parse(JSON.stringify(s)),DATA,DESIGN);WORLD.advanceWorld(restored,20,deps,DATA,DESIGN,fixed(.999));assert.equal(restored.worldSystems.threat.bossDefeated,1);assert.ok(restored.adventurers.every(n=>n.history.activities===1));assert.equal(restored.worldSystems.chronology.events.filter(e=>e.type==='special-win').length,1);});
 test('arma rota pierde mejora, afilado suma daño y equipo fundador no se duplica',()=>{const s=fixture(),n=s.adventurers[0];assert.equal(n.stats.attack,10);const base=COMBAT.previewEncounter(n,'wolf',1,DATA);n.preparation.sharpening=true;n.combatMods=WORLD.computeCombatMods(n,DESIGN);assert.ok(COMBAT.previewEncounter(n,'wolf',1,DATA).meanHpLossRate<base.meanHpLossRate);n.weaponDamage=8;n.equipment.weapon.durability=0;n.combatMods=WORLD.computeCombatMods(n,DESIGN);assert.ok(COMBAT.previewEncounter(n,'wolf',1,DATA).meanHpLossRate>base.meanHpLossRate);});
+test('reloj continuo y trabajo iniciado a mitad de ciclo conserva su duración',()=>{
+ const s=fixture(false);WORLD.pulseActiveWorld(s,0,true,deps,DATA,DESIGN,fixed(.999));
+ for(let ms=500;ms<=15000;ms+=500)WORLD.pulseActiveWorld(s,ms,true,deps,DATA,DESIGN,fixed(.999));
+ assert.equal(s.worldSystems.clockMinutes,5);
+ WORLD.startWorkerOuting(s,'mine',DESIGN);const job=s.worldSystems.map.workerJobs[0],iron=s.resources.iron;
+ WORLD.pulseActiveWorld(s,15500,true,deps,DATA,DESIGN,fixed(.999));
+ const p=WORLD.activityProgress(s,job);assert.ok(p.percent>0&&p.percent<100);assert.equal(p.remainingSeconds,30);
+ for(let ms=16000;ms<=30000;ms+=500)WORLD.pulseActiveWorld(s,ms,true,deps,DATA,DESIGN,fixed(.999));
+ assert.equal(s.worldSystems.clockMinutes,10);assert.equal(s.resources.iron,iron);assert.equal(WORLD.activityProgress(s,job).percent,50);
+ for(let ms=30500;ms<=45000;ms+=500)WORLD.pulseActiveWorld(s,ms,true,deps,DATA,DESIGN,fixed(.999));
+ assert.ok(s.resources.iron>iron);assert.equal(s.worldSystems.map.workerJobs.length,0);
+});
 console.log('test-integration-regressions: '+suites+' suites OK');

@@ -43,7 +43,14 @@ async function main(){
     await work();await tick();
     s=await read();assert.ok(s.worldSystems.clockMinutes>=10);assert.equal(s.worldSystems.production.stock.nails,1);assert.ok(s.resources.iron>5);assert.ok(s.worldSystems.guild.missions.some(m=>m.status==='accepted'));
     await tick();s=await read();assert.equal(s.worldSystems.production.stock.scissors,1);
-    await craft('smithy','dagger');await tick();await go('smithy');await tab('smithy','store');
+    await craft('smithy','dagger');
+    const progress=page.locator('.business-management progress').first();
+    const beforeProgress=Number(await progress.getAttribute('value'));
+    const beforeClock=(await read()).worldSystems.clockMinutes;
+    await page.clock.runFor(5000);
+    assert.ok(Number(await progress.getAttribute('value'))>beforeProgress,'La barra debe avanzar antes de 30 s');
+    assert.ok((await read()).worldSystems.clockMinutes>beforeClock,'El reloj debe avanzar continuamente');
+    await tick();await go('smithy');await tab('smithy','store');
     const card=page.locator('.business-management .management-card').filter({has:page.locator('[data-manage-action="listing"]')}).first();
     await card.locator('[data-product-price]').fill('0');await card.locator('[data-manage-action="price"]').click();
     assert.ok((await page.locator('.screen.is-active .management-message').textContent()).includes('Precio permitido'));

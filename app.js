@@ -1,4 +1,4 @@
-const APP_VERSION='0.9.0g3';
+const APP_VERSION='0.9.0g4';
 const MAIN_SAVE_KEY='pueblos-gremios-save-v0.8.0';
 const FULL_PLAYTEST=new URLSearchParams(location.search).get('prueba')==='nv1-3';
 const SAVE_KEY=FULL_PLAYTEST?'pueblos-gremios-playtest-nv1-3-v1':MAIN_SAVE_KEY;
@@ -2423,7 +2423,7 @@ function renderTextileIntegrated(){
 function renderMapIntegrated(){
   if(!els.mapWorldTime)return;
   const snap=WORLD.mapSnapshot(state,DESIGN);
-  els.mapWorldTime.textContent=WORLD.formatWorldTime(state.worldSystems.clockMinutes);
+  els.mapWorldTime.textContent=WORLD.formatWorldTime(state.worldSystems.clockMinutes,true);
   els.wolfPresence.textContent=Math.round(snap.presence.wolf.value)+'/100 · '+snap.presence.wolf.band.label;
   els.wolfPresenceProgress.value=snap.presence.wolf.value;
   els.boarPresence.textContent=Math.round(snap.presence.boar.value)+'/100 · '+snap.presence.boar.band.label;
@@ -2449,6 +2449,7 @@ function renderMapIntegrated(){
         subtitle:({group:'Salida en grupo',escort:'Escolta',delivery:'Entrega',mission:'Misión',spontaneous:'Salida propia'}[entry.activity.kind]||'Salida')+' · '+(entry.activity.enemyKey?(entry.activity.count+'× '+(enemy?.name||entry.activity.enemyKey)):'Entrega al Gremio'),
         right:'regresa '+WORLD.formatWorldTime(entry.activity.resolvesAtMinute)
       });
+      appendActivityProgress(els.mapActiveAdventurers,entry.activity);
     }
   }
 
@@ -2479,6 +2480,15 @@ function renderMapIntegrated(){
     const damaged=workerTools.some(([,tool])=>tool&&tool.durability<tool.maxDurability);
     els.repairWorkerTools.disabled=!damaged||WORLD.availableTreasury(state)<2;
   }
+}
+
+function appendActivityProgress(container,activity){
+  if(!container)return;
+  const info=WORLD.activityProgress(state,activity);
+  const wrap=document.createElement('div');wrap.className='job-progress';
+  const bar=document.createElement('progress');bar.max=100;bar.value=info.percent;bar.setAttribute('aria-label','Avance de la actividad');
+  const text=document.createElement('small');text.textContent=(info.waiting?'En espera · ':'')+info.remainingSeconds+' s restantes';
+  wrap.append(bar,text);container.append(wrap);
 }
 
 function renderProductionIntegrated(){
@@ -2521,9 +2531,9 @@ function renderProductionIntegrated(){
 
 function renderSimulationIntegrated(){
   if(!els.simulationClock)return;
-  els.simulationClock.textContent=WORLD.formatWorldTime(state.worldSystems.clockMinutes);
+  els.simulationClock.textContent=WORLD.formatWorldTime(state.worldSystems.clockMinutes,true);
   els.simulationEventCount.textContent=state.worldSystems.chronology.events.length+' eventos';
-  els.worldClockKingdom.textContent=WORLD.formatWorldTime(state.worldSystems.clockMinutes);
+  els.worldClockKingdom.textContent=WORLD.formatWorldTime(state.worldSystems.clockMinutes,true);
 }
 
 function renderIntegratedWorld(){
@@ -2534,7 +2544,7 @@ function renderIntegratedWorld(){
     if(copy)copy.textContent='Partida de prueba Nv.1–3. Tu ciudad anterior se conserva por separado. Esta fundación y sus residentes quedan guardados al volver a este enlace.';
   }
   const live=document.getElementById('cityLiveClock');
-  if(live)live.textContent=WORLD.formatWorldTime(state.worldSystems.clockMinutes);
+  if(live)live.textContent=WORLD.formatWorldTime(state.worldSystems.clockMinutes,true);
   const recent=document.getElementById('cityRecentActivity');
   if(recent){recent.replaceChildren();for(const e of state.worldSystems.chronology.events.slice(0,2))appendWorldRow(recent,{title:e.text});}
   const overview=document.getElementById('townHallOverview');
@@ -2560,6 +2570,10 @@ function renderIntegratedWorld(){
     const status=worker.currentJob?'En salida':worker.escortMissionId?'Con escolta':worker.injuredUntil>state.worldSystems.clockMinutes?'Recuperándose':worker.restingAtInn?'Descansando':'Disponible';
     const label=document.getElementById(id);
     if(label)label.textContent=status;
+    const job=state.worldSystems.map.workerJobs.find(j=>j.kind===kind);
+    const host=label?.parentElement;
+    host?.querySelector('.job-progress')?.remove();
+    if(job)appendActivityProgress(host,job);
     const button=document.getElementById({mine:'mapMineOuting',wood:'mapWoodOuting',hunt:'mapHuntOuting'}[kind]);
     if(button)button.disabled=status!=='Disponible'||worker.worldTool.durability<=0||(worker.stamina??100)<20;
   }
@@ -3424,7 +3438,7 @@ if('serviceWorker' in navigator){
 
     window.addEventListener('load',async()=>{
       try{
-        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0g3',{updateViaCache:'none'});
+        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0g4',{updateViaCache:'none'});
         await reg.update();
       }catch{}
     });
