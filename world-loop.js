@@ -440,6 +440,75 @@
     return {ok:true,recipeKey,quality,origin};
   }
 
+  function finishReservedRecipe(state,job,design,rng){
+    const recipe=design.recipes[job.recipeKey];
+    if(!recipe)return {ok:false,reason:'Receta inexistente'};
+    const quality=productQuality(rng);
+
+    if(design.equipment[job.recipeKey]){
+      const product=craftEquipmentObject(job.recipeKey,job.origin||'neutral',quality,design);
+      state.worldSystems.production.goods[job.recipeKey].push(product);
+      if(recipe.shop==='textile'){
+        state.worldSystems.textile.goodsProduced[job.origin||'neutral']=
+          (state.worldSystems.textile.goodsProduced[job.origin||'neutral']||0)+1;
+      }
+    }else{
+      state.worldSystems.production.stock[job.recipeKey]=
+        (state.worldSystems.production.stock[job.recipeKey]||0)+(recipe.outputQty||1);
+    }
+
+    state.worldSystems.production.qualityLog.unshift({
+      recipeKey:job.recipeKey,
+      quality:quality.label,
+      score:quality.score,
+      origin:job.origin||'neutral'
+    });
+    state.worldSystems.production.qualityLog=state.worldSystems.production.qualityLog.slice(0,20);
+    state.city.development=Number(((state.city.development||0)+.45).toFixed(2));
+    logEvent(state,'craft','Producción terminada: '+recipe.name+' · '+quality.label+'.');
+    return {ok:true,quality};
+  }
+
+  function enqueueRecipe(state,recipeKey,design,origin='neutral'){
+    const recipe=design.recipes[recipeKey];
+    if(!recipe)return {ok:false,reason:'Receta inexistente'};
+    if(recipe.id==='tannedHide')return tanHide(state,origin,design);
+    if(recipe.shop==='textile'&&!state.worldSystems.textile.built)return {ok:false,reason:'Textilería no construida'};
+
+    const queue=state.worldSystems.production.queue;
+    const capacity=design.buildings[recipe.shop]?.queueCapacity||5;
+    const activeForShop=queue.filter(job=>job.shop===recipe.shop).length;
+    if(activeForShop>=capacity)return {ok:false,reason:'Cola de '+recipe.shop+' completa ('+capacity+')'};
+
+    if(!consumeRecipeMaterials(state,recipe,origin,design)){
+      return {ok:false,reason:'Faltan materiales o componentes'};
+    }
+
+    const durationMinutes=Math.max(
+      TICK_MINUTES,
+      Math.ceil((Number(recipe.durationSec)||10)/60/TICK_MINUTES)*TICK_MINUTES
+    );
+    const job={
+      id:nowId('job'),
+      recipeKey,
+      shop:recipe.shop,
+      origin,
+      startedAtMinute:state.worldSystems.clockMinutes,
+      readyAtMinute:state.worldSystems.clockMinutes+durationMinutes
+    };
+    queue.push(job);
+    logEvent(state,'queue','Trabajo reservado: '+recipe.name+'. Materiales apartados.');
+    return {ok:true,job};
+  }
+
+  function processProductionQueue(state,design,rng){
+    const queue=state.worldSystems.production.queue;
+    const due=queue.filter(job=>job.readyAtMinute<=state.worldSystems.clockMinutes);
+    for(const job of due)finishReservedRecipe(state,job,design,rng);
+    state.worldSystems.production.queue=queue.filter(job=>job.readyAtMinute>state.worldSystems.clockMinutes);
+    return due.length;
+  }
+
   function buildTextile(state,design){
     if(state.worldSystems.textile.built)return {ok:false,reason:'La Textilería ya está construida'};
     if((state.city.level||1)<design.buildings.textile.unlockCityLevel)return {ok:false,reason:'Requiere Ciudad Nv. 2'};
@@ -1101,6 +1170,7 @@
     normalizeState(state,data,design);
     state.worldSystems.clockMinutes+=TICK_MINUTES;
     state.worldSystems.day=1+Math.floor(state.worldSystems.clockMinutes/(24*60));
+    processProductionQueue(state,design,rng);
     resolveDueActivities(state,deps,data,design,rng);
     autonomyStep(state,deps,data,design,rng);
     threatStep(state,deps,data,design,rng);
@@ -1175,6 +1245,7 @@
     publishHuntMission,
     toggleMission,
     craftRecipe,
+    enqueueRecipe,
     buildTextile,
     tanHide,
     threatBand,
