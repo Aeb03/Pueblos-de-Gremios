@@ -56,6 +56,16 @@
     leatherBoots:{id:'leatherBoots',name:'Botas de cuero',shop:'textile',slot:'feet',price:12,durability:8,initiative:1,textile:true}
   };
 
+  const workerTools={
+    roughPick:{id:'roughPick',name:'Pico rudimentario',worker:'mara',durability:8,tier:'rough',resourceBonus:0},
+    ironPickaxe:{id:'ironPickaxe',name:'Pico de hierro',worker:'mara',durability:14,tier:'improved',resourceBonus:1,hardVein:true},
+    roughAxe:{id:'roughAxe',name:'Hacha rudimentaria',worker:'logger',durability:8,tier:'rough',resourceBonus:0},
+    workAxe:{id:'workAxe',name:'Hacha de trabajo',worker:'logger',durability:14,tier:'improved',resourceBonus:1,hardTrees:true},
+    roughHuntingGear:{id:'roughHuntingGear',name:'Equipo de caza rudimentario',worker:'hunter',durability:8,tier:'rough',resourceBonus:0},
+    huntingBow:{id:'huntingBow',name:'Arco de caza',worker:'hunter',durability:14,tier:'improved',resourceBonus:1,hardPrey:true},
+    huntingKnife:{id:'huntingKnife',name:'Cuchillo de caza',worker:'hunter',durability:14,tier:'improved',harvestBonus:1}
+  };
+
   const recipes={
     nails:{id:'nails',name:'Clavos · lote de 8',shop:'smithy',materials:{iron:1,firewood:1},durationSec:10,outputQty:1,referencePrice:8},
     arrowheads:{id:'arrowheads',name:'Puntas de flecha · lote de 6',shop:'smithy',materials:{iron:2,firewood:1},durationSec:12,outputQty:1,referencePrice:10},
@@ -213,6 +223,7 @@
     food,
     materialOrigins,
     equipment,
+    workerTools,
     recipes,
     services,
     enemies,
