@@ -68,6 +68,8 @@
   };
 
   const recipes={
+    simpleMeal:{id:"simpleMeal",name:"Plato sencillo",shop:"meson",materials:{meat:.75,firewood:.15},worldMinutes:3,outputQty:1},
+    travelRation:{id:"travelRation",name:"Ración de viaje",shop:"meson",materials:{meat:.75,firewood:.10},worldMinutes:3,outputQty:1},
     nails:{id:'nails',name:'Clavos · lote de 8',shop:'smithy',materials:{iron:1,firewood:1},durationSec:10,outputQty:1,referencePrice:8},
     arrowheads:{id:'arrowheads',name:'Puntas de flecha · lote de 6',shop:'smithy',materials:{iron:2,firewood:1},durationSec:12,outputQty:1,referencePrice:10},
     pickaxeHead:{id:'pickaxeHead',name:'Cabeza de pico',shop:'smithy',materials:{iron:4,firewood:1},durationSec:18,outputQty:1,referencePrice:14},

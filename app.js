@@ -1,4 +1,4 @@
-const APP_VERSION='0.9.0g4';
+const APP_VERSION='0.9.1a';
 const MAIN_SAVE_KEY='pueblos-gremios-save-v0.8.0';
 const FULL_PLAYTEST=new URLSearchParams(location.search).get('prueba')==='nv1-3';
 const SAVE_KEY=FULL_PLAYTEST?'pueblos-gremios-playtest-nv1-3-v1':MAIN_SAVE_KEY;
@@ -2295,7 +2295,7 @@ function renderGuildIntegrated(){
   updateDeliveryHint();
   updateEscortHint();
   const missions=state.worldSystems.guild.missions;
-  const active=missions.filter(m=>m.status==='open'||m.status==='accepted');
+  const active=missions.filter(m=>m.repeat||m.status==='open'||m.status==='accepted');
   const slots=state.buildings.guildHall?.missionSlots||DESIGN.mission.startingConcurrent;
   els.guildMissionCount.textContent=active.length+'/'+slots;
   const signature=JSON.stringify(missions);
@@ -2325,15 +2325,16 @@ function renderGuildIntegrated(){
       npc?'Aceptada por '+npc.fullName:''
     ].filter(Boolean).join(' · ');
 
-    appendWorldRow(els.guildMissionList,{
-      title:mission.id+' · '+missionStatusLabel(mission.status),
+    const missionRow=appendWorldRow(els.guildMissionList,{
+      title:mission.id+' · '+(mission.status==='archived'?'Retirada':missionStatusLabel(mission.status)),
       subtitle,
-      right:mission.status==='open'?(mission.active?'Activa':'Pausada'):'',
+      right:mission.active?'Activa · '+(mission.repeat?'recurrente':'una vez'):'Pausada',
       className:mission.status==='completed'?'is-good':mission.status==='failed'?'is-danger':'',
-      button:mission.status==='open'
+      button:mission.repeat||mission.status==='open'
         ?{label:mission.active?'Pausar':'Activar',dataset:{missionToggle:mission.id}}
         :null
     });
+    if(mission.status!=='archived'){const withdraw=document.createElement('button');withdraw.className='small-action';withdraw.textContent='Retirar';withdraw.dataset.manageAction='withdraw-mission';withdraw.dataset.mission=mission.id;missionRow.querySelector('.event-right').append(withdraw);}
   }
 }
 
@@ -2352,7 +2353,7 @@ function renderTextileIntegrated(){
   const textile=state.worldSystems.textile;
   const unlocked=(state.city.level||1)>=DESIGN.buildings.textile.unlockCityLevel;
   els.cityTextileButton.hidden=!unlocked&&!textile.built;
-  els.cityTextileLevel.textContent=textile.built?'Nv. 1':(unlocked?'Construir':'Bloqueada');
+  els.cityTextileLevel.textContent=textile.built?'Nv. '+textile.level:(unlocked?'Construir':'Bloqueada');
 
   els.textileBadge.textContent=textile.built
     ?'Textilería · Nv. 1'
@@ -2497,8 +2498,8 @@ function appendActivityProgress(container,activity){
 function renderProductionIntegrated(){
   if(els.smithyWorldQueue){
     const queue=state.worldSystems.production.queue;
-    els.smithyWorldQueue.textContent='Cola '+queue.filter(j=>j.shop==='smithy').length+'/5';
-    els.carpenterWorldQueue.textContent='Cola '+queue.filter(j=>j.shop==='carpenter').length+'/5';
+    els.smithyWorldQueue.textContent='Cola '+queue.filter(j=>j.shop==='smithy').length+'/'+(5+Math.max(0,(state.buildings.smithy?.level||1)-1));
+    els.carpenterWorldQueue.textContent='Cola '+queue.filter(j=>j.shop==='carpenter').length+'/'+(5+Math.max(0,(state.buildings.carpenter?.level||1)-1));
   }
 
   if(els.worldResourceGrid){
@@ -2590,6 +2591,7 @@ function renderIntegratedWorld(){
   }
   renderSimulationIntegrated();
   if(globalThis.PG_MANAGEMENT_UI)PG_MANAGEMENT_UI.render(state,DESIGN,WORLD);
+  if(globalThis.PG_CITY_LIFE)PG_CITY_LIFE.render(state,DESIGN,WORLD);
 }
 
 function advanceIntegratedWorld(minutes){
@@ -3368,6 +3370,8 @@ if(globalThis.PG_MANAGEMENT_UI)PG_MANAGEMENT_UI.init({
   action(dataset,card){
     if(dataset.manageAction==='rest-worker'){toggleInnRest(dataset.worker);return;}
     if(dataset.manageAction==='sharpen-worker'){const out=WORLD.prepareWorkerTool(state,dataset.worker,DESIGN);const msg=document.querySelector('.screen.is-active .management-message');if(msg)msg.textContent=out.ok?'Herramienta preparada para una salida.':out.reason;if(out.ok)saveState();render();return;}
+    const extra=globalThis.PG_CITY_CONTROLS?.action(dataset,card,state,DESIGN,WORLD);
+    if(extra){const message=document.querySelector('.screen.is-active .management-message');if(message)message.textContent=extra.reason||(extra.ok?'Cambios guardados.':'No se pudo completar');if(extra.ok){syncCityFromIntegratedWorld();saveState();}render();return;}
     const price=Number(card?.querySelector('[data-product-price]')?.value);
     const result=dataset.manageAction==='recycle'?WORLD.recycleProduct(state,dataset.product,DESIGN):WORLD.setProductSale(state,dataset.product,{price,listed:dataset.manageAction==='listing'?dataset.listed==='true':undefined},DESIGN);
     if(result.ok)saveState();
@@ -3378,6 +3382,7 @@ if(globalThis.PG_MANAGEMENT_UI)PG_MANAGEMENT_UI.init({
     render();
   }
 });
+if(globalThis.PG_CITY_LIFE)PG_CITY_LIFE.init({open:showScreen});
 setInterval(render,500);
 document.addEventListener('visibilitychange',()=>{
   if(!document.hidden){
@@ -3441,7 +3446,7 @@ if('serviceWorker' in navigator){
 
     window.addEventListener('load',async()=>{
       try{
-        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0g4',{updateViaCache:'none'});
+        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.1a',{updateViaCache:'none'});
         await reg.update();
       }catch{}
     });

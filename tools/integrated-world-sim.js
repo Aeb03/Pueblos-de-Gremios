@@ -105,6 +105,7 @@ function canQueue(state,key){
   return true;
 }
 
+const automaticPlans=process.argv[5]==='plans';
 function playerPolicy(state,rng){
   for(const shop of ['smithy','carpenter','textile'])WORLD.setProductionPolicy(state,shop,'sell');
   for(const worker of Object.values(state.workers)){
@@ -113,7 +114,8 @@ function playerPolicy(state,rng){
   }
   // El jugador mantiene activos los tres oficios de recolección sin castigar offline.
   for(const kind of ['mine','wood','hunt']){
-    if(rng()<.58)WORLD.startWorkerOuting(state,kind,DESIGN);
+    if(automaticPlans){if(!state.worldSystems.workerPlans[kind])WORLD.setWorkerPlan(state,kind,{enabled:true});}
+    else if(rng()<.58)WORLD.startWorkerOuting(state,kind,DESIGN);
   }
 
   // Producción básica para desbloquear herramientas y luego oferta comercial.
@@ -169,9 +171,15 @@ function playerPolicy(state,rng){
     }
   }
 
+  if(automaticPlans){
+    if(state.city.level>state.buildings.guildHall.level&&WORLD.availableTreasury(state)>115)WORLD.upgradeBuilding(state,'guildHall',DESIGN);
+    for(const enemyKey of ['wolf','boar']){
+      if(!state.worldSystems.guild.missions.some(m=>m.repeat&&m.enemyKey===enemyKey)&&WORLD.availableTreasury(state)>75)WORLD.publishHuntMission(state,{enemyKey,count:1,reward:DESIGN.mission.baseRewards[enemyKey]},DESIGN);
+    }
+  }
   // Mantener alguna misión real en el tablón.
   const active=state.worldSystems.guild.missions.filter(m=>m.status==='open'||m.status==='accepted');
-  if(active.length<1&&WORLD.availableTreasury(state)>75){
+  if(!automaticPlans&&active.length<1&&WORLD.availableTreasury(state)>75){
     const wolf=state.worldSystems.threat.presence.wolf;
     const boar=state.worldSystems.threat.presence.boar;
     const enemyKey=wolf>=boar?'wolf':'boar';
@@ -271,6 +279,6 @@ const seed=Math.max(1,Number(process.argv[3])||1989);
 const minutes=Math.max(10,Number(process.argv[4])||240);
 const rows=[];
 for(let i=0;i<runs;i++)rows.push(run(seed+i*97,minutes));
-const result=summarize(rows);
+const result={...summarize(rows),policy:automaticPlans?'automatic-worker-plans':'manual-work-orders'};
 console.log('INTEGRATED_WORLD_SIM');
 console.log(JSON.stringify(result,null,2));
