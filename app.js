@@ -756,6 +756,12 @@ const els={
   mapWoodOuting:document.getElementById('mapWoodOuting'),
   mapHuntOuting:document.getElementById('mapHuntOuting'),
   mapOutingFeedback:document.getElementById('mapOutingFeedback'),
+  mapWorkerToolsSummary:document.getElementById('mapWorkerToolsSummary'),
+  repairWorkerTools:document.getElementById('repairWorkerTools'),
+  equipMaraPickaxe:document.getElementById('equipMaraPickaxe'),
+  equipLoggerAxe:document.getElementById('equipLoggerAxe'),
+  equipHunterBow:document.getElementById('equipHunterBow'),
+  equipHunterKnife:document.getElementById('equipHunterKnife'),
   mapZoneList:document.getElementById('mapZoneList'),
   mapActiveAdventurers:document.getElementById('mapActiveAdventurers'),
 
