@@ -66,13 +66,13 @@ jobs:
         run: |
           grep -q "v0.9.0g1" index.html
           grep -q "pueblos-gremios-v0.9.0g1" sw.js
-          grep -q "game-data.js?v=0.9.0c1" index.html
-          grep -q "adventurer-core.js?v=0.9.0c1" index.html
-          grep -q "city-progression.js?v=0.9.0c1" index.html
-          grep -q "activity-combat.js?v=0.9.0c1" index.html
-          grep -q "activity.css?v=0.9.0c1" index.html
-          grep -q "app.js?v=0.9.0c1" index.html
-          grep -q "styles.css?v=0.9.0c1" index.html
+          grep -q "game-data.js?v=0.9.0g1" index.html
+          grep -q "adventurer-core.js?v=0.9.0g1" index.html
+          grep -q "city-progression.js?v=0.9.0g1" index.html
+          grep -q "activity-combat.js?v=0.9.0g1" index.html
+          grep -q "activity.css?v=0.9.0g1" index.html
+          grep -q "app.js?v=0.9.0g1" index.html
+          grep -q "styles.css?v=0.9.0g1" index.html
           grep -q "SAVE_KEY='pueblos-gremios-save-v0.8.0'" app.js
       - name: Check foundation cycle
         run: |
