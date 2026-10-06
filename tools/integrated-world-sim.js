@@ -106,9 +106,14 @@ function canQueue(state,key){
 }
 
 function playerPolicy(state,rng){
+  for(const shop of ['smithy','carpenter','textile'])WORLD.setProductionPolicy(state,shop,'sell');
+  for(const worker of Object.values(state.workers)){
+    if((worker.stamina??100)<20)worker.restingAtInn=true;
+    if((worker.stamina??100)>=80)worker.restingAtInn=false;
+  }
   // El jugador mantiene activos los tres oficios de recolección sin castigar offline.
   for(const kind of ['mine','wood','hunt']){
-    if(rng()<.58)WORLD.workerOuting(state,kind,DESIGN,rng);
+    if(rng()<.58)WORLD.startWorkerOuting(state,kind,DESIGN);
   }
 
   // Producción básica para desbloquear herramientas y luego oferta comercial.
@@ -188,6 +193,10 @@ function run(seed,minutes=240){
   }
 
   const ws=state.worldSystems;
+  const reserved=ws.guild.missions.filter(m=>m.status==='accepted').reduce((n,m)=>n+m.reward,0);
+  if(state.resources.coins<reserved||Math.abs(ws.townHall.treasuryReserved-reserved)>1e-6)throw new Error('Tesorería/reserva inconsistente');
+  if(new Set(state.adventurers.map(n=>n.id)).size!==state.adventurers.length)throw new Error('NPC duplicado');
+  if(Object.values(state.resources).some(v=>!Number.isFinite(v)||v<0))throw new Error('Recursos inválidos');
   return {
     cityLevel:state.city.level,
     development:state.city.development,
@@ -210,6 +219,14 @@ function run(seed,minutes=240){
     cityAttacks:ws.threat.cityAttacks,
     workerInjuries:ws.map.workerInjuries,
     escorts:ws.map.escorts,
+    alphaSeen:ws.threat.alphaSeen,
+    alphaDefeated:ws.threat.alphaDefeated,
+    bossSeen:ws.threat.bossSeen,
+    bossDefeated:ws.threat.bossDefeated,
+    repairs:state.adventurers.reduce((sum,n)=>sum+(n.history.repairs||0),0),
+    recurringSpend:state.adventurers.reduce((sum,n)=>sum+(n.spending.rest||0)+(n.spending.repair||0)+(n.spending.consumable||0),0),
+    investmentSpend:state.adventurers.reduce((sum,n)=>sum+(n.spending.gear||0),0),
+    stalled:state.adventurers.filter(n=>n.autonomy.intent==='needs-rest').length,
     events:ws.chronology.events.length
   };
 }
@@ -237,7 +254,15 @@ function summarize(rows){
     incidentsMean:mean(rows.map(r=>r.incidents)),
     cityAttacksMean:mean(rows.map(r=>r.cityAttacks)),
     workerInjuriesMean:mean(rows.map(r=>r.workerInjuries)),
-    escortsMean:mean(rows.map(r=>r.escorts))
+    escortsMean:mean(rows.map(r=>r.escorts)),
+    alphaSeenMean:mean(rows.map(r=>r.alphaSeen)),
+    alphaDefeatedMean:mean(rows.map(r=>r.alphaDefeated)),
+    bossSeenMean:mean(rows.map(r=>r.bossSeen)),
+    bossDefeatedMean:mean(rows.map(r=>r.bossDefeated)),
+    repairsMean:mean(rows.map(r=>r.repairs)),
+    recurringSpendMean:mean(rows.map(r=>r.recurringSpend)),
+    investmentSpendMean:mean(rows.map(r=>r.investmentSpend)),
+    stalledMean:mean(rows.map(r=>r.stalled))
   };
 }
 

@@ -18,6 +18,9 @@ jobs:
           node --check world-design-data.js
           node --check world-loop.js
           node --check app.js
+          node --check management-ui.js
+          node --check tools/test-integration-regressions.js
+          node --check tools/test-browser-loop.js
           node --check tools/test-adventurer-core.js
           node --check tools/test-city-progression.js
           node --check tools/test-activity-combat.js
@@ -39,6 +42,9 @@ jobs:
 
       - name: Check integrated world loop
         run: node tools/test-world-loop.js
+
+      - name: Check integration regressions
+        run: node tools/test-integration-regressions.js
 
       - name: Check integrated world simulation
         run: |
@@ -64,6 +70,7 @@ jobs:
           test -f world-loop.css
           test -f world-design-data.js
           test -f world-loop.js
+          test -f management-ui.js
           test -f manifest.webmanifest
           test -f sw.js
           test -f icons/icon.svg
@@ -71,16 +78,16 @@ jobs:
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest OK')"
       - name: Check version wiring
         run: |
-          grep -q "v0.9.0g2" index.html
-          grep -q "pueblos-gremios-v0.9.0g2" sw.js
-          grep -q "game-data.js?v=0.9.0g2" index.html
-          grep -q "adventurer-core.js?v=0.9.0g2" index.html
-          grep -q "city-progression.js?v=0.9.0g2" index.html
-          grep -q "activity-combat.js?v=0.9.0g2" index.html
-          grep -q "activity.css?v=0.9.0g2" index.html
-          grep -q "app.js?v=0.9.0g2" index.html
-          grep -q "styles.css?v=0.9.0g2" index.html
-          grep -q "SAVE_KEY='pueblos-gremios-save-v0.8.0'" app.js
+          grep -q "v0.9.0g3" index.html
+          grep -q "pueblos-gremios-v0.9.0g3" sw.js
+          grep -q "game-data.js?v=0.9.0g3" index.html
+          grep -q "adventurer-core.js?v=0.9.0g3" index.html
+          grep -q "city-progression.js?v=0.9.0g3" index.html
+          grep -q "activity-combat.js?v=0.9.0g3" index.html
+          grep -q "activity.css?v=0.9.0g3" index.html
+          grep -q "app.js?v=0.9.0g3" index.html
+          grep -q "styles.css?v=0.9.0g3" index.html
+          grep -q "MAIN_SAVE_KEY='pueblos-gremios-save-v0.8.0'" app.js
       - name: Check foundation cycle
         run: |
           grep -q "function foundCity" app.js
@@ -174,3 +181,14 @@ jobs:
           grep -q 'data-screen="guildHall"' index.html
           grep -q 'data-screen="textile"' index.html
           grep -q 'data-screen="map"' index.html
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install browser test runtime
+        run: |
+          npm install --no-save --package-lock=false playwright@1.62.1
+          npx playwright install --with-deps chromium
+      - name: Check mobile foundation to city level 3
+        run: node tools/test-browser-loop.js

@@ -1,6 +1,8 @@
-const APP_VERSION='0.9.0g2';
-const SAVE_KEY='pueblos-gremios-save-v0.8.0';
-const FOUNDER_LEDGER_KEY='pueblos-gremios-founder-ledger-v1';
+const APP_VERSION='0.9.0g3';
+const MAIN_SAVE_KEY='pueblos-gremios-save-v0.8.0';
+const FULL_PLAYTEST=new URLSearchParams(location.search).get('prueba')==='nv1-3';
+const SAVE_KEY=FULL_PLAYTEST?'pueblos-gremios-playtest-nv1-3-v1':MAIN_SAVE_KEY;
+const FOUNDER_LEDGER_KEY=FULL_PLAYTEST?'pueblos-gremios-playtest-founder-ledger-v1':'pueblos-gremios-founder-ledger-v1';
 const DATA=globalThis.PG_DATA;
 const ADV=globalThis.PG_ADVENTURER_CORE;
 const CITY=globalThis.PG_CITY_PROGRESSION;
@@ -629,6 +631,7 @@ function markSmithyBookRead(){
 }
 
 function showScreen(name){
+  if(name==='expedition')name='map';
   screens.forEach(s=>s.classList.toggle('is-active',s.dataset.screen===name));
   const navTarget=['smithy','carpenter','inn','townHall','guildHall','textile'].includes(name)?'city':name;
   nav.forEach(b=>b.classList.toggle('is-active',b.dataset.target===navTarget));
@@ -1322,7 +1325,7 @@ function createActionId(){
 }
 
 function workerName(workerKey){
-  return {mara:'Mara',borin:'Borin',eldon:'Eldon'}[workerKey]||workerKey;
+  return {mara:'Mara',borin:'Borin',eldon:'Eldon',logger:'Leñador',hunter:'Cazador',nara:'Nara'}[workerKey]||workerKey;
 }
 
 function hasIronPickaxeEquipped(){
@@ -1345,12 +1348,17 @@ function rollReward(){
 }
 
 function isWorkerBusy(workerKey){
+  const w=state.workers[workerKey];
+  if(w?.currentJob||w?.escortMissionId)return true;
+  const shop=workerKey==='borin'?'smithy':workerKey==='eldon'?'carpenter':null;
+  if(shop&&state.worldSystems.production.queue.some(j=>j.shop===shop))return true;
   return (workerKey==='mara'&&Boolean(state.activeExpedition))
     ||(workerKey==='borin'&&Boolean(state.activeCraft))
     ||(workerKey==='eldon'&&Boolean(state.activeCarpentry));
 }
 
 function syncWorkerStamina(workerKey){
+  if(state.worldSystems)return false;
   const worker=state.workers[workerKey];
   if(!worker||isWorkerBusy(workerKey))return false;
 
@@ -2073,6 +2081,7 @@ function renderFoundingAdventurers(){
       </div>
       <small>${DATA.adventurerRoles[npc.classKey]?.identity||npc.role} · Evasión ${Math.round((npc.evasion||0)*100)}%</small>
       <small>Originario de ${npc.originTier} ${npc.originCityName} · 🪙 ${formatNumber(npc.coins)} · XP ${npc.xp}/${DATA.adventurerProgression.xpToNext[npc.level]||'—'}</small>
+      <div class="npc-possessions"><strong>Equipo y botín propios</strong><small>${Object.values(npc.equipment||{}).filter(Boolean).map(eq=>eq.name+' · Dur. '+eq.durability+'/'+eq.maxDurability).join(' · ')}</small><small>${Object.entries(npc.loot||{}).filter(([,q])=>q>0).map(([k,q])=>q+' '+(DESIGN.resources[k]?.name||k)).join(' · ')||'Sin botín almacenado'}</small><small>Ánimo: ${npc.mood} · Victorias ${npc.history?.victories||0} · Descansos ${npc.history?.rests||0} · Reparaciones ${npc.history?.repairs||0}</small></div>
       ${npc.populationMilestone?'<small class="arrival-note">🧭 '+(npc.populationMilestone==='city-level-2'?'Llegó al alcanzar Ciudad Nv. 2':'Llegó al alcanzar Ciudad Nv. 3')+'</small>':''}
     `;
     els.kingdomAdventurerList.append(card);
@@ -2162,7 +2171,7 @@ function renderWorldEvents(){
   els.worldEventList.replaceChildren();
   const events=state.worldSystems.chronology.events.slice(0,12);
   if(!events.length){
-    appendWorldRow(els.worldEventList,{title:'Todavía no hay acontecimientos',subtitle:'Avanzá el mundo desde Menú para iniciar la simulación.'});
+    appendWorldRow(els.worldEventList,{title:'Todavía no hay acontecimientos',subtitle:'Los aventureros se preparan para sus primeras salidas.'});
     return;
   }
   for(const event of events){
@@ -2189,7 +2198,7 @@ function renderMesonIntegrated(){
       :(need.needsRest?'Necesita recuperación':(need.moderate?'Desgaste moderado':'Preparado'));
     appendWorldRow(els.mesonAdventurerList,{
       title:npc.fullName+' · '+reason,
-      subtitle:'PV '+npc.hpCurrent+'/'+npc.hpMax+' · Maná '+npc.manaCurrent+'/'+npc.manaMax+
+      subtitle:npc.status+' · PV '+npc.hpCurrent+'/'+npc.hpMax+' · Maná '+npc.manaCurrent+'/'+npc.manaMax+
         (npc.rationPrepared?' · Ración preparada':''),
       right:'🪙 '+formatNumber(npc.coins)
     });
@@ -2244,9 +2253,8 @@ function updateGuildRewardHint(){
   const min=Math.ceil(reference*DESIGN.mission.manualValueRange[0]);
   const max=Math.floor(reference*DESIGN.mission.manualValueRange[1]);
   els.guildRewardHint.textContent='Recomendado '+reference+' · permitido '+min+'–'+max+' monedas.';
-  if(document.activeElement!==els.guildRewardInput){
-    els.guildRewardInput.value=String(reference);
-  }
+  els.guildRewardInput.min=String(min);
+  els.guildRewardInput.max=String(max);
 }
 
 function updateDeliveryHint(){
@@ -2263,22 +2271,24 @@ function updateDeliveryHint(){
   const max=Math.floor(reference*DESIGN.mission.manualValueRange[1]);
   els.deliveryHint.textContent='Demanda '+Math.round(need*100)/100+' · recomendado '+reference+' · permitido '+min+'–'+max+'.';
   els.publishDeliveryMission.disabled=need<qty;
-  if(document.activeElement!==els.deliveryRewardInput)els.deliveryRewardInput.value=String(reference);
+  els.deliveryRewardInput.min=String(min);
+  els.deliveryRewardInput.max=String(max);
 }
 
 function updateEscortHint(){
   if(!els.escortHint)return;
-  const bands=['wolf','boar'].map(species=>WORLD.threatBand(state.worldSystems.threat.presence[species],DESIGN));
-  const danger=Math.max(...bands.map(b=>DESIGN.threat.bands.findIndex(x=>x.id===b.id)));
+  const danger=WORLD.workerDanger(state,els.escortWorkerSelect.value||'mine',DESIGN);
   const enabled=danger>=2;
   const reference=10+Math.max(0,danger)*3;
   els.escortHint.textContent=enabled
     ?'Amenaza suficiente para escolta · recomendado '+reference+' monedas.'
     :'Amenaza baja: todavía no hace falta pagar una escolta.';
   els.publishEscortMission.disabled=!enabled;
-  if(document.activeElement!==els.escortRewardInput)els.escortRewardInput.value=String(reference);
+  els.escortRewardInput.min=String(Math.ceil(reference*.70));
+  els.escortRewardInput.max=String(Math.floor(reference*1.30));
 }
 
+let guildRenderSignature='';
 function renderGuildIntegrated(){
   if(!els.guildMissionList)return;
   updateGuildRewardHint();
@@ -2288,6 +2298,9 @@ function renderGuildIntegrated(){
   const active=missions.filter(m=>m.status==='open'||m.status==='accepted');
   const slots=state.buildings.guildHall?.missionSlots||DESIGN.mission.startingConcurrent;
   els.guildMissionCount.textContent=active.length+'/'+slots;
+  const signature=JSON.stringify(missions);
+  if(signature===guildRenderSignature)return;
+  guildRenderSignature=signature;
   els.guildMissionList.replaceChildren();
 
   if(!missions.length){
@@ -2420,7 +2433,7 @@ function renderMapIntegrated(){
   for(const zone of snap.zones){
     appendWorldRow(els.mapZoneList,{
       title:zone.name,
-      subtitle:zone.kind+' · distancia '+zone.distance+(zone.requires?' · requiere '+zone.requires:''),
+      subtitle:({city:'Ciudad',forest:'Bosque',hills:'Colinas',mine:'Mina',route:'Ruta'}[zone.kind]||zone.kind)+' · distancia '+zone.distance+(zone.requires?' · requiere '+(DESIGN.workerTools[zone.requires]?.name||zone.requires):''),
       right:zone.enemy?(DESIGN.enemies[zone.enemy]?.name||zone.enemy):''
     });
   }
@@ -2433,7 +2446,7 @@ function renderMapIntegrated(){
       const enemy=DESIGN.enemies[entry.activity.enemyKey];
       appendWorldRow(els.mapActiveAdventurers,{
         title:entry.name,
-        subtitle:entry.activity.kind+' · '+entry.activity.count+'× '+(enemy?.name||entry.activity.enemyKey),
+        subtitle:({group:'Salida en grupo',escort:'Escolta',delivery:'Entrega',mission:'Misión',spontaneous:'Salida propia'}[entry.activity.kind]||'Salida')+' · '+(entry.activity.enemyKey?(entry.activity.count+'× '+(enemy?.name||entry.activity.enemyKey)):'Entrega al Gremio'),
         right:'regresa '+WORLD.formatWorldTime(entry.activity.resolvesAtMinute)
       });
     }
@@ -2516,13 +2529,50 @@ function renderSimulationIntegrated(){
 function renderIntegratedWorld(){
   WORLD.normalizeState(state,DATA,DESIGN);
   renderWorldEvents();
+  if(FULL_PLAYTEST&&!state.city.founded){
+    const copy=document.querySelector('.foundation-card>p:not(.eyebrow)');
+    if(copy)copy.textContent='Partida de prueba Nv.1–3. Tu ciudad anterior se conserva por separado. Esta fundación y sus residentes quedan guardados al volver a este enlace.';
+  }
+  const live=document.getElementById('cityLiveClock');
+  if(live)live.textContent=WORLD.formatWorldTime(state.worldSystems.clockMinutes);
+  const recent=document.getElementById('cityRecentActivity');
+  if(recent){recent.replaceChildren();for(const e of state.worldSystems.chronology.events.slice(0,2))appendWorldRow(recent,{title:e.text});}
+  const overview=document.getElementById('townHallOverview');
+  if(overview){overview.replaceChildren();appendWorldRow(overview,{title:state.city.name+' · Nv. '+state.city.level,subtitle:'Desarrollo '+state.city.development.toFixed(2)+' · '+state.adventurers.length+' residentes'});
+    for(const [key,b] of Object.entries(state.buildings)){const cfg=DESIGN.buildings[key];if(cfg)appendWorldRow(overview,{title:cfg.name,subtitle:b.built===false?'Sin construir':'Nv. '+b.level});}
+    for(const [key,w] of Object.entries(state.workers))appendWorldRow(overview,{title:workerName(key)||w.profession||key,subtitle:w.currentJob?'En salida':w.restingAtInn?'Descansando':'En la ciudad'});}
+  const guests=document.getElementById('guildResidentList');
+  if(guests){guests.replaceChildren();for(const n of state.adventurers)appendWorldRow(guests,{title:n.fullName+' · '+n.role,subtitle:'Nv. '+n.level+' · '+n.status});}
+  const rewards=document.getElementById('guildReservedRewards');
+  if(rewards){rewards.replaceChildren();for(const m of state.worldSystems.guild.missions.filter(m=>m.status==='accepted'))appendWorldRow(rewards,{title:'Misión aceptada',subtitle:getAdventurer(m.acceptedBy)?.fullName||'',right:m.reward+' monedas reservadas'});if(!rewards.childElementCount)appendWorldRow(rewards,{title:'Sin recompensas comprometidas'});}
+  const gatherers=document.getElementById('innGathererRestPanel');
+  if(gatherers){gatherers.replaceChildren();for(const key of ['logger','hunter']){const w=state.workers[key];appendWorldRow(gatherers,{title:workerName(key)+' · Resistencia '+w.stamina+'/100',subtitle:w.restingAtInn?'Descansando':'Recuperación normal',button:{label:w.restingAtInn?'Volver al trabajo':'Descansar',dataset:{manageAction:'rest-worker',worker:key}}});}}
+  const voice=document.getElementById('mesonRealActivity');
+  if(voice){voice.replaceChildren();for(const e of state.worldSystems.chronology.events.filter(e=>['meson','combat-loss','combat-win','special-win','special-loss'].includes(e.type)).slice(0,8))appendWorldRow(voice,{title:e.text,subtitle:WORLD.formatWorldTime(e.atMinute)});}
   renderMesonIntegrated();
   renderTownHallIntegrated();
   renderGuildIntegrated();
   renderTextileIntegrated();
   renderMapIntegrated();
   renderProductionIntegrated();
+  for(const [key,id,kind] of [['mara','maraState','mine'],['logger','loggerState','wood'],['hunter','hunterState','hunt']]){
+    const worker=state.workers[key];
+    const status=worker.currentJob?'En salida':worker.escortMissionId?'Con escolta':worker.injuredUntil>state.worldSystems.clockMinutes?'Recuperándose':worker.restingAtInn?'Descansando':'Disponible';
+    const label=document.getElementById(id);
+    if(label)label.textContent=status;
+    const button=document.getElementById({mine:'mapMineOuting',wood:'mapWoodOuting',hunt:'mapHuntOuting'}[kind]);
+    if(button)button.disabled=status!=='Disponible'||worker.worldTool.durability<=0||(worker.stamina??100)<20;
+  }
+  for(const key of ['borin','eldon']){
+    const shop=key==='borin'?'smithy':'carpenter';
+    const busy=state.worldSystems.production.queue.some(j=>j.shop===shop);
+    const label=document.getElementById(key+'State');
+    if(label&&busy)label.textContent='Trabajando';
+    const trade=document.getElementById(shop+(key==='borin'?'Borin':'Eldon')+'State');
+    if(trade&&busy)trade.textContent='Trabajando';
+  }
   renderSimulationIntegrated();
+  if(globalThis.PG_MANAGEMENT_UI)PG_MANAGEMENT_UI.render(state,DESIGN,WORLD);
 }
 
 function advanceIntegratedWorld(minutes){
@@ -2583,7 +2633,7 @@ function buildTextileAction(){
   render();
 }
 
-function enqueueApprovedRecipe(recipeKey){
+function enqueueApprovedRecipe(recipeKey,quantity=1){
   const recipe=DESIGN.recipes[recipeKey];
   if(!recipe)return;
   let origin='neutral';
@@ -2594,7 +2644,7 @@ function enqueueApprovedRecipe(recipeKey){
       return;
     }
   }
-  const result=WORLD.enqueueRecipe(state,recipeKey,DESIGN,origin);
+  const result=WORLD.enqueueBatch(state,recipeKey,DESIGN,origin,quantity);
   const feedback=recipe.shop==='smithy'
     ?els.smithyWorldFeedback
     :(recipe.shop==='carpenter'?els.carpenterWorldFeedback:els.textileFeedback);
@@ -2606,14 +2656,10 @@ function enqueueApprovedRecipe(recipeKey){
 }
 
 function integratedWorkerOuting(kind){
-  const result=WORLD.workerOuting(state,kind,DESIGN,Math.random);
+  const result=WORLD.startWorkerOuting(state,kind,DESIGN);
   if(result.ok){
     syncCityFromIntegratedWorld();
-    const gained=Object.entries(result.gained).map(([k,v])=>(DESIGN.resources[k]?.name||k)+' +'+v).join(' · ');
-    els.mapOutingFeedback.textContent=gained+
-      (result.special?' · '+result.special:'')+
-      (result.escort?' · salida escoltada':'')+
-      (result.injured?' · trabajador herido':'');
+    els.mapOutingFeedback.textContent='Salida iniciada. El trabajador regresará con sus recursos.';
     saveState();
   }else{
     els.mapOutingFeedback.textContent=result.reason||'No se pudo realizar la salida.';
@@ -2816,14 +2862,17 @@ function resolveAdventurerActivity(){
 function render(){
   updateFoundationGate();
   if(els.localTestTools)els.localTestTools.hidden=!isLocalTestHost();
+  const simulationTools=document.getElementById('simulationTestTools');
+  if(simulationTools)simulationTools.hidden=!isLocalTestHost();
   if(els.manualCombatLab)els.manualCombatLab.hidden=!isLocalTestHost();
   const resetButton=document.getElementById('resetWorldBtn');
   if(resetButton)resetButton.hidden=!isLocalTestHost();
   WORLD.normalizeState(state,DATA,DESIGN);
+  if(WORLD.pulseActiveWorld(state,Date.now(),!document.hidden,WORLD_DEPS,DATA,DESIGN).advanced)saveState();
   resolveExpiredExpedition();
   resolveExpiredCraft();
   resolveExpiredCarpentry();
-  syncAllWorkerStamina();
+  // La Resistencia integrada avanza junto al reloj del mundo.
   if(LEGACY_SMITHY_TRAFFIC_ENABLED)tickSmithyTraffic();
 
   els.coins.textContent=formatNumber(state.resources.coins);
@@ -2843,7 +2892,7 @@ function render(){
   els.cityDevelopmentProgress.value=Math.min(state.city.development,els.cityDevelopmentProgress.max);
   els.cityPopulationSummary.textContent=`Aventureros ${activeResidents}/${residentLimit} · Mesón ${activeResidents}/${mesonCapacity}`;
   els.cityProgressHint.textContent=cityNext.maxed
-    ?'Nivel máximo disponible en v0.9.0g2. La población queda limitada a 5 residentes.'
+    ?'Tramo de prueba Nv.1–3 completo. Estos cinco residentes son el comienzo de tu población.'
     :`Faltan ${cityNext.remaining.toFixed(2)} de Desarrollo para Ciudad Nv. ${cityNext.level}. Expediciones, producción y mejoras hacen crecer la ciudad.`;
   els.smithyLevelCity.textContent=state.buildings.smithy.level;
   if(currentScreen()==='city')title.textContent=state.city.founded?state.city.name:'Nueva ciudad';
@@ -3237,8 +3286,9 @@ if(els.tanningActions)els.tanningActions.addEventListener('click',event=>{
   render();
 });
 
-document.querySelectorAll('[data-world-recipe]').forEach(button=>{
-  button.addEventListener('click',()=>enqueueApprovedRecipe(button.dataset.worldRecipe));
+document.addEventListener('click',event=>{
+  const button=event.target.closest('[data-world-recipe]');
+  if(button)enqueueApprovedRecipe(button.dataset.worldRecipe,Number(button.closest('.business-management')?.querySelector('[data-craft-quantity]')?.value)||1);
 });
 
 if(els.mapMineOuting)els.mapMineOuting.addEventListener('click',()=>integratedWorkerOuting('mine'));
@@ -3295,6 +3345,22 @@ document.getElementById('foundationCityName')?.addEventListener('keydown',event=
 });
 document.getElementById('resetWorldBtn')?.addEventListener('click',resetTestWorld);
 
+if(globalThis.PG_MANAGEMENT_UI)PG_MANAGEMENT_UI.init({
+  render,
+  policy(shop,policy){WORLD.setProductionPolicy(state,shop,policy);saveState();render();},
+  action(dataset,card){
+    if(dataset.manageAction==='rest-worker'){toggleInnRest(dataset.worker);return;}
+    if(dataset.manageAction==='sharpen-worker'){const out=WORLD.prepareWorkerTool(state,dataset.worker,DESIGN);const msg=document.querySelector('.screen.is-active .management-message');if(msg)msg.textContent=out.ok?'Herramienta preparada para una salida.':out.reason;if(out.ok)saveState();render();return;}
+    const price=Number(card?.querySelector('[data-product-price]')?.value);
+    const result=dataset.manageAction==='recycle'?WORLD.recycleProduct(state,dataset.product,DESIGN):WORLD.setProductSale(state,dataset.product,{price,listed:dataset.manageAction==='listing'?dataset.listed==='true':undefined},DESIGN);
+    if(result.ok)saveState();
+    let feedback=card?.querySelector('.management-feedback');
+    if(!feedback&&card){feedback=document.createElement('p');feedback.className='management-feedback';card.append(feedback);}
+    const message=document.querySelector('.screen.is-active .management-message');
+    if(message)message.textContent=result.ok?'Cambios guardados.':result.reason;
+    render();
+  }
+});
 setInterval(render,500);
 document.addEventListener('visibilitychange',()=>{
   if(!document.hidden){
@@ -3358,7 +3424,7 @@ if('serviceWorker' in navigator){
 
     window.addEventListener('load',async()=>{
       try{
-        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0g2',{updateViaCache:'none'});
+        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0g3',{updateViaCache:'none'});
         await reg.update();
       }catch{}
     });

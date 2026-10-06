@@ -74,7 +74,7 @@
   function weaponUpgradeBonus(adventurer,data){
     const role=data.adventurerRoles[adventurer.classKey]||{};
     const starter=Number(role.weaponDamage)||0;
-    const current=Number(adventurer.weaponDamage)||starter;
+    const current=adventurer.equipment?.weapon?.durability===0?starter:(Number(adventurer.weaponDamage)||starter);
     return Math.max(0,current-starter);
   }
 
@@ -87,7 +87,7 @@
 
     const level=Math.max(1,Math.floor(Number(adventurer.level)||1));
     const levelBonus=(level-1)*.08;
-    const weaponBonus=weaponUpgradeBonus(adventurer,data);
+    const weaponBonus=weaponUpgradeBonus(adventurer,data)+(Number(adventurer.combatMods?.attackBonus)||0);
 
     const pressure=GROUP_PRESSURE[enemyKey]?.[safeCount]||GROUP_PRESSURE[enemyKey]?.[1]||{
       lossMultiplier:1,winPenalty:0,manaMultiplier:1
@@ -153,6 +153,10 @@
       const previousHpMax=adventurer.hpMax;
       const previousManaMax=adventurer.manaMax;
       const stats=statsForLevel(data,adventurer.classKey,adventurer.level);
+      for(const eq of Object.values(adventurer.equipment||{})){
+        if(!eq||eq.founder||eq.durability===0)continue;
+        for(const key of ['attack','defense','initiative','mana'])stats[key]+=Number(eq[key])||0;
+      }
 
       adventurer.stats=stats;
       adventurer.hpMax=stats.hp;

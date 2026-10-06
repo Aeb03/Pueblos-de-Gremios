@@ -46,6 +46,7 @@
   };
 
   const equipment={
+    legacySword:{id:'legacySword',name:'Espada conservada',shop:'smithy',slot:'weapon',classes:['warrior','explorer']},
     dagger:{id:'dagger',name:'Daga de hierro',shop:'smithy',slot:'weapon',price:24,durability:9,attack:2,classes:['explorer']},
     huntingKnife:{id:'huntingKnife',name:'Cuchillo de caza',shop:'smithy',slot:'tool',price:18,durability:10},
     huntingBow:{id:'huntingBow',name:'Arco de caza',shop:'carpenter',slot:'weapon',price:28,durability:9,attack:3,initiative:1,classes:['explorer']},
@@ -84,7 +85,8 @@
     tannedHide:{id:'tannedHide',name:'Cuero curtido',shop:'textile',rawOrigin:true,durationSec:12,outputQty:1},
     leatherProtection:{id:'leatherProtection',name:'Protección ligera',shop:'textile',tannedHide:3,materials:{tendon:1},durationSec:28,outputQty:1,referencePrice:24},
     leatherGloves:{id:'leatherGloves',name:'Guantes',shop:'textile',tannedHide:1,durationSec:15,outputQty:1,referencePrice:12},
-    leatherBoots:{id:'leatherBoots',name:'Botas',shop:'textile',tannedHide:1,durationSec:15,outputQty:1,referencePrice:12}
+    leatherBoots:{id:'leatherBoots',name:'Botas',shop:'textile',tannedHide:1,durationSec:15,outputQty:1,referencePrice:12},
+    leatherStraps:{id:'leatherStraps',name:'Correas de cuero',shop:'textile',tannedHide:1,durationSec:15,outputQty:1,referencePrice:6}
   };
 
   const services={
