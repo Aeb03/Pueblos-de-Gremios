@@ -57,8 +57,8 @@
   };
 
   const recipes={
-    nails:{id:'nails',name:'Clavos · lote de 8',shop:'smithy',materials:{iron:1,firewood:1},durationSec:10,outputQty:8,referencePrice:8},
-    arrowheads:{id:'arrowheads',name:'Puntas de flecha · lote de 6',shop:'smithy',materials:{iron:2,firewood:1},durationSec:12,outputQty:6,referencePrice:10},
+    nails:{id:'nails',name:'Clavos · lote de 8',shop:'smithy',materials:{iron:1,firewood:1},durationSec:10,outputQty:1,referencePrice:8},
+    arrowheads:{id:'arrowheads',name:'Puntas de flecha · lote de 6',shop:'smithy',materials:{iron:2,firewood:1},durationSec:12,outputQty:1,referencePrice:10},
     pickaxeHead:{id:'pickaxeHead',name:'Cabeza de pico',shop:'smithy',materials:{iron:4,firewood:1},durationSec:18,outputQty:1,referencePrice:14},
     axeHead:{id:'axeHead',name:'Cabeza de hacha',shop:'smithy',materials:{iron:4,firewood:1},durationSec:18,outputQty:1,referencePrice:14},
     ironPickaxe:{id:'ironPickaxe',name:'Pico de hierro',shop:'smithy',components:{pickaxeHead:1,toolHandle:1},durationSec:10,outputQty:1,referencePrice:28},
@@ -68,7 +68,7 @@
     scissors:{id:'scissors',name:'Tijeras',shop:'smithy',materials:{iron:2,firewood:1},durationSec:16,outputQty:1,referencePrice:18},
     toolHandle:{id:'toolHandle',name:'Mango de herramienta',shop:'carpenter',materials:{wood:2},durationSec:10,outputQty:1,referencePrice:6},
     huntingBow:{id:'huntingBow',name:'Arco de caza',shop:'carpenter',materials:{wood:4,tendon:2},durationSec:25,outputQty:1,referencePrice:28},
-    arrowBundle:{id:'arrowBundle',name:'Haz de 12 flechas',shop:'carpenter',components:{arrowheads:12},materials:{wood:2},durationSec:18,outputQty:12,referencePrice:16},
+    arrowBundle:{id:'arrowBundle',name:'Haz de 12 flechas',shop:'carpenter',components:{arrowheads:2},materials:{wood:2},durationSec:18,outputQty:1,referencePrice:16},
     simpleStaff:{id:'simpleStaff',name:'Bastón simple',shop:'carpenter',materials:{wood:3},durationSec:18,outputQty:1,referencePrice:26},
     woodenShield:{id:'woodenShield',name:'Escudo de madera',shop:'carpenter',materials:{wood:4},components:{nails:1},durationSec:22,outputQty:1,referencePrice:22},
     tannedHide:{id:'tannedHide',name:'Cuero curtido',shop:'textile',rawOrigin:true,durationSec:12,outputQty:1},
