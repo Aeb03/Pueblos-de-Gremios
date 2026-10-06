@@ -2079,7 +2079,7 @@ function renderFoundingAdventurers(){
   });
 }
 
-const WORLD_DEPS={COMBAT};
+const WORLD_DEPS={COMBAT,CITY};
 
 function addWorldEvent(type,text,meta={}){
   if(!state.worldSystems?.chronology)return;
