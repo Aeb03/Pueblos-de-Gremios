@@ -487,7 +487,7 @@
     if(!consumeRecipeMaterials(state,recipe,origin,design))return {ok:false,reason:'Faltan materiales o componentes'};
 
     const quality=productQuality(rng);
-    if(design.equipment[recipeKey]){
+    if(design.equipment[recipeKey]&&Array.isArray(state.worldSystems.production.goods[recipeKey])){
       const product=craftEquipmentObject(recipeKey,origin,quality,design);
       state.worldSystems.production.goods[recipeKey].push(product);
       if(recipe.shop==='textile'){
@@ -509,7 +509,7 @@
     if(!recipe)return {ok:false,reason:'Receta inexistente'};
     const quality=productQuality(rng);
 
-    if(design.equipment[job.recipeKey]){
+    if(design.equipment[job.recipeKey]&&Array.isArray(state.worldSystems.production.goods[job.recipeKey])){
       const product=craftEquipmentObject(job.recipeKey,job.origin||'neutral',quality,design);
       state.worldSystems.production.goods[job.recipeKey].push(product);
       if(recipe.shop==='textile'){
