@@ -2014,6 +2014,454 @@ function renderFoundingAdventurers(){
   });
 }
 
+const WORLD_DEPS={COMBAT};
+
+function addWorldEvent(type,text,meta={}){
+  if(!state.worldSystems?.chronology)return;
+  state.worldSystems.chronology.events.unshift({
+    id:createActionId(),
+    atMinute:state.worldSystems.clockMinutes||0,
+    day:state.worldSystems.day||1,
+    type,
+    text,
+    meta
+  });
+  state.worldSystems.chronology.events=state.worldSystems.chronology.events.slice(0,80);
+}
+
+function syncCityFromIntegratedWorld(){
+  const previousLevel=Number(state.city.level)||1;
+  state.city=CITY.normalizeCityProgress(state.city);
+  const currentLevel=Number(state.city.level)||1;
+
+  if(currentLevel>previousLevel){
+    for(let level=previousLevel+1;level<=currentLevel;level++){
+      state.city.levelReachedAt[level]=state.city.levelReachedAt[level]||Date.now();
+      addWorldEvent('city-level','La ciudad alcanzó Nv. '+level+'.');
+    }
+  }
+
+  const arrivals=reconcileCityPopulation();
+  for(const npc of arrivals){
+    addWorldEvent('arrival',npc.fullName+' llegó a la ciudad como '+npc.role+'.',{adventurerId:npc.id});
+  }
+}
+
+function worldEventClass(type){
+  if(['combat-loss','city-attack','threat','special-loss'].includes(type))return 'is-danger';
+  if(['mission-accept','queue','worker-outing','escort'].includes(type))return 'is-warning';
+  if(['combat-win','special-win','craft','loot','meson','repair','building','arrival','city-level'].includes(type))return 'is-good';
+  return '';
+}
+
+function appendWorldRow(container,{title,subtitle='',right='',className='',button=null}){
+  if(!container)return null;
+  const row=document.createElement('div');
+  row.className='world-event-row '+className;
+
+  const left=document.createElement('span');
+  const strong=document.createElement('strong');
+  strong.textContent=title;
+  left.append(strong);
+  if(subtitle){
+    const small=document.createElement('small');
+    small.textContent=subtitle;
+    left.append(small);
+  }
+
+  const rightWrap=document.createElement('span');
+  rightWrap.className='event-right';
+  if(right){
+    const r=document.createElement('strong');
+    r.textContent=right;
+    rightWrap.append(r);
+  }
+  if(button){
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='small-action';
+    b.textContent=button.label;
+    if(button.dataset){
+      for(const [key,value] of Object.entries(button.dataset))b.dataset[key]=value;
+    }
+    rightWrap.append(b);
+  }
+
+  row.append(left,rightWrap);
+  container.append(row);
+  return row;
+}
+
+function renderWorldEvents(){
+  if(!els.worldEventList)return;
+  els.worldEventList.replaceChildren();
+  const events=state.worldSystems.chronology.events.slice(0,12);
+  if(!events.length){
+    appendWorldRow(els.worldEventList,{title:'Todavía no hay acontecimientos',subtitle:'Avanzá el mundo desde Menú para iniciar la simulación.'});
+    return;
+  }
+  for(const event of events){
+    appendWorldRow(els.worldEventList,{
+      title:event.text,
+      subtitle:WORLD.formatWorldTime(event.atMinute),
+      right:event.type,
+      className:worldEventClass(event.type)
+    });
+  }
+}
+
+function renderMesonIntegrated(){
+  if(!els.mesonAdventurerList)return;
+  const meson=state.worldSystems.meson;
+  const total=meson.platesSold+meson.rationsSold+meson.restsSold+meson.lodgingSold;
+  els.mesonServiceSummary.textContent=total+' servicios';
+  els.mesonAdventurerList.replaceChildren();
+
+  for(const npc of state.adventurers){
+    const need=WORLD.recoveryNeed(npc,DESIGN);
+    const reason=npc.hpCurrent<=0
+      ?'Incapacitado'
+      :(need.needsRest?'Necesita recuperación':(need.moderate?'Desgaste moderado':'Preparado'));
+    appendWorldRow(els.mesonAdventurerList,{
+      title:npc.fullName+' · '+reason,
+      subtitle:'PV '+npc.hpCurrent+'/'+npc.hpMax+' · Maná '+npc.manaCurrent+'/'+npc.manaMax+
+        (npc.rationPrepared?' · Ración preparada':''),
+      right:'🪙 '+formatNumber(npc.coins)
+    });
+  }
+}
+
+function renderTownHallIntegrated(){
+  if(!els.townHallCoins)return;
+  const snap=WORLD.townHallSnapshot(state,DESIGN);
+  els.townHallCityLevel.textContent='Ciudad Nv. '+snap.cityLevel;
+  els.townHallCoins.textContent=formatNumber(snap.coins);
+  els.townHallReserved.textContent=formatNumber(snap.reserved);
+  els.townHallAvailable.textContent=formatNumber(snap.available);
+  els.townHallDevelopment.textContent=Number(snap.development).toFixed(2);
+  els.townHallEra.textContent=snap.season.id;
+  els.townHallDiamonds.textContent=formatNumber(snap.season.diamonds||0);
+
+  els.townHallAlerts.replaceChildren();
+  if(!snap.alerts.length){
+    appendWorldRow(els.townHallAlerts,{title:'Sin alertas críticas',subtitle:'La ciudad funciona dentro de parámetros normales.',className:'is-good'});
+  }else{
+    for(const alert of snap.alerts){
+      appendWorldRow(els.townHallAlerts,{
+        title:alert.text,
+        subtitle:alert.type,
+        className:alert.severity==='critical'||alert.severity==='imminent'?'is-danger':'is-warning'
+      });
+    }
+  }
+}
+
+function missionStatusLabel(status){
+  return {
+    open:'Publicada',
+    accepted:'Aceptada',
+    completed:'Completada',
+    failed:'Fallida'
+  }[status]||status;
+}
+
+function updateGuildRewardHint(){
+  if(!els.guildEnemySelect||!els.guildRewardInput)return;
+  const enemyKey=els.guildEnemySelect.value||'wolf';
+  const maxCount=enemyKey==='wolf'?3:2;
+  let count=Math.max(1,Math.floor(Number(els.guildEnemyCount.value)||1));
+  count=Math.min(count,maxCount);
+  els.guildEnemyCount.value=String(count);
+  Array.from(els.guildEnemyCount.options).forEach(option=>{
+    option.disabled=Number(option.value)>maxCount;
+  });
+  const reference=(DESIGN.mission.baseRewards[enemyKey]||6)*count;
+  const min=Math.ceil(reference*DESIGN.mission.manualValueRange[0]);
+  const max=Math.floor(reference*DESIGN.mission.manualValueRange[1]);
+  els.guildRewardHint.textContent='Recomendado '+reference+' · permitido '+min+'–'+max+' monedas.';
+  if(document.activeElement!==els.guildRewardInput){
+    els.guildRewardInput.value=String(reference);
+  }
+}
+
+function renderGuildIntegrated(){
+  if(!els.guildMissionList)return;
+  updateGuildRewardHint();
+  const missions=state.worldSystems.guild.missions;
+  const active=missions.filter(m=>m.status==='open'||m.status==='accepted');
+  const slots=state.buildings.guildHall?.missionSlots||DESIGN.mission.startingConcurrent;
+  els.guildMissionCount.textContent=active.length+'/'+slots;
+  els.guildMissionList.replaceChildren();
+
+  if(!missions.length){
+    appendWorldRow(els.guildMissionList,{title:'Tablón vacío',subtitle:'Publicá una misión de control para crear una oportunidad real.'});
+    return;
+  }
+
+  for(const mission of missions.slice(0,12)){
+    const enemy=DESIGN.enemies[mission.enemyKey];
+    const npc=mission.acceptedBy?getAdventurer(mission.acceptedBy):null;
+    const subtitle=[
+      mission.count+'× '+(enemy?.name||mission.enemyKey),
+      '🪙 '+mission.reward,
+      npc?'Aceptada por '+npc.fullName:''
+    ].filter(Boolean).join(' · ');
+
+    appendWorldRow(els.guildMissionList,{
+      title:mission.id+' · '+missionStatusLabel(mission.status),
+      subtitle,
+      right:mission.status==='open'?(mission.active?'Activa':'Pausada'):'',
+      className:mission.status==='completed'?'is-good':mission.status==='failed'?'is-danger':'',
+      button:mission.status==='open'
+        ?{label:mission.active?'Pausar':'Activar',dataset:{missionToggle:mission.id}}
+        :null
+    });
+  }
+}
+
+function rawOriginQty(origin){
+  const cfg=DESIGN.materialOrigins[origin];
+  return cfg?Number(state.resources[cfg.raw]||0):0;
+}
+
+function tannedOriginQty(origin){
+  const cfg=DESIGN.materialOrigins[origin];
+  return cfg?Number(state.resources[cfg.tanned]||0):0;
+}
+
+function renderTextileIntegrated(){
+  if(!els.textileBadge)return;
+  const textile=state.worldSystems.textile;
+  const unlocked=(state.city.level||1)>=DESIGN.buildings.textile.unlockCityLevel;
+  els.cityTextileButton.hidden=!unlocked&&!textile.built;
+  els.cityTextileLevel.textContent=textile.built?'Nv. 1':(unlocked?'Construir':'Bloqueada');
+
+  els.textileBadge.textContent=textile.built
+    ?'Textilería · Nv. 1'
+    :(unlocked?'Textilería · Disponible':'Textilería · Requiere Ciudad Nv. 2');
+  els.textileBuildPanel.hidden=textile.built;
+  els.textileProductionPanel.hidden=!textile.built;
+
+  if(!textile.built){
+    const stock=state.worldSystems.production.stock;
+    const cost=DESIGN.buildings.textile.buildCost;
+    const ready=WORLD.availableTreasury(state)>=cost.coins&&
+      (state.resources.wood||0)>=cost.wood&&
+      (state.resources.stone||0)>=cost.stone&&
+      (stock.nails||0)>=cost.nails&&
+      (stock.scissors||0)>=cost.scissors&&unlocked;
+    els.buildTextile.disabled=!ready;
+  }
+
+  if(!textile.built)return;
+
+  els.tanningActions.replaceChildren();
+  const origins=Object.keys(DESIGN.materialOrigins);
+  for(const origin of origins){
+    const cfg=DESIGN.materialOrigins[origin];
+    const raw=rawOriginQty(origin);
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='small-action';
+    b.dataset.tanOrigin=origin;
+    b.disabled=raw<1;
+    b.textContent=cfg.label+' · piel '+raw;
+    els.tanningActions.append(b);
+  }
+
+  const totalTanned=origins.reduce((sum,o)=>sum+tannedOriginQty(o),0);
+  els.tannedStockSummary.textContent=totalTanned+' cueros';
+
+  const previous=els.textileOriginSelect.value;
+  els.textileOriginSelect.replaceChildren();
+  for(const origin of origins){
+    const qty=tannedOriginQty(origin);
+    if(qty<=0)continue;
+    const option=document.createElement('option');
+    option.value=origin;
+    option.textContent=DESIGN.materialOrigins[origin].label+' · '+qty+' cuero';
+    els.textileOriginSelect.append(option);
+  }
+  if(Array.from(els.textileOriginSelect.options).some(o=>o.value===previous)){
+    els.textileOriginSelect.value=previous;
+  }
+
+  els.textileStockList.replaceChildren();
+  const goods=state.worldSystems.production.goods;
+  let any=false;
+  for(const key of ['leatherProtection','leatherGloves','leatherBoots']){
+    for(const product of goods[key]||[]){
+      any=true;
+      appendWorldRow(els.textileStockList,{
+        title:product.name,
+        subtitle:product.qualityLabel+' · Dur. '+product.durability+'/'+product.maxDurability,
+        right:'🪙 '+product.salePrice
+      });
+    }
+  }
+  if(!any)appendWorldRow(els.textileStockList,{title:'Sin productos terminados',subtitle:'Curtí pieles y poné trabajos en cola.'});
+}
+
+function renderMapIntegrated(){
+  if(!els.mapWorldTime)return;
+  const snap=WORLD.mapSnapshot(state,DESIGN);
+  els.mapWorldTime.textContent=WORLD.formatWorldTime(state.worldSystems.clockMinutes);
+  els.wolfPresence.textContent=Math.round(snap.presence.wolf.value)+'/100 · '+snap.presence.wolf.band.label;
+  els.wolfPresenceProgress.value=snap.presence.wolf.value;
+  els.boarPresence.textContent=Math.round(snap.presence.boar.value)+'/100 · '+snap.presence.boar.band.label;
+  els.boarPresenceProgress.value=snap.presence.boar.value;
+
+  els.mapZoneList.replaceChildren();
+  for(const zone of snap.zones){
+    appendWorldRow(els.mapZoneList,{
+      title:zone.name,
+      subtitle:zone.kind+' · distancia '+zone.distance+(zone.requires?' · requiere '+zone.requires:''),
+      right:zone.enemy?(DESIGN.enemies[zone.enemy]?.name||zone.enemy):''
+    });
+  }
+
+  els.mapActiveAdventurers.replaceChildren();
+  if(!snap.activeAdventurers.length){
+    appendWorldRow(els.mapActiveAdventurers,{title:'Todos en la ciudad',subtitle:'Nadie está resolviendo una salida ahora mismo.'});
+  }else{
+    for(const entry of snap.activeAdventurers){
+      const enemy=DESIGN.enemies[entry.activity.enemyKey];
+      appendWorldRow(els.mapActiveAdventurers,{
+        title:entry.name,
+        subtitle:entry.activity.kind+' · '+entry.activity.count+'× '+(enemy?.name||entry.activity.enemyKey),
+        right:'regresa '+WORLD.formatWorldTime(entry.activity.resolvesAtMinute)
+      });
+    }
+  }
+}
+
+function renderProductionIntegrated(){
+  if(els.smithyWorldQueue){
+    const queue=state.worldSystems.production.queue;
+    els.smithyWorldQueue.textContent='Cola '+queue.filter(j=>j.shop==='smithy').length+'/5';
+    els.carpenterWorldQueue.textContent='Cola '+queue.filter(j=>j.shop==='carpenter').length+'/5';
+  }
+
+  if(els.worldResourceGrid){
+    els.worldResourceGrid.replaceChildren();
+    const keys=['firewood','meat','skin','tendon','wolfSkin','boarSkin','alphaWolfSkin','greatBoarSkin'];
+    for(const key of keys){
+      const item=DESIGN.resources[key];
+      const div=document.createElement('div');
+      const label=document.createElement('span');
+      const value=document.createElement('strong');
+      label.textContent=item?.name||key;
+      value.textContent=String(Math.round((state.resources[key]||0)*100)/100);
+      div.append(label,value);
+      els.worldResourceGrid.append(div);
+    }
+  }
+
+  if(els.worldProductionStock){
+    els.worldProductionStock.replaceChildren();
+    const stock=state.worldSystems.production.stock;
+    for(const key of ['nails','arrowheads','pickaxeHead','axeHead','ironPickaxe','workAxe','huntingKnife','scissors','toolHandle','arrowBundle']){
+      const qty=stock[key]||0;
+      const div=document.createElement('div');
+      const label=document.createElement('span');
+      const value=document.createElement('strong');
+      label.textContent=DESIGN.recipes[key]?.name||key;
+      value.textContent=String(qty);
+      div.append(label,value);
+      els.worldProductionStock.append(div);
+    }
+  }
+}
+
+function renderSimulationIntegrated(){
+  if(!els.simulationClock)return;
+  els.simulationClock.textContent=WORLD.formatWorldTime(state.worldSystems.clockMinutes);
+  els.simulationEventCount.textContent=state.worldSystems.chronology.events.length+' eventos';
+  els.worldClockKingdom.textContent=WORLD.formatWorldTime(state.worldSystems.clockMinutes);
+}
+
+function renderIntegratedWorld(){
+  WORLD.normalizeState(state,DATA,DESIGN);
+  renderWorldEvents();
+  renderMesonIntegrated();
+  renderTownHallIntegrated();
+  renderGuildIntegrated();
+  renderTextileIntegrated();
+  renderMapIntegrated();
+  renderProductionIntegrated();
+  renderSimulationIntegrated();
+}
+
+function advanceIntegratedWorld(minutes){
+  if(!state.city.founded){
+    if(els.simulationFeedback)els.simulationFeedback.textContent='Primero fundá la ciudad.';
+    return;
+  }
+  const result=WORLD.advanceWorld(state,minutes,WORLD_DEPS,DATA,DESIGN,Math.random);
+  syncCityFromIntegratedWorld();
+  saveState();
+  if(els.simulationFeedback){
+    const last=result.events[0]?.text||'El mundo avanzó sin novedades importantes.';
+    els.simulationFeedback.textContent='Avanzaron '+result.minutes+' min. '+last;
+  }
+  render();
+}
+
+function publishGuildMissionAction(){
+  const enemyKey=els.guildEnemySelect.value||'wolf';
+  const count=Math.max(1,Math.floor(Number(els.guildEnemyCount.value)||1));
+  const reward=Math.max(1,Math.round(Number(els.guildRewardInput.value)||1));
+  const result=WORLD.publishHuntMission(state,{enemyKey,count,reward},DESIGN);
+  els.guildFeedback.textContent=result.ok?'Misión publicada. Los aventureros decidirán si la aceptan.':result.reason;
+  if(result.ok)saveState();
+  render();
+}
+
+function buildTextileAction(){
+  const result=WORLD.buildTextile(state,DESIGN);
+  els.textileFeedback.textContent=result.ok?'Textilería construida.':result.reason;
+  if(result.ok){
+    syncCityFromIntegratedWorld();
+    saveState();
+  }
+  render();
+}
+
+function enqueueApprovedRecipe(recipeKey){
+  const recipe=DESIGN.recipes[recipeKey];
+  if(!recipe)return;
+  let origin='neutral';
+  if(recipe.shop==='textile'){
+    origin=els.textileOriginSelect?.value||'neutral';
+    if(!els.textileOriginSelect?.options.length){
+      els.textileFeedback.textContent='No hay cuero curtido disponible.';
+      return;
+    }
+  }
+  const result=WORLD.enqueueRecipe(state,recipeKey,DESIGN,origin);
+  const feedback=recipe.shop==='smithy'
+    ?els.smithyWorldFeedback
+    :(recipe.shop==='carpenter'?els.carpenterWorldFeedback:els.textileFeedback);
+  if(feedback)feedback.textContent=result.ok
+    ?recipe.name+' agregado a la cola. Materiales reservados.'
+    :result.reason;
+  if(result.ok)saveState();
+  render();
+}
+
+function integratedWorkerOuting(kind){
+  const result=WORLD.workerOuting(state,kind,DESIGN,Math.random);
+  if(result.ok){
+    syncCityFromIntegratedWorld();
+    const gained=Object.entries(result.gained).map(([k,v])=>(DESIGN.resources[k]?.name||k)+' +'+v).join(' · ');
+    els.mapOutingFeedback.textContent=gained+(result.escort?' · salida escoltada':'')+(result.injured?' · trabajador herido':'');
+    saveState();
+  }else{
+    els.mapOutingFeedback.textContent=result.reason||'No se pudo realizar la salida.';
+  }
+  render();
+}
+
 let activityAdventurerSignature='';
 
 function selectedActivityAdventurer(){
