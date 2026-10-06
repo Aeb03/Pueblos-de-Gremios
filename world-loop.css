@@ -29,3 +29,10 @@
 .world-summary-strip>span{white-space:nowrap;padding:6px 8px;border:1px solid #443626;border-radius:999px;background:#17130f;font-size:.72rem}
 #manualCombatLab[hidden]{display:none!important}
 @media(max-width:390px){.production-grid{grid-template-columns:1fr}}
+
+/* El prototipo viejo queda en DOM sólo por compatibilidad con la migración;
+   la experiencia v0.9.0g1 usa el catálogo aprobado integrado. */
+.screen[data-screen="smithy"]>.smithy-tabs,
+.screen[data-screen="smithy"]>.smithy-tab-panel,
+.screen[data-screen="carpenter"]>.recipe-card{display:none!important}
+.approved-production-panel{display:grid;gap:10px}
