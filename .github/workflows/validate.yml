@@ -85,15 +85,15 @@ jobs:
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest OK')"
       - name: Check version wiring
         run: |
-          grep -q "v0.9.1d" index.html
-          grep -q "pueblos-gremios-v0.9.1d" sw.js
-          grep -q "game-data.js?v=0.9.1d" index.html
-          grep -q "adventurer-core.js?v=0.9.1d" index.html
-          grep -q "city-progression.js?v=0.9.1d" index.html
-          grep -q "activity-combat.js?v=0.9.1d" index.html
-          grep -q "activity.css?v=0.9.1d" index.html
-          grep -q "app.js?v=0.9.1d" index.html
-          grep -q "styles.css?v=0.9.1d" index.html
+          grep -q "v0.9.2a" index.html
+          grep -q "pueblos-gremios-v0.9.2a" sw.js
+          grep -q "game-data.js?v=0.9.2a" index.html
+          grep -q "adventurer-core.js?v=0.9.2a" index.html
+          grep -q "city-progression.js?v=0.9.2a" index.html
+          grep -q "activity-combat.js?v=0.9.2a" index.html
+          grep -q "activity.css?v=0.9.2a" index.html
+          grep -q "app.js?v=0.9.2a" index.html
+          grep -q "styles.css?v=0.9.2a" index.html
           grep -q "MAIN_SAVE_KEY='pueblos-gremios-save-v0.8.0'" app.js
       - name: Check foundation cycle
         run: |

@@ -898,7 +898,7 @@
       (product.mana||0)*.15+(product.damageReduction||0)*30+(Number(product.quality)||50)*.01;
   }
 
-  function productForNeed(state,npc,design){
+  function productForNeed(state,npc,design,ignoreBudget=false){
     const goods=state.worldSystems.production.goods;
     const candidates=[];
     for(const [key,list] of Object.entries(goods)){
@@ -915,7 +915,7 @@
     }
     candidates.sort((a,b)=>b.upgrade-a.upgrade||productScore(b.product)-productScore(a.product));
     const reserve=design.services.rest.price+(npc.personalityKey==='frugal'?12:2);
-    return candidates.find(c=>npc.coins>=c.product.salePrice+reserve)||null;
+    return (ignoreBudget?candidates[0]:candidates.find(c=>npc.coins>=c.product.salePrice+reserve))||null;
   }
 
   function equipPurchased(npc,product){
@@ -945,9 +945,12 @@
     spendNpc(npc,'gear',price);
     state.resources.coins+=price;
     state.worldSystems.market.salesRevenue+=price;
+    const previousStats=clone(npc.stats);
     equipPurchased(npc,found.product);
+    const statDelta=Object.fromEntries(['attack','defense','initiative','mana'].map(k=>[k,(npc.stats[k]||0)-(previousStats[k]||0)]));
+    const changeText=Object.entries(statDelta).filter(([,v])=>v).map(([k,v])=>({attack:'Ataque',defense:'Defensa',initiative:'Iniciativa',mana:'Maná'}[k])+' '+(v>0?'+':'')+v).join(', ');
     found.list.splice(found.list.indexOf(found.product),1);
-    logEvent(state,'market',npc.fullName+' compró '+found.product.name+' por '+price+' monedas.',{adventurerId:npc.id,shop:found.product.ownerShop||design.equipment[found.product.catalogId]?.shop});
+    logEvent(state,'market',npc.fullName+' compró '+found.product.name+' por '+price+' monedas.'+(changeText?' '+changeText+'.':''),{adventurerId:npc.id,shop:found.product.ownerShop||design.equipment[found.product.catalogId]?.shop,product:found.product.name,statDelta,price});
     return true;
   }
 
@@ -2088,6 +2091,22 @@
     };
   }
 
+  function adventurerInsight(state,npc,design){
+    const needs=[],activity=npc.autonomy?.currentActivity,need=recoveryNeed(npc,design);
+    const add=(title,text,target)=>needs.push({title,text,target});
+    if(activity?.kind==='recovery')add('Se está recuperando','Está alojado en el Mesón; volverá a estar disponible al completar su recuperación.','inn');
+    else if(need.needsRest)add('Necesita descanso','Vida '+npc.hpCurrent+'/'+npc.hpMax+' · Maná '+npc.manaCurrent+'/'+npc.manaMax+'. '+(npc.coins>=design.services.rest.price?'Puede pagar el descanso de '+design.services.rest.price+' monedas.':'No puede pagar el descanso rápido; el Mesón ofrece convalecencia lenta.'),'inn');
+    else if(need.moderate)add('Le vendría bien un plato','Tiene desgaste moderado. '+((state.worldSystems.production.stock.simpleMeal||0)<1?'La cocina no tiene platos preparados.':npc.coins<design.food.simpleMeal.price?'Le faltan monedas para un plato de '+design.food.simpleMeal.price+'.':'Hay platos disponibles a '+design.food.simpleMeal.price+' monedas.'),'inn');
+    for(const eq of Object.values(npc.equipment||{}).filter(e=>e&&e.maxDurability>0&&e.durability/e.maxDurability<=.4).slice(0,2)){
+      const price=repairPrice(eq),shop=eq.ownerShop||design.equipment[eq.catalogId]?.shop||'smithy';
+      add(eq.durability===0?'Equipo roto':'Necesita reparación',eq.name+' · Durabilidad '+eq.durability+'/'+eq.maxDurability+'. Reparar cuesta '+price+' monedas; '+(npc.coins>=price?'puede pagarlo.':'le faltan '+(price-npc.coins)+' monedas.'),shop);
+    }
+    if(needs.length<3){const offer=productForNeed(state,npc,design,true);if(offer){const reserve=design.services.rest.price+(npc.personalityKey==='frugal'?12:2),missing=Math.max(0,offer.product.salePrice+reserve-npc.coins);add('Hay una mejora a la venta',offer.product.name+' · '+offer.product.salePrice+' monedas. '+(missing?'Le faltan '+missing+' monedas conservando su reserva para servicios.':'Puede comprarla conservando su reserva para servicios.'),offer.product.ownerShop||offer.item.shop);}}
+    if(!needs.length)add('Listo para nuevas oportunidades','Tiene Vida, Maná y equipo funcionales. Decide sus salidas según peligro, recompensa y personalidad.','guildHall');
+    const events=[...(state.worldSystems.chronology.highlights||[]),...state.worldSystems.chronology.events].filter(e=>e.meta?.adventurerId===npc.id||e.meta?.members?.includes(npc.id)||(!e.meta?.adventurerId&&e.text.includes(npc.fullName))).filter((e,i,list)=>list.findIndex(x=>x.id===e.id)===i).sort((a,b)=>b.atMinute-a.atMinute).slice(0,6);
+    return {needs:needs.slice(0,3),activity:activity?{kind:activity.kind,enemy:design.enemies[activity.enemyKey]?.name||'',members:activity.members||[]}:null,events};
+  }
+
   function formatWorldTime(minutes,showSeconds=false){
     const total=Math.max(0,Math.floor(Number(minutes)||0));
     const day=1+Math.floor(total/(24*60));
@@ -2098,6 +2117,7 @@
   }
 
   return {
+    adventurerInsight,
     WORLD_LOOP_SCHEMA_VERSION,
     TICK_MINUTES,
     normalizeState,
