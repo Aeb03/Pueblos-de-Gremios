@@ -33,8 +33,8 @@
   };
 
   const food={
-    simpleMeal:{id:'simpleMeal',name:'Plato sencillo',price:2,meat:1,firewood:1,hpRestore:.08,manaRestore:.10},
-    travelRation:{id:'travelRation',name:'Ración de viaje',price:3,meat:1,firewood:1,hpProtection:.08,manaProtection:.05}
+    simpleMeal:{id:'simpleMeal',name:'Plato sencillo',price:4,meat:1,firewood:1,hpRestore:.08,manaRestore:.10},
+    travelRation:{id:'travelRation',name:'Ración de viaje',price:5,meat:1,firewood:1,hpProtection:.08,manaProtection:.05}
   };
 
   const materialOrigins={
