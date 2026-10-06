@@ -15,10 +15,13 @@ jobs:
           node --check adventurer-core.js
           node --check city-progression.js
           node --check activity-combat.js
+          node --check world-design-data.js
+          node --check world-loop.js
           node --check app.js
           node --check tools/test-adventurer-core.js
           node --check tools/test-city-progression.js
           node --check tools/test-activity-combat.js
+          node --check tools/test-world-loop.js
           node --check tools/balance-sim.js
           node --check tools/world-sim.js
           node --check tools/sim/world-config.js
@@ -32,6 +35,9 @@ jobs:
 
       - name: Check activity combat
         run: node tools/test-activity-combat.js
+
+      - name: Check integrated world loop
+        run: node tools/test-world-loop.js
 
       - name: Check balance simulators
         run: |
@@ -48,6 +54,9 @@ jobs:
           test -f city-progression.js
           test -f activity-combat.js
           test -f activity.css
+          test -f world-loop.css
+          test -f world-design-data.js
+          test -f world-loop.js
           test -f manifest.webmanifest
           test -f sw.js
           test -f icons/icon.svg
@@ -55,8 +64,8 @@ jobs:
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest OK')"
       - name: Check version wiring
         run: |
-          grep -q "v0.9.0c1" index.html
-          grep -q "pueblos-gremios-v0.9.0c1" sw.js
+          grep -q "v0.9.0g1" index.html
+          grep -q "pueblos-gremios-v0.9.0g1" sw.js
           grep -q "game-data.js?v=0.9.0c1" index.html
           grep -q "adventurer-core.js?v=0.9.0c1" index.html
           grep -q "city-progression.js?v=0.9.0c1" index.html
@@ -138,3 +147,23 @@ jobs:
           grep -q 'id="activityLogList"' index.html
           grep -q "loseXpOnIncapacitation" activity-combat.js
           grep -q "statsForLevel" adventurer-core.js
+
+      - name: Check integrated approved systems
+        run: |
+          grep -q "PG_WORLD_DESIGN" app.js
+          grep -q "PG_WORLD_LOOP" app.js
+          grep -q "simpleMeal" world-design-data.js
+          grep -q "travelRation" world-design-data.js
+          grep -q "materialOrigins" world-design-data.js
+          grep -q "workerTools" world-design-data.js
+          grep -q "publishDeliveryMission" world-loop.js
+          grep -q "publishEscortMission" world-loop.js
+          grep -q "enqueueRecipe" world-loop.js
+          grep -q "buildTextile" world-loop.js
+          grep -q "sellLootStep" world-loop.js
+          grep -q "threatStep" world-loop.js
+          grep -q "autonomyStep" world-loop.js
+          grep -q 'data-screen="townHall"' index.html
+          grep -q 'data-screen="guildHall"' index.html
+          grep -q 'data-screen="textile"' index.html
+          grep -q 'data-screen="map"' index.html
