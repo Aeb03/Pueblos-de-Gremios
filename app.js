@@ -3024,6 +3024,44 @@ if(els.activityAdventurerSelect)els.activityAdventurerSelect.addEventListener('c
 if(els.activityEnemySelect)els.activityEnemySelect.addEventListener('change',render);
 if(els.activityEnemyCount)els.activityEnemyCount.addEventListener('change',render);
 
+if(els.advanceWorld10)els.advanceWorld10.addEventListener('click',()=>advanceIntegratedWorld(10));
+if(els.advanceWorld30)els.advanceWorld30.addEventListener('click',()=>advanceIntegratedWorld(30));
+if(els.advanceWorld120)els.advanceWorld120.addEventListener('click',()=>advanceIntegratedWorld(120));
+
+if(els.publishGuildMission)els.publishGuildMission.addEventListener('click',publishGuildMissionAction);
+if(els.guildEnemySelect)els.guildEnemySelect.addEventListener('change',updateGuildRewardHint);
+if(els.guildEnemyCount)els.guildEnemyCount.addEventListener('change',updateGuildRewardHint);
+if(els.guildMissionList)els.guildMissionList.addEventListener('click',event=>{
+  const button=event.target.closest('[data-mission-toggle]');
+  if(!button)return;
+  const result=WORLD.toggleMission(state,button.dataset.missionToggle);
+  if(result.ok){
+    saveState();
+    render();
+  }
+});
+
+if(els.buildTextile)els.buildTextile.addEventListener('click',buildTextileAction);
+if(els.tanningActions)els.tanningActions.addEventListener('click',event=>{
+  const button=event.target.closest('[data-tan-origin]');
+  if(!button)return;
+  const result=WORLD.tanHide(state,button.dataset.tanOrigin,DESIGN);
+  els.textileFeedback.textContent=result.ok?'Piel curtida conservando su origen.':result.reason;
+  if(result.ok){
+    syncCityFromIntegratedWorld();
+    saveState();
+  }
+  render();
+});
+
+document.querySelectorAll('[data-world-recipe]').forEach(button=>{
+  button.addEventListener('click',()=>enqueueApprovedRecipe(button.dataset.worldRecipe));
+});
+
+if(els.mapMineOuting)els.mapMineOuting.addEventListener('click',()=>integratedWorkerOuting('mine'));
+if(els.mapWoodOuting)els.mapWoodOuting.addEventListener('click',()=>integratedWorkerOuting('wood'));
+if(els.mapHuntOuting)els.mapHuntOuting.addEventListener('click',()=>integratedWorkerOuting('hunt'));
+
 els.swordInventoryList.addEventListener('change',event=>{
   const input=event.target.closest('[data-sword-price]');
   if(!input)return;
@@ -3132,7 +3170,7 @@ if('serviceWorker' in navigator){
 
     window.addEventListener('load',async()=>{
       try{
-        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0c1',{updateViaCache:'none'});
+        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.0g1',{updateViaCache:'none'});
         await reg.update();
       }catch{}
     });
