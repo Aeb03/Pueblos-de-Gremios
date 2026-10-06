@@ -587,6 +587,33 @@
     <p class="feedback" id="guildFeedback"></p>
   </article>
   <article class="panel">
+    <p class="eyebrow">Entrega por demanda real</p>
+    <div class="activity-grid">
+      <label class="activity-field"><span>Recurso</span><select id="deliveryResourceSelect">
+        <option value="meat">Carne</option><option value="tendon">Tendón</option>
+        <option value="wolfSkin">Piel de Lobo</option><option value="boarSkin">Piel de Jabalí</option>
+      </select></label>
+      <label class="activity-field"><span>Cantidad</span><input id="deliveryQtyInput" type="number" min="1" max="10" value="1"></label>
+    </div>
+    <label class="activity-field"><span>Recompensa</span><input id="deliveryRewardInput" type="number" min="1" value="2"></label>
+    <p class="muted" id="deliveryHint">Sólo se permite publicar si la ciudad realmente necesita ese recurso.</p>
+    <button class="primary" id="publishDeliveryMission">Publicar entrega</button>
+    <p class="feedback" id="deliveryFeedback"></p>
+  </article>
+
+  <article class="panel">
+    <p class="eyebrow">Escolta por amenaza</p>
+    <div class="activity-grid">
+      <label class="activity-field"><span>Salida</span><select id="escortWorkerSelect">
+        <option value="mine">Mina</option><option value="wood">Bosque</option><option value="hunt">Caza</option>
+      </select></label>
+      <label class="activity-field"><span>Recompensa</span><input id="escortRewardInput" type="number" min="1" value="16"></label>
+    </div>
+    <p class="muted" id="escortHint">Sólo se habilita cuando la Amenaza recomienda una escolta.</p>
+    <button class="primary" id="publishEscortMission">Publicar escolta</button>
+    <p class="feedback" id="escortFeedback"></p>
+  </article>
+  <article class="panel">
     <div class="section-head compact"><div><p class="eyebrow">Misiones</p><h3>Tablón activo</h3></div><span id="guildMissionCount">0/2</span></div>
     <div class="world-event-list" id="guildMissionList"></div>
   </article>
