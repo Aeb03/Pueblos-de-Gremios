@@ -1128,8 +1128,74 @@
     threatConsequences(state,design,rng);
   }
 
+  function workerForKind(state,kind){
+    if(kind==='mine')return state.workers.mara;
+    if(kind==='wood')return state.workers.logger;
+    if(kind==='hunt')return state.workers.hunter;
+    return null;
+  }
+
+  function workerToolForKind(state,kind){
+    return workerForKind(state,kind)?.worldTool||null;
+  }
+
+  function equipWorkerTool(state,workerKey,toolKey,design){
+    const cfg=design.workerTools[toolKey];
+    const worker=state.workers[workerKey];
+    if(!cfg||!worker)return {ok:false,reason:'Herramienta o trabajador inválido'};
+    if(cfg.worker!==workerKey)return {ok:false,reason:'La herramienta no corresponde a ese trabajador'};
+
+    let available=false;
+    if(toolKey==='huntingBow'){
+      const goods=state.worldSystems.production.goods.huntingBow||[];
+      if(goods.length){
+        goods.shift();
+        available=true;
+      }
+    }else{
+      const stock=state.worldSystems.production.stock;
+      if((stock[toolKey]||0)>0){
+        stock[toolKey]--;
+        available=true;
+      }
+    }
+    if(!available)return {ok:false,reason:'No hay '+cfg.name+' disponible'};
+
+    const equipped=makeWorkerTool(toolKey,design);
+    if(toolKey==='huntingKnife')worker.harvestTool=equipped;
+    else worker.worldTool=equipped;
+    logEvent(state,'worker-tool',(worker.profession||workerKey)+' recibió '+cfg.name+'.');
+    return {ok:true,tool:equipped};
+  }
+
+  function repairWorkerTools(state,design,workerKey=null){
+    const keys=workerKey?[workerKey]:['mara','logger','hunter'];
+    const repaired=[];
+    for(const key of keys){
+      const worker=state.workers[key];
+      if(!worker)continue;
+      for(const field of ['worldTool','harvestTool']){
+        const tool=worker[field];
+        if(!tool||tool.durability>=tool.maxDurability)continue;
+        const price=2;
+        if(availableTreasury(state)<price)continue;
+        state.resources.coins-=price;
+        tool.durability=tool.maxDurability;
+        repaired.push(tool.name);
+      }
+    }
+    if(repaired.length)logEvent(state,'repair','Se repararon herramientas de trabajo: '+repaired.join(', ')+'.');
+    return {ok:repaired.length>0,repaired,reason:repaired.length?'':'No hay herramientas dañadas o faltan monedas'};
+  }
+
   function workerOuting(state,kind,design,rng=Math.random){
-    const result={ok:true,kind,gained:{},escort:null,injured:false};
+    const worker=workerForKind(state,kind);
+    const tool=workerToolForKind(state,kind);
+    if(!worker||!tool)return {ok:false,reason:'Trabajador o herramienta no disponible'};
+    if(tool.durability<=0)return {ok:false,reason:tool.name+' está agotado. Debe repararse antes de otra salida.'};
+
+    const toolCfg=design.workerTools[tool.id]||{};
+    const result={ok:true,kind,gained:{},escort:null,injured:false,tool:tool.name,toolWear:1};
     const wolfBand=threatBand(state.worldSystems.threat.presence.wolf,design);
     const boarBand=threatBand(state.worldSystems.threat.presence.boar,design);
     const danger=Math.max(
@@ -1151,17 +1217,37 @@
       }
     }
 
+    const bonus=Number(toolCfg.resourceBonus)||0;
     if(kind==='mine'){
-      result.gained.iron=randInt(rng,5,7);
+      result.gained.iron=randInt(rng,5,7)+bonus;
       result.gained.stone=randInt(rng,3,4);
+      if(toolCfg.hardVein&&rng()<.15){
+        result.gained.iron+=randInt(rng,3,5);
+        result.special='Veta dura';
+      }
     }else if(kind==='wood'){
-      result.gained.wood=randInt(rng,6,8);
-      result.gained.firewood=randInt(rng,3,4);
+      result.gained.wood=randInt(rng,6,8)+bonus;
+      result.gained.firewood=randInt(rng,3,4)+bonus;
+      if(toolCfg.hardTrees&&rng()<.15){
+        result.gained.wood+=randInt(rng,2,3);
+        result.special='Árboles duros';
+      }
       state.workers.logger.outings++;
     }else if(kind==='hunt'){
-      result.gained.meat=randInt(rng,4,6);
+      result.gained.meat=randInt(rng,4,6)+bonus;
       result.gained.skin=randInt(rng,2,3);
       result.gained.tendon=randInt(rng,1,2);
+      if(toolCfg.hardPrey&&rng()<.18){
+        result.gained.meat+=1;
+        result.gained.skin+=1;
+        result.special='Presa difícil';
+      }
+      const knife=state.workers.hunter.harvestTool;
+      if(knife&&knife.durability>0&&design.workerTools[knife.id]?.harvestBonus){
+        result.gained.skin+=1;
+        if(rng()<.55)result.gained.tendon+=1;
+        knife.durability=Math.max(0,knife.durability-1);
+      }
       state.workers.hunter.outings++;
     }else return {ok:false,reason:'Salida inexistente'};
 
@@ -1169,10 +1255,11 @@
       for(const key of Object.keys(result.gained))result.gained[key]=Math.max(0,Math.floor(result.gained[key]*.5));
     }
 
+    tool.durability=Math.max(0,tool.durability-1);
     for(const [key,qty] of Object.entries(result.gained))state.resources[key]=(state.resources[key]||0)+qty;
     state.worldSystems.map.workerOutings++;
     state.city.development=Number(((state.city.development||0)+1).toFixed(2));
-    logEvent(state,'worker-outing','Salida de '+kind+' completada.',result);
+    logEvent(state,'worker-outing','Salida de '+kind+' completada con '+tool.name+'.',result);
     return result;
   }
 
@@ -1281,6 +1368,8 @@
     advanceWorld,
     stepWorld,
     workerOuting,
+    equipWorkerTool,
+    repairWorkerTools,
     publishHuntMission,
     toggleMission,
     craftRecipe,
