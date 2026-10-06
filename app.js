@@ -1,13 +1,17 @@
-const APP_VERSION='0.9.0c1';
+const APP_VERSION='0.9.0g1';
 const SAVE_KEY='pueblos-gremios-save-v0.8.0';
 const DATA=globalThis.PG_DATA;
 const ADV=globalThis.PG_ADVENTURER_CORE;
 const CITY=globalThis.PG_CITY_PROGRESSION;
 const COMBAT=globalThis.PG_ACTIVITY_COMBAT;
+const DESIGN=globalThis.PG_WORLD_DESIGN;
+const WORLD=globalThis.PG_WORLD_LOOP;
 
 if(!ADV)throw new Error('PG_ADVENTURER_CORE no está disponible.');
 if(!CITY)throw new Error('PG_CITY_PROGRESSION no está disponible.');
 if(!COMBAT)throw new Error('PG_ACTIVITY_COMBAT no está disponible.');
+if(!DESIGN)throw new Error('PG_WORLD_DESIGN no está disponible.');
+if(!WORLD)throw new Error('PG_WORLD_LOOP no está disponible.');
 
 const EXPEDITION_DURATION_MS=30_000;
 const CRAFT_DURATION_MS=DATA.recipes.pickaxeHead.durationMs;
@@ -64,6 +68,10 @@ const titles={
   inn:'Mesón',
   expedition:'Expedición',
   kingdom:'Reino de Ardel',
+  townHall:'Ayuntamiento',
+  guildHall:'Sede del Gremio',
+  textile:'Textilería',
+  map:'Mapa local',
   inventory:'Inventario',
   menu:'Menú'
 };
@@ -255,17 +263,18 @@ function loadState(){
     merged.city=CITY.normalizeCityProgress(merged.city);
     merged.buildings.meson.level=Math.max(1,Number(merged.buildings.meson.level)||1);
     merged.buildings.meson.capacity=CITY.mesonCapacity(merged.buildings.meson.level);
-    return merged;
+    return WORLD.normalizeState(merged,DATA,DESIGN);
   }catch{
     return defaultState();
   }
 }
 
-let state=loadState();
+let state=WORLD.normalizeState(loadState(),DATA,DESIGN);
 
 function saveState(){
   state.version=APP_VERSION;
   state.adventurerSchemaVersion=ADV.ADVENTURER_SCHEMA_VERSION;
+  WORLD.normalizeState(state,DATA,DESIGN);
   localStorage.setItem(SAVE_KEY,JSON.stringify(state));
 }
 
