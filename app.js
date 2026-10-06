@@ -1,4 +1,4 @@
-const APP_VERSION='0.9.1a';
+const APP_VERSION='0.9.1b';
 const MAIN_SAVE_KEY='pueblos-gremios-save-v0.8.0';
 const FULL_PLAYTEST=new URLSearchParams(location.search).get('prueba')==='nv1-3';
 const SAVE_KEY=FULL_PLAYTEST?'pueblos-gremios-playtest-nv1-3-v1':MAIN_SAVE_KEY;
@@ -2370,6 +2370,10 @@ function renderTextileIntegrated(){
       (stock.nails||0)>=cost.nails&&
       (stock.scissors||0)>=cost.scissors&&unlocked;
     els.buildTextile.disabled=!ready;
+    const checklist=document.getElementById('textileBuildRequirements');
+    if(checklist){const rows=[['Ciudad',state.city.level||1,2],['Monedas disponibles',WORLD.availableTreasury(state),cost.coins],['Madera',state.resources.wood||0,cost.wood],['Piedra',state.resources.stone||0,cost.stone],['Lotes de clavos',stock.nails||0,cost.nails],['Tijeras',stock.scissors||0,cost.scissors]];
+      checklist.replaceChildren(...rows.map(([name,have,need])=>{const p=document.createElement('p');p.className=have>=need?'is-success':'is-warning';p.textContent=(have>=need?'✓ ':'Falta: ')+name+' '+Number(have.toFixed(2))+'/'+need;return p;}));}
+
   }
 
   if(!textile.built)return;
@@ -3446,7 +3450,7 @@ if('serviceWorker' in navigator){
 
     window.addEventListener('load',async()=>{
       try{
-        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.1a',{updateViaCache:'none'});
+        const reg=await navigator.serviceWorker.register('./sw.js?v=0.9.1b',{updateViaCache:'none'});
         await reg.update();
       }catch{}
     });

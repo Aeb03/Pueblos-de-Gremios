@@ -247,9 +247,12 @@
     next.buildings={
       ...(next.buildings||{}),
       townHall:{level:1,...(next.buildings?.townHall||{})},
+      carpenter:{level:1,...(next.buildings?.carpenter||{})},
       guildHall:{level:1,missionSlots:design.buildings.guildHall.missionSlots,...(next.buildings?.guildHall||{})},
       textile:{level:ws.textile.built?Math.max(1,ws.textile.level):0,built:ws.textile.built,...(next.buildings?.textile||{})}
     };
+
+    next.buildings.guildHall.missionSlots=2+Math.max(0,(next.buildings.guildHall.level||1)-1);
 
     next.workers={
       ...(next.workers||{}),
@@ -725,7 +728,7 @@
   }
 
   function hasMissionSlot(state,design){
-    const slots=2+Math.max(0,(state.buildings.guildHall?.level||1)-1)*2;
+    const slots=2+Math.max(0,(state.buildings.guildHall?.level||1)-1);
     return activeMissionCount(state)<slots;
   }
 
@@ -1980,15 +1983,16 @@
     if(next>3)return {ok:false,reason:'Máximo Nv.3 para esta partida'};
     if(next>(state.city.level||1))return {ok:false,reason:'Requiere Ciudad Nv.'+next};
     const cost={coins:next===2?30:60,wood:next===2?6:10,stone:next===2?4:8};
-    const benefit=key==='guildHall'?(2+(next-1)*2)+' misiones simultáneas':key==='meson'?(5+(next-1)*2)+' plazas de alojamiento':key==='townHall'?'Ayuntamiento Nv.'+next+' · obras registradas':(5+next-1)+' trabajos en cola';
-    const affordable=availableTreasury(state)>=cost.coins&&state.resources.wood>=cost.wood&&state.resources.stone>=cost.stone;
-    return {ok:affordable,next,cost,benefit,reason:affordable?'':'Faltan recursos o monedas disponibles'};
+    const benefit=key==='guildHall'?(2+(next-1))+' misiones simultáneas':key==='meson'?(5+(next-1)*2)+' plazas de alojamiento':key==='townHall'?'Ayuntamiento Nv.'+next+' · obras registradas':(5+next-1)+' trabajos en cola';
+    const missing=Object.entries(cost).filter(([k,q])=>(k==='coins'?availableTreasury(state):(state.resources[k]||0))<q).map(([k,q])=>design.resources[k].name+' '+(k==='coins'?availableTreasury(state):(state.resources[k]||0))+'/'+q);
+    const affordable=!missing.length;
+    return {ok:affordable,next,cost,benefit,reason:affordable?'':'Falta: '+missing.join(' · ')};
   }
   function upgradeBuilding(state,key,design){
     const quote=upgradeQuote(state,key,design);if(!quote.ok)return quote;
     for(const [k,q] of Object.entries(quote.cost))state.resources[k]-=q;
     const b=state.buildings[key];b.level=quote.next;
-    if(key==='guildHall')b.missionSlots=2+(b.level-1)*2;
+    if(key==='guildHall')b.missionSlots=2+(b.level-1);
     if(key==='meson'){b.capacity=5+(b.level-1)*2;state.worldSystems.meson.level=b.level;}
     if(key==='textile')state.worldSystems.textile.level=b.level;
     state.city.development=Number(((state.city.development||0)+.8).toFixed(2));
