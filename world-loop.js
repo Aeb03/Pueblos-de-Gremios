@@ -944,7 +944,7 @@
     state.worldSystems.market.salesRevenue+=price;
     equipPurchased(npc,found.product);
     found.list.splice(found.list.indexOf(found.product),1);
-    logEvent(state,'market',npc.fullName+' compró '+found.product.name+' por '+price+' monedas.');
+    logEvent(state,'market',npc.fullName+' compró '+found.product.name+' por '+price+' monedas.',{adventurerId:npc.id,shop:found.product.ownerShop||design.equipment[found.product.catalogId]?.shop});
     return true;
   }
 
