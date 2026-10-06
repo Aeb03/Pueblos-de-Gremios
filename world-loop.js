@@ -158,6 +158,30 @@
     return npc;
   }
 
+  function makeWorkerTool(toolKey,design){
+    const cfg=design.workerTools[toolKey];
+    return {
+      id:cfg.id,
+      name:cfg.name,
+      durability:cfg.durability,
+      maxDurability:cfg.durability,
+      tier:cfg.tier
+    };
+  }
+
+  function normalizeWorkerTool(current,defaultKey,design){
+    if(current&&current.id&&design.workerTools[current.id]){
+      const cfg=design.workerTools[current.id];
+      return {
+        ...makeWorkerTool(current.id,design),
+        ...current,
+        durability:clamp(Number(current.durability??cfg.durability),0,cfg.durability),
+        maxDurability:cfg.durability
+      };
+    }
+    return makeWorkerTool(defaultKey,design);
+  }
+
   function normalizeState(state,data,design){
     const next=state;
     next.resources=ensureResourceBag(next.resources,design);
@@ -208,8 +232,23 @@
 
     next.workers={
       ...(next.workers||{}),
-      logger:{profession:'Leñador',level:1,outings:0,status:'Disponible',...(next.workers?.logger||{})},
-      hunter:{profession:'Cazador',level:1,outings:0,status:'Disponible',...(next.workers?.hunter||{})}
+      mara:{
+        ...(next.workers?.mara||{}),
+        worldTool:normalizeWorkerTool(next.workers?.mara?.worldTool,'roughPick',design)
+      },
+      logger:{
+        profession:'Leñador',level:1,outings:0,status:'Disponible',
+        ...(next.workers?.logger||{}),
+        worldTool:normalizeWorkerTool(next.workers?.logger?.worldTool,'roughAxe',design)
+      },
+      hunter:{
+        profession:'Cazador',level:1,outings:0,status:'Disponible',
+        ...(next.workers?.hunter||{}),
+        worldTool:normalizeWorkerTool(next.workers?.hunter?.worldTool,'roughHuntingGear',design),
+        harvestTool:next.workers?.hunter?.harvestTool
+          ?normalizeWorkerTool(next.workers.hunter.harvestTool,'huntingKnife',design)
+          :null
+      }
     };
 
     next.accountLedger={
